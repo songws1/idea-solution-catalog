@@ -1,0 +1,29 @@
+{
+  "name": "idea-solution-catalog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GBS idea + solution search and governance prototype. All data is synthetic.",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "tsx scripts/generate-seed.ts",
+    "enrich": "tsx scripts/enrich.ts",
+    "verify-duplicates": "tsx scripts/verify-duplicates.ts"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
