@@ -10,7 +10,7 @@ function orgOfUser(userId: string): string | undefined {
   return userById(userId)?.org;
 }
 
-function orgOfSolution(dataset: Dataset, sol: SolutionRecord): string {
+export function orgOfSolution(dataset: Dataset, sol: SolutionRecord): string {
   if (sol.resolves_idea_id) {
     const idea = dataset.ideas.find((i) => i.id === sol.resolves_idea_id);
     if (idea) return idea.org;

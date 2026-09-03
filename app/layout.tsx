@@ -29,10 +29,10 @@ export default function RootLayout({
         <header className="site-header">
           <div className="site-header-inner">
             <div className="site-title">
-              <a href="/search">GBS idea + solution catalog</a>
+              <a href="/">GBS idea + solution catalog</a>
             </div>
             <nav className="site-nav">
-              <a href="/search">Search</a>
+              <a href="/">Catalog</a>
               <a href="/governance">Governance</a>
               <a href="/export">Export</a>
             </nav>

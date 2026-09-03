@@ -1,29 +1,12 @@
 import { NextResponse } from "next/server";
-import { getDatasetVariant, loadDataset, userName } from "@/lib/dataset";
+import { getDatasetVariant, loadDataset } from "@/lib/dataset";
+import { toClientRecord } from "@/lib/client-records";
 import { retrieve } from "@/lib/retrieval";
 import { chatComplete, embedTexts, getApiKey, OpenRouterError } from "@/lib/openrouter";
 import type { ChatMessage } from "@/lib/openrouter";
-import type { CatalogRecord, ClientIdea, ClientSolution, ScoredResult, SearchApiResponse } from "@/lib/types";
+import type { ScoredResult, SearchApiResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function toClient(record: CatalogRecord): ClientIdea | ClientSolution {
-  // Embeddings stay server-side; user ids become display names.
-  if (record.doc_type === "idea") {
-    const { embedding: _e, submitted_by, submitted_by_manager, ...rest } = record;
-    return {
-      ...rest,
-      submitted_by_name: userName(submitted_by),
-      submitted_by_manager_name: userName(submitted_by_manager),
-    } satisfies ClientIdea;
-  }
-  const { embedding: _e, solution_owner, built_by, ...rest } = record;
-  return {
-    ...rest,
-    solution_owner_name: userName(solution_owner),
-    built_by_name: userName(built_by),
-  } satisfies ClientSolution;
-}
 
 function buildContext(
   query: string,
@@ -102,8 +85,8 @@ export async function POST(request: Request) {
   }
 
   const outcome = retrieve(dataset, queryEmbedding, { topDirect: 8 });
-  const ideas = outcome.ideas.map((r) => ({ ...r, record: toClient(r.record) }));
-  const solutions = outcome.solutions.map((r) => ({ ...r, record: toClient(r.record) }));
+  const ideas = outcome.ideas.map((r) => ({ ...r, record: toClientRecord(r.record) }));
+  const solutions = outcome.solutions.map((r) => ({ ...r, record: toClientRecord(r.record) }));
 
   let answer: string | null = null;
   try {

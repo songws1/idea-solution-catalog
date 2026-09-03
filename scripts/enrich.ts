@@ -22,6 +22,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chatComplete, embedTexts, embeddingModel, getApiKey } from "../lib/openrouter";
+import { TAG_TAXONOMY } from "../lib/tag-taxonomy";
 
 /**
  * Load .env.local / .env manually — tsx doesn't do it for us outside Next.js.
@@ -70,42 +71,16 @@ loadEnvLocal();
 // sol-0011~sol-0020 pair at 0.7120 and the highest non-planted pair,
 // idea-0005~idea-0006, at 0.7116). Override with DUP_THRESHOLD (both) or
 // DUP_THRESHOLD_PRE / DUP_THRESHOLD_POST.
+// KNOWN FRAGILITY (docs/BACKLOG.md): the post-enrichment margin between the
+// planted sol-0011~sol-0020 pair and the nearest non-planted pair is only
+// ~0.0002-0.0004. Re-run npm run verify-duplicates after ANY re-enrichment —
+// never assume this threshold still holds once summaries/embeddings regenerate.
 const DUP_THRESHOLD_PRE = Number(process.env.DUP_THRESHOLD_PRE ?? process.env.DUP_THRESHOLD ?? 0.65);
 const DUP_THRESHOLD_POST = Number(process.env.DUP_THRESHOLD_POST ?? process.env.DUP_THRESHOLD ?? 0.7118);
 const TOP_CANDIDATES = 3;
 const EMBED_ROUND = 5; // decimal places kept for stored embeddings
 
-/**
- * Fixed category-tag taxonomy for solutions (Addendum A §1.3, Chris-approved
- * scope: "choose from a fixed allowed-tag list instead of generating
- * freeform"). Chosen to cover the actual topics in the seed solutions —
- * domain tags per service area plus a few cross-cutting capability tags.
- * Enrichment must choose from this list only; anything else is rejected.
- */
-const ALLOWED_TAGS = [
-  // Domain tags
-  "invoice-processing",
-  "collections",
-  "financial-close",
-  "dispute-handling",
-  "onboarding",
-  "benefits-administration",
-  "recruiting",
-  "vendor-management",
-  "spend-analysis",
-  "contract-management",
-  "space-management",
-  "maintenance",
-  "inventory-restock",
-  "it-service-desk",
-  "access-management",
-  // Cross-cutting capability tags
-  "email-triage",
-  "document-extraction",
-  "meeting-notes",
-  "task-tracking",
-  "approvals",
-] as const;
+const ALLOWED_TAGS = TAG_TAXONOMY;
 
 /**
  * Cache version — bumped when the enrichment prompt changes meaningfully, so
@@ -285,7 +260,9 @@ async function enrichSolution(
     {
       role: "system" as const,
       content:
-        "You catalog built solutions in an internal improvement-ideas catalog. Given what a citizen developer wrote when saving their artifact, produce: (1) a factual 2-3 sentence summary of what the solution does, what problem it solves, and how it is used — written in plain business language someone searching the catalog might use; (2) 3-5 tags describing the capability and domain, chosen ONLY from this fixed taxonomy: invoice-processing, collections, financial-close, dispute-handling, onboarding, benefits-administration, recruiting, vendor-management, spend-analysis, contract-management, space-management, maintenance, inventory-restock, it-service-desk, access-management, email-triage, document-extraction, meeting-notes, task-tracking, approvals. Never invent a tag outside that list. Respond with JSON only: {\"summary\": string, \"tags\": string[]}.",
+        "You catalog built solutions in an internal improvement-ideas catalog. Given what a citizen developer wrote when saving their artifact, produce: (1) a factual 2-3 sentence summary of what the solution does, what problem it solves, and how it is used — written in plain business language someone searching the catalog might use; (2) 3-5 tags describing the capability and domain, chosen ONLY from this fixed taxonomy: " +
+          TAG_TAXONOMY.join(", ") +
+          ". Never invent a tag outside that list. Respond with JSON only: {\"summary\": string, \"tags\": string[]}.",
     },
     {
       role: "user" as const,
