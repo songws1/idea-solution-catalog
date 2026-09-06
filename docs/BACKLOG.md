@@ -1,7 +1,8 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 3, 2026
-**Status:** Phases 1-3 complete and verified. Phase 4 is next.
+**Last updated:** September 6, 2026
+**Status:** Phases 1-4.1 complete and verified. Next: the UX redesign v3
+build sequence (`docs/ux-redesign-v3.md` §8).
 
 ---
 
@@ -28,6 +29,32 @@
   regenerated; `npm run verify-duplicates` re-run and PASSED on live
   output (not just claimed — console output checked directly): 6/6
   planted clusters caught, 0 false positives, both variants.
+- **Phase 4 — Landing page + filter bar + Kanban (§1, §2.1-2.5).**
+  Complete. Commit `d1db5f6`. Catalog landing page with the unified
+  filter bar, Kanban results view, one shared card-detail component
+  (`RecordDetail` / `RecordDetailDrawer`); `ResultsPanels` and
+  `ConnectorLayer` retired.
+- **Phase 4.1 — Bug fixes on Phase 4.** Complete. Four fixes:
+  - Duplicate-candidate click now jumps to that record's tile (scroll +
+    flash highlight) — clearing search/filters back to the browse grid
+    when the tile isn't in the current view — and never opens a drawer
+    except as a last resort for candidates with no tile anywhere
+    (solved/linked ideas). The on-card `DuplicateBadge` candidate rows
+    are clickable under the same contract.
+  - Linked-record identity (name/title + org) shown inline above the
+    "View linked solution/idea" action in the detail drawer, both
+    directions.
+  - "Estimated savings from reuse" governance widget removed entirely
+    (component, page usage, the Widget 5 block in `lib/governance.ts`,
+    orphan CSS).
+  - Idea-title vs solution-name presentation checked across search
+    results, Kanban cards, and the detail view: field usage is consistent
+    everywhere; the wording divergence is seed data, not presentation.
+    No code change needed.
+  Verified working in the running app. The code changes are in the
+  working tree pending their own commit — this docs update deliberately
+  excludes application code, so no hash exists yet; record it here when
+  the commit lands.
 
 ---
 
@@ -50,50 +77,53 @@ next time that file is touched (small, no urgency).
 
 ---
 
-## Next — Phase 4: Landing page + filter bar + Kanban (§1, §2.1-2.5)
+## Next — UX redesign v3 (`docs/ux-redesign-v3.md`)
 
-The largest phase so far. Full prompt is in `docs/cline-build-prompts.md`
-— use Plan mode first, this one has real design surface area, not just a
-mechanical change.
+v3 comes from a live UX review of the running app on 2026-09-06 and
+supersedes Addendum A §1-§2 in full. Read order per the spec:
+`docs/spec.md`, then `docs/ux-redesign-v3.md`; do not read Addendum A.
 
-**Scope reminder before starting:**
-- Search bar stays visually dominant; filter bar is secondary.
-- Filter bar is ONE unified system (not a separate "intent chip" row —
-  that idea was dropped in the addendum's revision): primary chips are
-  Service, Solution type, Technology type (now a real field, thanks to
-  Phase 3), Org; "more filters" holds Year, Month, Taxonomy, Org.
-- Card grid shows solutions primarily; tags are clickable and filter the
-  grid (fixes original UAT issue #4).
-- Kanban: three columns (Idea / In progress / Solution), clustering by
-  the existing cross-reference join, duplicate-candidate indicator
-  surfaced (existing data, new UI).
-- ONE shared card-detail component used by both the landing grid and
-  Kanban cards — not two separate detail UIs. All actions must be real
-  (open artifact as a primary button, jump-to-linked-record, clickable
-  duplicate candidates) — fixes original UAT issues #5 and #7. Do NOT
-  build "flag as reviewed" — explicitly out of scope (no write-back
-  store).
-- Kanban is the default results view. `ResultsPanels.tsx` and
-  `ConnectorLayer.tsx` are retired (not kept as a toggle) — the toggle
-  option is the Mindmap view, which is Phase 5, not this phase.
+**The structural decision (v3 §0):** Kanban is the only layout — the card
+grid is deleted, not toggled. This absorbs what was previously scoped as
+"Phase 4.8 — Kanban on landing page"; that phase no longer exists as
+separate work.
 
-**Before pasting the Cline prompt tomorrow:** tell it to read
-`lib/match-label.ts` and `components/search/SearchView.tsx` as they
-currently stand (not as Phase 1's original summary described them) —
-both changed after that summary was written, per the UAT fix above. Any
-new component that shows a match score must reuse `matchLabel()` /
-`topScoreOf()` / `hasAnyRealMatch()` from `lib/match-label.ts`, not
-reimplement scoring display logic.
+Build sequence (v3 §8 — each step ends at a clean commit and a named
+click-through; `npm run build` + `npx tsc --noEmit` clean after each):
+
+1. **Global tokens and the control/value split** (§2.2, §2.5) — new
+   tints, filter chip and tag treatments, facet link style. Smallest
+   change, touches every later step.
+2. **Naming pass** (§1) — every user-facing label on all three tabs;
+   `org`/`service` relabelled Service/Sub-service in the UI with stored
+   field names unchanged.
+3. **Card anatomy and the board** (§3) — the largest step: grid deleted,
+   nested "Resolved idea" block replaced by a one-line `Resolves` title
+   link, record-id policy enforced on the board.
+4. **Synthesis prompt** (§3.5) — small, but re-run the §0 Q1/Q2 queries
+   and diff rankings/scores to 4 decimal places; a prompt change must not
+   move retrieval.
+5. **Governance** (§4) — summary tiles, widget reorder, duplicate-cluster
+   rework, dot-grid accessibility, table fixes, cross-navigation.
+6. **Export** (§5) — smallest, do last.
+
+`npm run verify-duplicates` only needs re-running if `npm run enrich` is
+re-run, which none of these steps require.
 
 ---
 
-## After that — Phase 5: Mindmap / graph view (§2.6)
+## After the v3 sequence
 
-Its own checkpoint, built and reviewed after Kanban is stable — don't
-bundle into the same UAT pass as Phase 4. Full spec (nodes/edges/layout,
-force-directed via d3-force or equivalent, empty-state handling,
-responsive fallback below ~900px) is in `docs/spec-addendum-v2.md` §2.6
-and the ready-to-paste prompt is in `docs/cline-build-prompts.md`.
+- **Mindmap / graph view** (Addendum §2.6) — still its own phase, built
+  and reviewed after the v3 work is stable; v3 §7 leaves it unchanged.
+- **Solution artifacts** — `Open the artifact` currently points at a
+  placeholder `sharepoint.example` URL (a known no-op). Generating real
+  artifact files is its own phase; explicitly out of scope for v3 (§7).
+  Sequence after the v3 build steps.
+- **Employee directory** — the Contact-owner/mailto affordance ships
+  inert in v3 (the button exists so the card layout is final; §7 says do
+  not wire it here). Explicitly out of scope for v3; sequence after the
+  v3 build steps.
 
 ---
 

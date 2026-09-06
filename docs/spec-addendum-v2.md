@@ -1,3 +1,6 @@
+> **SUPERSEDED IN PART — see `docs/ux-redesign-v3.md`.**
+> Sections 1 and 2 of this addendum (landing page, filter bar, Kanban, card detail) are superseded in full by the v3 redesign spec and must not be used to guide new work. Sections 0, 3, 4 and 5 still stand and have already been built. Kept for history.
+
 # Addendum A — UX/Functionality Revision (v2)
 
 **Status:** Ready to build. Supersedes conflicting statements in the base

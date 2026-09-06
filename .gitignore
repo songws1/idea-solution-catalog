@@ -144,3 +144,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Files delivered from Claude sessions (not part of the app)
+Claude outputs/
