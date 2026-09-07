@@ -33,6 +33,8 @@ interface Props {
   clusterIdeas?: ClientScoredResult[];
   onOpen: (item: ClientScoredResult) => void;
   onJumpToSolution: (solutionId: string) => void;
+  /** Duplicate-candidate contract: jump to the record's tile, drawer last resort. */
+  onJumpToDuplicate: (id: string) => void;
 }
 
 export default function KanbanCard({
@@ -42,6 +44,7 @@ export default function KanbanCard({
   clusterIdeas,
   onOpen,
   onJumpToSolution,
+  onJumpToDuplicate,
 }: Props) {
   const { record, score, via_link } = item;
   const label = matchLabel(score, topScore);
@@ -96,7 +99,7 @@ export default function KanbanCard({
             Likely already solved — jump to the solution
           </button>
         )}
-        <DuplicateBadge record={record} />
+        <DuplicateBadge record={record} onNavigate={onJumpToDuplicate} />
       </article>
     );
   }
@@ -164,7 +167,7 @@ export default function KanbanCard({
         </div>
       )}
       {via_link && <p className="via-link-note">shown via its linked counterpart</p>}
-      <DuplicateBadge record={record} />
+      <DuplicateBadge record={record} onNavigate={onJumpToDuplicate} />
     </article>
   );
 }

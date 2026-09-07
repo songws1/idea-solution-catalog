@@ -317,62 +317,6 @@ export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Widget 5 — estimated savings from reuse (illustrative only)
-// ---------------------------------------------------------------------------
-
-export interface ReuseSavingsConfig {
-  /** Illustrative assumed effort per net-new build, in hours. */
-  hoursPerNetNewBuild: number;
-  /** Illustrative assumed fully-loaded hourly rate, in USD. */
-  hourlyRateUsd: number;
-}
-
-export const DEFAULT_REUSE_SAVINGS_CONFIG: ReuseSavingsConfig = {
-  hoursPerNetNewBuild: 50,
-  hourlyRateUsd: 50,
-};
-
-export interface ReuseSavings {
-  openIdeasResolvable: Array<{ idea: IdeaRecord; resolvableVia: IdeaRecord }>;
-  count: number;
-  estimatedHours: number;
-  estimatedUsd: number;
-  config: ReuseSavingsConfig;
-}
-
-/**
- * Open ideas that duplicate an already-solved idea could likely be resolved by
- * reusing that existing solution instead of funding a net-new build.
- * The formula is an illustrative placeholder, not a validated figure — the UI
- * must state that assumption on screen.
- */
-export function reuseSavings(
-  dataset: Dataset,
-  config: ReuseSavingsConfig = DEFAULT_REUSE_SAVINGS_CONFIG
-): ReuseSavings {
-  const ideaById = new Map(dataset.ideas.map((i) => [i.id, i]));
-  const resolvable: Array<{ idea: IdeaRecord; resolvableVia: IdeaRecord }> = [];
-  for (const idea of dataset.ideas) {
-    if (idea.status === "solved" || idea.linked_solution_id) continue;
-    for (const cand of idea.duplicate_candidates) {
-      const other = ideaById.get(cand.id);
-      if (other && other.status === "solved" && other.has_solution) {
-        resolvable.push({ idea, resolvableVia: other });
-        break;
-      }
-    }
-  }
-  const estimatedHours = resolvable.length * config.hoursPerNetNewBuild;
-  return {
-    openIdeasResolvable: resolvable,
-    count: resolvable.length,
-    estimatedHours,
-    estimatedUsd: estimatedHours * config.hourlyRateUsd,
-    config,
-  };
-}
-
 
 
 

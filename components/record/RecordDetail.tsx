@@ -14,13 +14,19 @@ import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
  *  - "View linked idea / solution" jumps to (scrolls + highlights) the paired
  *    card wherever it is in the current view; onNavigate falls back to opening
  *    that record's detail when no card is rendered for it.
- *  - Duplicate candidates are real links with the same jump-or-open contract
- *    (carried over from the old DuplicateBadge expand-on-click interaction).
+ *  - Duplicate candidates are real links using the jump-to-tile contract
+ *    (onJumpToDuplicate): land on the record's tile in the card grid —
+ *    clearing search/filters to reach the full browse grid when needed — and
+ *    only open the candidate's detail when no tile can exist anywhere.
  *  - NO "flag as reviewed" / "Not a duplicate" action — explicitly out of
  *    scope (§2.4; no write-back store exists).
  *
  * Match-quality label comes from the shared matchLabel() scale (§3) and is
  * shown only when the record was opened from a scored search-results context.
+ * When an idea has a linked solution (or a solution a linked idea), the
+ * counterpart's basic identity (name/title, org) is shown inline above the
+ * "View linked …" action (Phase 4.1 #2), backed by the ideasById/solutionsById
+ * lookups.
  */
 
 export interface DetailRecord {
@@ -36,10 +42,15 @@ interface Props {
   onClose: () => void;
   /** Jump to a record's card if one is rendered; open its detail otherwise. */
   onNavigate: (id: string) => void;
+  /** Duplicate-candidate contract: jump to the record's tile, drawer last resort. */
+  onJumpToDuplicate: (id: string) => void;
   /** Clicking a tag pill filters the grid to that tag (§1.4). */
   onTagClick: (tag: string) => void;
   /** Resolved org/service per solution id (server-computed, §1.3). */
   solutionMeta?: SolutionMetaMap;
+  /** Dataset lookups backing the inline linked-record info line (Phase 4.1 #2). */
+  ideasById?: Record<string, ClientIdea>;
+  solutionsById?: Record<string, ClientSolution>;
 }
 
 function fmtDate(iso: string | null): string {
@@ -53,10 +64,10 @@ function fmtDate(iso: string | null): string {
 
 function DuplicateDisclosure({
   record,
-  onNavigate,
+  onJumpToDuplicate,
 }: {
   record: ClientRecord;
-  onNavigate: (id: string) => void;
+  onJumpToDuplicate: (id: string) => void;
 }) {
   const candidates = record.duplicate_candidates;
   if (candidates.length === 0 && !record.duplicate_of) return null;
@@ -72,7 +83,7 @@ function DuplicateDisclosure({
             <button
               type="button"
               className="dup-link"
-              onClick={() => onNavigate(record.duplicate_of as string)}
+              onClick={() => onJumpToDuplicate(record.duplicate_of as string)}
               title="Go to this record"
             >
               {record.duplicate_of}
@@ -85,7 +96,7 @@ function DuplicateDisclosure({
             <button
               type="button"
               className="dup-link"
-              onClick={() => onNavigate(c.id)}
+              onClick={() => onJumpToDuplicate(c.id)}
               title="Go to this record"
             >
               {c.id}
@@ -99,7 +110,16 @@ function DuplicateDisclosure({
   );
 }
 
-export default function RecordDetail({ detail, onClose, onNavigate, onTagClick, solutionMeta }: Props) {
+export default function RecordDetail({
+  detail,
+  onClose,
+  onNavigate,
+  onJumpToDuplicate,
+  onTagClick,
+  solutionMeta,
+  ideasById,
+  solutionsById,
+}: Props) {
   const { record, score, topScore } = detail;
   const label = score !== undefined && topScore !== undefined ? matchLabel(score, topScore) : null;
 
@@ -118,6 +138,26 @@ export default function RecordDetail({ detail, onClose, onNavigate, onTagClick, 
   const sol = record.doc_type === "solution" ? (record as ClientSolution) : null;
   const meta = sol && solutionMeta ? solutionMeta[sol.id] : undefined;
   const tags = idea ? idea.solution_tags : (sol as ClientSolution).category_tags;
+
+  // Inline identity of the linked counterpart (Phase 4.1 #2): problem phrasing
+  // on one side, artifact-style name on the other — name/title + org is the
+  // minimum needed to know what "View linked …" will land on.
+  let linkedInfo: string | null = null;
+  if (linkedId) {
+    if (idea) {
+      const linkedSol = solutionsById?.[linkedId];
+      if (linkedSol) {
+        linkedInfo = `Linked solution: ${linkedSol.name} (${
+          solutionMeta?.[linkedSol.id]?.org ?? "Unassigned"
+        })`;
+      }
+    } else {
+      const linkedIdea = ideasById?.[linkedId];
+      if (linkedIdea) {
+        linkedInfo = `Linked idea: ${linkedIdea.title} (${linkedIdea.org})`;
+      }
+    }
+  }
 
   return (
     <div className="detail-body">
@@ -213,7 +253,9 @@ export default function RecordDetail({ detail, onClose, onNavigate, onTagClick, 
         )}
       </div>
 
-      <DuplicateDisclosure record={record} onNavigate={onNavigate} />
+      <DuplicateDisclosure record={record} onJumpToDuplicate={onJumpToDuplicate} />
+
+      {linkedInfo && <p className="linked-record-info">{linkedInfo}</p>}
 
       <div className="detail-actions">
         {sol && (

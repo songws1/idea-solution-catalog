@@ -18,9 +18,11 @@ interface Props {
   ideas: ClientScoredResult[];
   solutions: ClientScoredResult[];
   onOpen: (item: ClientScoredResult) => void;
+  /** Duplicate-candidate contract: jump to the record's tile, drawer last resort. */
+  onJumpToDuplicate: (id: string) => void;
 }
 
-export default function KanbanResults({ ideas, solutions, onOpen }: Props) {
+export default function KanbanResults({ ideas, solutions, onOpen, onJumpToDuplicate }: Props) {
   const topScore = useMemo(
     () => topScoreOf([...ideas, ...solutions].map((r) => r.score)),
     [ideas, solutions]
@@ -43,6 +45,7 @@ export default function KanbanResults({ ideas, solutions, onOpen }: Props) {
                 topScore={topScore}
                 likelySolved={columns.likelySolved[item.record.id]}
                 onOpen={onOpen}
+                onJumpToDuplicate={onJumpToDuplicate}
                 onJumpToSolution={(id) => {
                   const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
                   if (el) {
@@ -73,6 +76,7 @@ export default function KanbanResults({ ideas, solutions, onOpen }: Props) {
                 topScore={topScore}
                 likelySolved={columns.likelySolved[item.record.id]}
                 onOpen={onOpen}
+                onJumpToDuplicate={onJumpToDuplicate}
                 onJumpToSolution={(id) => {
                   const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
                   if (el) {
@@ -103,6 +107,7 @@ export default function KanbanResults({ ideas, solutions, onOpen }: Props) {
                 topScore={topScore}
                 clusterIdeas={cluster.ideas}
                 onOpen={onOpen}
+                onJumpToDuplicate={onJumpToDuplicate}
                 onJumpToSolution={(id) => {
                   const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
                   if (el) {

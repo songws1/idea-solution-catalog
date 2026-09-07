@@ -4,7 +4,6 @@ import {
   duplicateClusters,
   duplicateRateByOrg,
   orgDotGrid,
-  reuseSavings,
   statusByOrg,
   throughput,
 } from "@/lib/governance";
@@ -13,7 +12,6 @@ import AgingWidget from "@/components/governance/AgingWidget";
 import ThroughputWidget from "@/components/governance/ThroughputWidget";
 import DuplicateRate from "@/components/governance/DuplicateRate";
 import OrgDotGrid from "@/components/governance/OrgDotGrid";
-import ReuseSavings from "@/components/governance/ReuseSavings";
 import DuplicateClusters from "@/components/governance/DuplicateClusters";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +26,6 @@ export default function GovernancePage() {
   const dupRate = duplicateRateByOrg(dataset);
   const dots = orgDotGrid(dataset);
   const clusters = duplicateClusters(dataset);
-  const savings = reuseSavings(dataset);
 
   const totalRecords = dataset.ideas.length + dataset.solutions.length;
   const flaggedRecords = [...dataset.ideas, ...dataset.solutions].filter(
@@ -58,7 +55,6 @@ export default function GovernancePage() {
         <ThroughputWidget points={tp.points} conversionPct={tp.conversionPct} />
         <DuplicateRate rows={dupRate} />
         <OrgDotGrid rows={dots} />
-        <ReuseSavings savings={savings} />
         <DuplicateClusters clusters={clusters} dataset={dataset} />
       </div>
     </div>

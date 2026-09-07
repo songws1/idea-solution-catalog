@@ -1,7 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { ClientRecord, ClientScoredResult, DatasetVariant, SearchApiResponse } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  ClientIdea,
+  ClientRecord,
+  ClientScoredResult,
+  ClientSolution,
+  DatasetVariant,
+  SearchApiResponse,
+} from "@/lib/types";
 import { hasAnyRealMatch, topScoreOf } from "@/lib/match-label";
 import type { DetailRecord } from "@/components/record/RecordDetail";
 import RecordDetailDrawer from "@/components/record/RecordDetailDrawer";
@@ -45,6 +52,7 @@ export default function CatalogHome({
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [detail, setDetail] = useState<DetailRecord | null>(null);
+  const [pendingJump, setPendingJump] = useState<string | null>(null);
   void variant;
 
   // Whole-result-set noise gate — lib/match-label.ts, reused not reimplemented.
@@ -69,6 +77,17 @@ export default function CatalogHome({
   const filtered = useMemo(
     () => applyFilters(catalog, solutionMeta, filters),
     [catalog, solutionMeta, filters]
+  );
+
+  // Linked-record identity for the detail view's inline info line (Phase 4.1 #2).
+  const ideasById = useMemo(
+    () => Object.fromEntries(catalog.ideas.map((i) => [i.id, i])) as Record<string, ClientIdea>,
+    [catalog]
+  );
+  const solutionsById = useMemo(
+    () =>
+      Object.fromEntries(catalog.solutions.map((s) => [s.id, s])) as Record<string, ClientSolution>,
+    [catalog]
   );
 
   async function runSearch(e?: React.FormEvent) {
@@ -123,27 +142,22 @@ export default function CatalogHome({
   }
 
   /**
-   * §2.4 navigation contract: jump to (scroll + highlight) the record's card
-   * wherever it is in the current view; open its detail directly when no card
-   * is rendered for it. Never a dead click.
+   * Scroll a rendered card tile into view and briefly highlight it (§2.4).
+   * Shared by both navigation contracts below.
    */
-  function navigateToRecord(id: string) {
-    const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
-    if (el) {
-      setDetail(null); // reveal the card the drawer was covering
-      window.setTimeout(() => {
-        el.scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? "auto"
-            : "smooth",
-          block: "center",
-        });
-        el.classList.add("jump-flash");
-        window.setTimeout(() => el.classList.remove("jump-flash"), 1800);
-      }, 60);
-      return;
-    }
-    // Not rendered as a card — open its detail directly.
+  function flashTile(el: HTMLElement) {
+    el.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+    el.classList.add("jump-flash");
+    window.setTimeout(() => el.classList.remove("jump-flash"), 1800);
+  }
+
+  /** Open a record's detail by id — scored context when it's in the current results. */
+  function openDetailById(id: string) {
     if (results && hasResults) {
       const top = topScoreOf([...results.ideas, ...results.solutions].map((r) => r.score));
       const hit = [...results.ideas, ...results.solutions].find((r) => r.record.id === id);
@@ -156,6 +170,58 @@ export default function CatalogHome({
       catalog.ideas.find((i) => i.id === id) ?? catalog.solutions.find((s) => s.id === id);
     if (fromCatalog) setDetail({ record: fromCatalog });
   }
+
+  /**
+   * §2.4 navigation contract: jump to (scroll + highlight) the record's card
+   * wherever it is in the current view; open its detail directly when no card
+   * is rendered for it. Never a dead click.
+   */
+  function navigateToRecord(id: string) {
+    const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
+    if (el) {
+      setDetail(null); // reveal the card the drawer was covering
+      window.setTimeout(() => flashTile(el), 60);
+      return;
+    }
+    // Not rendered as a card — open its detail directly.
+    openDetailById(id);
+  }
+
+  /**
+   * Duplicate-candidate navigation (Phase 4.1 fix #1): always land on the
+   * record's tile in the card grid — scroll + highlight, never a drawer unless
+   * no tile can exist (solved/linked ideas render no tile in any view).
+   * Fallback chain: current-view tile → full browse-grid tile (clears search
+   * and filters) → candidate's detail as a last resort.
+   */
+  function jumpToDuplicate(id: string) {
+    setDetail(null);
+    const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
+    if (el) {
+      window.setTimeout(() => flashTile(el), 60);
+      return;
+    }
+    setResults(null);
+    setError(null);
+    setQuery("");
+    setFilters(EMPTY_FILTERS);
+    setPendingJump(id);
+  }
+
+  // Resume a duplicate-candidate jump after the clear-to-browse re-render:
+  // flash the tile when it exists, else open the candidate's detail (last
+  // resort — candidates not in the browse grid are solved/linked ideas).
+  useEffect(() => {
+    if (!pendingJump) return;
+    const id = pendingJump;
+    setPendingJump(null);
+    const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
+    if (el) {
+      flashTile(el);
+      return;
+    }
+    openDetailById(id);
+  }, [pendingJump]);
 
   const resultsTopScore = hasResults
     ? topScoreOf([...shownIdeas, ...shownSolutions].map((r) => r.score))
@@ -204,6 +270,7 @@ export default function CatalogHome({
                 ideas={shownIdeas}
                 solutions={shownSolutions}
                 onOpen={(item) => openDetail(item, resultsTopScore)}
+                onJumpToDuplicate={jumpToDuplicate}
               />
               <button type="button" className="clear-search" onClick={clearSearch}>
                 Clear this search and browse the catalog
@@ -252,8 +319,11 @@ export default function CatalogHome({
         detail={detail}
         onClose={() => setDetail(null)}
         onNavigate={navigateToRecord}
+        onJumpToDuplicate={jumpToDuplicate}
         onTagClick={handleTagClick}
         solutionMeta={solutionMeta}
+        ideasById={ideasById}
+        solutionsById={solutionsById}
       />
     </div>
   );
