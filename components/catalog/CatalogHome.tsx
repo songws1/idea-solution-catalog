@@ -80,13 +80,17 @@ export default function CatalogHome({
     return filterScored(results.ideas, results.solutions, solutionMeta, filters);
   }, [results, hasResults, solutionMeta, filters]);
 
-  // Browse mode: the full dataset (minus active filters), unscored.
+  // Browse mode: the full dataset (minus active filters), unscored. The
+  // clustering pool is ALL ideas (v3 §3.2 — solved ideas feed the Resolves
+  // line on solution cards even though they never get their own column card);
+  // column membership still comes from filtered.ideas alone.
   const browseView = useMemo(
     () => ({
       ideas: filtered.ideas.map((r): BoardItem => ({ record: r })),
       solutions: filtered.solutions.map((r): BoardItem => ({ record: r })),
+      clusterPool: catalog.ideas.map((r): BoardItem => ({ record: r })),
     }),
-    [filtered]
+    [filtered, catalog]
   );
 
   const resultsTopScore =
@@ -250,7 +254,7 @@ export default function CatalogHome({
   // Board data for the active mode: search results (chip-narrowed) or browse.
   const board =
     results && hasResults && searchView
-      ? { ideas: searchView.ideas, solutions: searchView.solutions }
+      ? { ideas: searchView.ideas, solutions: searchView.solutions, clusterPool: undefined }
       : browseView;
   // Every column empty under active filters — same treatment in both modes.
   const filteredEmpty =
@@ -345,6 +349,7 @@ export default function CatalogHome({
             <KanbanResults
               ideas={board.ideas}
               solutions={board.solutions}
+              clusterPool={board.clusterPool}
               onOpen={openDetail}
               onJumpToDuplicate={jumpToDuplicate}
               onNavigate={navigateToRecord}

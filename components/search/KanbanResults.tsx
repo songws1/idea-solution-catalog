@@ -19,6 +19,8 @@ import KanbanCard from "./KanbanCard";
 interface Props {
   ideas: BoardItem[];
   solutions: BoardItem[];
+  /** Clustering pool (v3 §3.2): all ideas incl. solved — browse mode sets it. */
+  clusterPool?: BoardItem[];
   onOpen: (item: BoardItem) => void;
   /** Duplicate-candidate contract: jump to the record's tile, drawer last resort. */
   onJumpToDuplicate: (id: string) => void;
@@ -47,6 +49,7 @@ function jumpToTile(id: string, fallback: () => void) {
 export default function KanbanResults({
   ideas,
   solutions,
+  clusterPool,
   onOpen,
   onJumpToDuplicate,
   onNavigate,
@@ -59,7 +62,10 @@ export default function KanbanResults({
     () => (anyScored ? topScoreOf(ideas.concat(solutions).map((r) => r.score ?? 0)) : undefined),
     [ideas, solutions, anyScored]
   );
-  const columns = useMemo(() => buildKanbanColumns(ideas, solutions), [ideas, solutions]);
+  const columns = useMemo(
+    () => buildKanbanColumns(ideas, solutions, clusterPool),
+    [ideas, solutions, clusterPool]
+  );
 
   return (
     <div className="kanban" data-testid="kanban-view">

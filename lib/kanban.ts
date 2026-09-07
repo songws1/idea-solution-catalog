@@ -50,10 +50,19 @@ export interface KanbanColumns {
  */
 export function buildKanbanColumns(
   ideas: BoardItem[],
-  solutions: BoardItem[]
+  solutions: BoardItem[],
+  /**
+   * Ideas available for the Resolves clustering and likelySolved lookups —
+   * defaults to `ideas`. Browse mode passes ALL ideas here (solved ideas
+   * included) because they must feed the Resolves line even though column
+   * membership still excludes them (§3.2: a solved idea never gets its own
+   * card). Search mode leaves it undefined — results.ideas already carries
+   * the solved ideas. Column membership and counts come from `ideas` alone.
+   */
+  clusterPool: BoardItem[] = ideas
 ): KanbanColumns {
   const solutionById = new Map(solutions.map((r) => [r.record.id, r]));
-  const ideaById = new Map(ideas.map((r) => [r.record.id, r]));
+  const ideaById = new Map(clusterPool.map((r) => [r.record.id, r]));
 
   const ideaColumn: BoardItem[] = [];
   const inProgressColumn: BoardItem[] = [];

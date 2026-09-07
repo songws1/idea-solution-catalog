@@ -348,6 +348,18 @@ a:hover {
   padding: 16px;
 }
 
+/* Spacing rhythm (§3.3/§3.6): the body gap is the ONLY vertical spacing
+   source inside a card — zero the stray margins so tag rows, flags and
+   actions sit on the same 11px grid on every card shape. */
+.card-body .tag-row,
+.card-body .likely-solved {
+  margin-top: 0;
+}
+
+.card-body .via-link-note {
+  margin: 0;
+}
+
 .board-card h3 {
   font-size: 18px;
   font-weight: 600;
