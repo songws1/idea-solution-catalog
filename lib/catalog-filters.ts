@@ -226,11 +226,12 @@ export function deriveFilterOptions(
 
 /** Plain-language description of active filters for the empty state (§1.2). */
 export function describeFilters(f: FilterState): string[] {
+  // v3 §1 mapping: stored `service` renders as "Sub-service"; stored `org` as "Service".
   const parts: string[] = [];
-  if (f.services.length) parts.push(`Service: ${f.services.join(", ")}`);
+  if (f.services.length) parts.push(`Sub-service: ${f.services.join(", ")}`);
   if (f.artifactTypes.length) parts.push(`Solution type: ${f.artifactTypes.join(", ")}`);
   if (f.technologyTypes.length) parts.push(`Technology type: ${f.technologyTypes.join(", ")}`);
-  if (f.orgs.length) parts.push(`Org: ${f.orgs.join(", ")}`);
+  if (f.orgs.length) parts.push(`Service: ${f.orgs.join(", ")}`);
   if (f.years.length) parts.push(`Year: ${f.years.join(", ")}`);
   if (f.months.length) parts.push(`Month: ${f.months.join(", ")}`);
   if (f.tags.length) parts.push(`Taxonomy: ${f.tags.join(", ")}`);

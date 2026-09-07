@@ -8,8 +8,9 @@ function Table({ rows, kind }: { rows: AgingRow[]; kind: "idea" | "solution" }) 
   return (
     <table>
       <thead>
+        {/* stored `org` renders as "Service" (v3 §1); rows are stored org values. */}
         <tr>
-          <th scope="col">Org</th>
+          <th scope="col">Service</th>
           <th scope="col">Under 30 days</th>
           <th scope="col">30 to 90</th>
           <th scope="col">Over 90</th>

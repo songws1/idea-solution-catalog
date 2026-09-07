@@ -6,13 +6,14 @@ import type { FilterOptions, FilterState } from "@/lib/catalog-filters";
 /**
  * Unified two-tier browse-by filter bar (Addendum A §1.1.2) — NOT a separate
  * intent-chip row. Primary chips always visible; "More filters" expands a
- * secondary row. Org intentionally appears in both tiers (same selection
- * state, §1.1). Multi-select dropdown chips, not modals. Entirely
- * client-side: selecting filters narrows the grid live, no LLM call.
+ * secondary row. The top-level facet (stored `org`, labelled "Service")
+ * intentionally appears in both tiers (same selection state, §1.1).
+ * Multi-select dropdown chips, not modals. Entirely client-side: selecting
+ * filters narrows the grid live, no LLM call.
  */
 
 interface FacetDef {
-  /** Unique id for open/close tracking (org appears twice under two labels). */
+  /** Unique id for open/close tracking (a facet may appear in both tiers). */
   id: string;
   key: keyof FilterState;
   label: string;
@@ -87,17 +88,20 @@ export default function FilterBar({ options, filters, onToggle, onClearAll }: Pr
     return () => document.removeEventListener("mousedown", onDown);
   }, [openId]);
 
+  // v3 §1 mapping: stored `org` renders as "Service"; stored `service` as
+  // "Sub-service". Keys stay the stored field names — filtering logic is
+  // untouched by the relabel.
   const primary: FacetDef[] = [
-    { id: "services", key: "services", label: "Service", options: options.services },
+    { id: "orgs-primary", key: "orgs", label: "Service", options: options.orgs },
+    { id: "services", key: "services", label: "Sub-service", options: options.services },
     { id: "artifactTypes", key: "artifactTypes", label: "Solution type", options: options.artifactTypes },
     { id: "technologyTypes", key: "technologyTypes", label: "Technology type", options: options.technologyTypes },
-    { id: "orgs-primary", key: "orgs", label: "Org", options: options.orgs },
   ];
   const secondary: FacetDef[] = [
     { id: "years", key: "years", label: "Year", options: options.years },
     { id: "months", key: "months", label: "Month", options: options.months },
     { id: "tags", key: "tags", label: "Taxonomy", options: options.tags },
-    { id: "orgs-secondary", key: "orgs", label: "Org", options: options.orgs },
+    { id: "orgs-secondary", key: "orgs", label: "Service", options: options.orgs },
   ];
 
   const anyActive =

@@ -38,8 +38,8 @@ export default function GovernancePage() {
         <h1>Catalog governance</h1>
         <p className="lede">
           Catalog health at a glance: status, aging, throughput, and the scale of
-          duplication across {totalRecords} records in {status.length} orgs. All
-          figures are derived from the dataset&rsquo;s static fields; duplicate
+          duplication across {totalRecords} records in {status.length} services.
+          All figures are derived from the dataset&rsquo;s static fields; duplicate
           flags are review candidates produced offline, not auto-merges.
         </p>
         <span className="dataset-note">

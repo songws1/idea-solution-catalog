@@ -81,8 +81,9 @@ export default function KanbanCard({
         </div>
         <h3>{record.title}</h3>
         <p className="card-meta">
-          {record.org}, {record.service} — submitted by {record.submitted_by_name} on{" "}
-          {fmtDate(record.submitted_date)}
+          {/* stored `org` renders as "Service", stored `service` as "Sub-service" (v3 §1). */}
+          Service: {record.org}; Sub-service: {record.service} — submitted by{" "}
+          {record.submitted_by_name} on {fmtDate(record.submitted_date)}
         </p>
         <p className="card-desc">{record.description}</p>
         {via_link && <p className="via-link-note">shown via its linked counterpart</p>}

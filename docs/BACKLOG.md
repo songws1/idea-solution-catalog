@@ -91,10 +91,10 @@ click-through; `npm run build` + `npx tsc --noEmit` clean after each):
 
 1. **Global tokens and the control/value split** (§2.2, §2.5) — new
    tints, filter chip and tag treatments, facet link style. Smallest
-   change, touches every later step.
+   change, touches every later step. **Done — commit `952afe2`.**
 2. **Naming pass** (§1) — every user-facing label on all three tabs;
    `org`/`service` relabelled Service/Sub-service in the UI with stored
-   field names unchanged.
+   field names unchanged. **Done.**
 3. **Card anatomy and the board** (§3) — the largest step: grid deleted,
    nested "Resolved idea" block replaced by a one-line `Resolves` title
    link, record-id policy enforced on the board.

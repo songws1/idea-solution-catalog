@@ -226,10 +226,11 @@ export default function RecordDetail({
       )}
 
       <div className="detail-meta">
+        {/* stored `org` renders as "Service", stored `service` as "Sub-service" (v3 §1). */}
         {idea ? (
           <>
             <span>
-              {idea.org}, {idea.service}
+              Service: {idea.org}; Sub-service: {idea.service}
             </span>
             <span>
               Submitted by {idea.submitted_by_name}
@@ -240,7 +241,9 @@ export default function RecordDetail({
         ) : (
           <>
             <span>
-              {meta ? `${meta.org}, ${meta.service}` : "Org unassigned"}
+              {meta
+                ? `Service: ${meta.org}; Sub-service: ${meta.service}`
+                : "Service unassigned"}
             </span>
             <span>
               Owner {sol?.solution_owner_name} — built by {sol?.built_by_name} on{" "}

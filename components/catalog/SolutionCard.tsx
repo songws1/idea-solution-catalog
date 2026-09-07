@@ -64,8 +64,9 @@ export default function SolutionCard({ sol, meta, onOpen, onTagClick }: Props) {
         </div>
       )}
       <p className="card-meta">
-        Owner {sol.solution_owner_name} — {meta?.org ?? "Unassigned"}
-        {meta?.service ? `, ${meta.service}` : ""} — built {fmtDate(sol.date_built)}
+        {/* stored `org` renders as "Service", stored `service` as "Sub-service" (v3 §1). */}
+        Owner {sol.solution_owner_name} — Service: {meta?.org ?? "Unassigned"}; Sub-service:{" "}
+        {meta?.service ?? "Unassigned"} — built {fmtDate(sol.date_built)}
       </p>
     </article>
   );

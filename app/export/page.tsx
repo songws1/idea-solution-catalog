@@ -38,9 +38,11 @@ export default function ExportPage() {
         <div className="export-item">
           <h2>Ideas</h2>
           <p className="widget-sub">
-            All {ideaCount} idea records: org, service, title, description,
-            submitter and their manager (as names), status, linked solution, and
-            duplicate flags (count + flagged record IDs).
+            {/* v3 §1: copy uses the UI labels — the CSV's own column headers keep
+                the stored names org/service. */}
+            All {ideaCount} idea records: service, sub-service, title,
+            description, submitter and their manager (as names), status, linked
+            solution, and duplicate flags (count + flagged record IDs).
           </p>
           <a
             className="artifact-button"

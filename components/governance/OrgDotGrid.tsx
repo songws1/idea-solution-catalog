@@ -27,7 +27,9 @@ function Legend({ compact }: { compact?: boolean }) {
 export default function OrgDotGrid({ rows }: { rows: OrgDotGridRow[] }) {
   return (
     <section className="widget wide">
-      <h2>Every record, by org</h2>
+      {/* v3 §1: heading uses the UI label — rows are stored `org` values rendered
+          as service lines. */}
+      <h2>Every record, by service</h2>
       <p className="widget-sub">
         One dot per record. Color carries state; hover any dot for the record it
         stands for. Duplicate flags override status color so the scale of

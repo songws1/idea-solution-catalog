@@ -6,6 +6,7 @@ export type DatasetVariant = "pre" | "post";
 export interface UserRecord {
   id: string;
   name: string;
+  /** Service line. Labelled "Service" in the UI; `service` below is "Sub-service". */
   org: string;
   service: string;
   manager_id: string | null;
@@ -19,6 +20,7 @@ export interface DuplicateCandidate {
 export interface IdeaRecord {
   id: string;
   doc_type: "idea";
+  /** Service line. Labelled "Service" in the UI; `service` below is "Sub-service". */
   org: string;
   service: string;
   title: string;

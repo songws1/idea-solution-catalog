@@ -5,10 +5,12 @@ export default function DuplicateRate({ rows }: { rows: DuplicateRateRow[] }) {
 
   return (
     <section className="widget">
-      <h2>Share flagged duplicate</h2>
+      {/* v3 §1: this heading is "Duplicate rate by service" even though the lib
+          function stays duplicateRateByOrg; stored `org` renders as "Service". */}
+      <h2>Duplicate rate by service</h2>
       <p className="widget-sub">
         Records with at least one duplicate candidate or confirmed duplicate
-        link, as a share of that org&rsquo;s ideas and solutions. This is the
+        link, as a share of that service&rsquo;s ideas and solutions. This is the
         core waste metric — flagged records are review candidates, not confirmed
         waste.
       </p>

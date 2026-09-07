@@ -119,8 +119,9 @@ export default function CatalogGrid({
                 <h3>{idea.title}</h3>
                 <p className="idea-desc">{idea.description}</p>
                 <p className="card-meta">
-                  {idea.org}, {idea.service} — submitted by {idea.submitted_by_name} on{" "}
-                  {fmtDate(idea.submitted_date)}
+                  {/* stored `org` renders as "Service", stored `service` as "Sub-service" (v3 §1). */}
+                  Service: {idea.org}; Sub-service: {idea.service} — submitted by{" "}
+                  {idea.submitted_by_name} on {fmtDate(idea.submitted_date)}
                 </p>
               </article>
             ))}
