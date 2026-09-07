@@ -11,7 +11,7 @@ import { orgOfSolution } from "./governance";
 import { userById } from "./dataset";
 import { TAG_TAXONOMY } from "./tag-taxonomy";
 import type { ClientDataset } from "./client-records";
-import type { ClientIdea, ClientSolution, Dataset } from "./types";
+import type { ClientIdea, ClientScoredResult, ClientSolution, Dataset } from "./types";
 
 /** Chris's fixed 8-value list — set at seed time, never LLM-inferred. */
 export const TECHNOLOGY_TYPES = [
@@ -155,8 +155,13 @@ function solutionMatches(
 
 export interface FilteredCatalog {
   solutions: ClientSolution[];
-  /** Ideas without a built solution — the secondary section under the grid. */
-  openIdeas: ClientIdea[];
+  /**
+   * Ideas with no built solution (status open OR in_progress) — the board's
+   * idea-side columns (v3 §3.2). buildKanbanColumns splits them by status;
+   * solved ideas are excluded here because they render as the Resolves line
+   * on their solution's card, never as their own card.
+   */
+  ideas: ClientIdea[];
 }
 
 export function applyFilters(
@@ -165,11 +170,30 @@ export function applyFilters(
   f: FilterState
 ): FilteredCatalog {
   const solutions = catalog.solutions.filter((s) => solutionMatches(s, meta[s.id], f));
-  // "Open ideas" = anything not yet resolved by a solution (§1.2 secondary section).
-  const openIdeas = catalog.ideas.filter(
+  const ideas = catalog.ideas.filter(
     (i) => i.status !== "solved" && !i.linked_solution_id && ideaMatches(i, f)
   );
-  return { solutions, openIdeas };
+  return { solutions, ideas };
+}
+
+/**
+ * The same facet logic applied to search results (v3 §0/§3.1: the filter
+ * chips narrow the one board in both browse and search mode). Score, ranking,
+ * and the match-label scale are untouched — this only removes records from
+ * the displayed set.
+ */
+export function filterScored(
+  ideas: ClientScoredResult[],
+  solutions: ClientScoredResult[],
+  meta: SolutionMetaMap,
+  f: FilterState
+): { ideas: ClientScoredResult[]; solutions: ClientScoredResult[] } {
+  return {
+    ideas: ideas.filter((r) => r.record.doc_type === "idea" && ideaMatches(r.record, f)),
+    solutions: solutions.filter(
+      (r) => r.record.doc_type === "solution" && solutionMatches(r.record, meta[r.record.id], f)
+    ),
+  };
 }
 
 export interface FilterOptions {

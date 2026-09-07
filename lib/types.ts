@@ -113,6 +113,18 @@ export interface ScoredResult<R = CatalogRecord> {
 /** Scored result as serialized to the browser (embeddings stripped, names resolved). */
 export type ClientScoredResult = ScoredResult<ClientRecord>;
 
+/**
+ * One card on the Kanban board (v3 §0 — the board is the only layout, serving
+ * both browse and search). Browse mode has no query, so score/via_link are
+ * absent and the card renders no match label. ClientScoredResult is
+ * structurally assignable to this.
+ */
+export interface BoardItem {
+  record: ClientRecord;
+  score?: number;
+  via_link?: boolean;
+}
+
 export interface SearchApiResponse {
   query: string;
   variant: DatasetVariant;

@@ -213,6 +213,28 @@ a:hover {
   max-width: var(--max-line);
 }
 
+/* v3 §3.1: one white surface holding the search input, the filter chips and
+   (after a search) the synthesised answer — what makes the search bar read as
+   the primary act without needing to be oversized. */
+.search-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px 16px;
+  margin-top: 20px;
+}
+
+.search-panel .search-bar {
+  margin: 8px 0 0;
+}
+
+.search-panel .answer-block {
+  border: none;
+  background: none;
+  padding: 14px 0 0;
+  margin: 0;
+}
+
 .error-banner {
   margin: 16px 0;
   padding: 12px 16px;
@@ -244,74 +266,172 @@ a:hover {
   margin: 0 0 6px;
 }
 
-/* Two linked panels ----------------------------------------------------- */
+/* Board card (v3 §3.3) — three zones: tinted header band, body, footer.
+   overflow:hidden so the band meets the border cleanly. */
 
-.panels-wrap {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 44px;
-  margin-top: 24px;
-}
-
-.panel h2 {
-  font-size: 19px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-strong);
-  margin-bottom: 14px;
-}
-
-.panel h2 .count {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-muted);
-  margin-left: 8px;
-}
-
-.card {
-  position: relative;
+.board-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 2px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  overflow: hidden;
   margin-bottom: 12px;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: border-color 120ms ease;
 }
 
-.card:hover {
-  border-left-color: var(--ink-muted);
+.board-card:hover {
+  border-color: var(--border-strong);
 }
 
-.card.selected,
-.card.linked-active {
-  border-left: 2px solid var(--accent);
-  background: var(--accent-tint);
-}
-
-.card.via-link {
+.board-card.via-link {
   border-style: dashed;
 }
 
-.card h3 {
-  font-size: 15.5px;
+/* Header band: background = the column's tint (set per column below). */
+.card-band {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  background: var(--band-tint);
+}
+
+.band-idea {
+  --band-tint: var(--tint-open);
+}
+
+.band-review {
+  --band-tint: var(--tint-review);
+}
+
+.band-solution {
+  --band-tint: var(--tint-solved);
+}
+
+.band-status {
+  font-size: 11.5px;
   font-weight: 600;
-  margin: 6px 0 4px;
+  color: var(--status-open);
 }
 
-.card .card-meta {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  margin: 0 0 6px;
+.band-status.status-in_progress {
+  color: var(--status-review);
 }
 
-.card .card-desc {
-  font-size: 13.5px;
+.band-type {
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--ink);
+}
+
+/* 1px × 11px hairline separating solution type from technology (§2.4). */
+.band-rule {
+  width: 1px;
+  height: 11px;
+  background: var(--border-strong);
+}
+
+.band-tech {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.strip-icon {
+  flex-shrink: 0;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 16px;
+}
+
+.board-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
   margin: 0;
-  max-width: var(--max-line);
+}
+
+.card-summary {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Resolves strip (v3 §3.4): the resolved idea appears ONLY here — one line,
+   title as a link. Replaces the nested "Resolved idea" block entirely. */
+.resolves-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--tint-solved);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--status-solved);
+}
+
+.resolves-word {
+  font-weight: 600;
+  color: var(--status-solved);
+}
+
+.resolves-link {
+  font: inherit;
+  font-size: 12.5px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-actions .btn-primary,
+.card-actions .btn-secondary {
+  font-size: 13px;
+  padding: 7px 14px;
+}
+
+/* Footer: two lines, since spelled-out labels wrap inside a ~390px column. */
+.card-foot {
+  padding: 11px 16px;
+  background: #fdfcfa;
+  border-top: 1px solid var(--border);
+}
+
+.foot-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.foot-date {
+  color: var(--ink-muted);
+}
+
+.foot-facets {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--ink-muted);
 }
 
 .card-topline {
@@ -375,13 +495,6 @@ a:hover {
   margin-top: 8px;
 }
 
-.artifact-link {
-  display: inline-block;
-  margin-top: 8px;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
 .enriched-note {
   margin-top: 10px;
   padding: 8px 10px;
@@ -417,53 +530,6 @@ a:hover {
   margin: 6px 0 0;
   padding-left: 18px;
   color: var(--ink-muted);
-}
-
-/* Connector — the one deliberate interactive detail --------------------- */
-
-.connector-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-  z-index: 2;
-}
-
-.connector-line {
-  stroke: var(--accent);
-  stroke-width: 1.5;
-  stroke-dashoffset: 0;
-  animation: connector-draw 450ms ease-out;
-}
-
-@keyframes connector-draw {
-  from {
-    stroke-dashoffset: var(--line-len);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .connector-line {
-    animation: none;
-  }
-  .card {
-    transition: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .panels-wrap {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-  .connector-layer {
-    display: none;
-  }
 }
 
 /* Empty state ------------------------------------------------------------ */
@@ -1091,63 +1157,7 @@ a:hover {
   margin: 0;
 }
 
-/* Catalog card grid (§1.2) */
-
-.catalog-section-title {
-  font-size: 19px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-strong);
-  margin: 28px 0 14px;
-}
-
-.catalog-section-title .count {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-muted);
-  margin-left: 8px;
-}
-
-.catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
-}
-
-.sol-card {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
-}
-
-.sol-card:hover {
-  border-left-color: var(--ink-muted);
-}
-
-.sol-card h3 {
-  font-size: 15.5px;
-  font-weight: 600;
-  margin: 6px 0 4px;
-}
-
-.sol-summary {
-  font-size: 13.5px;
-  margin: 0 0 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.sol-tech {
-  font-size: 11.5px;
-  color: var(--ink-muted);
-}
+/* Tag pills (detail drawer tag row) — still used by RecordDetail. */
 
 .tag-pill {
   cursor: pointer;
@@ -1161,57 +1171,9 @@ a:hover {
   border-color: var(--accent);
 }
 
-.open-ideas-section {
-  margin-top: 36px;
-}
-
-.idea-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 12px;
-}
-
-.idea-row {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 2px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  cursor: pointer;
-}
-
-.idea-row:hover {
-  border-left-color: var(--ink-muted);
-}
-
-.idea-row h3 {
-  font-size: 14.5px;
-  margin: 6px 0 4px;
-}
-
-.idea-desc {
-  font-size: 13px;
-  color: var(--ink-muted);
-  margin: 0 0 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.idea-id {
-  font-size: 11.5px;
-  color: var(--ink-muted);
-}
-
 .active-filter-list {
   margin: 8px 0;
   padding-left: 18px;
-  font-size: 13.5px;
-}
-
-.catalog-none {
-  color: var(--ink-muted);
   font-size: 13.5px;
 }
 
@@ -1350,10 +1312,12 @@ a:hover {
   margin: 4px 0 0;
 }
 
-/* Kanban results (§2.1-§2.3, §2.5) */
+/* Kanban board (v3 §3.2) — the only layout on /. Column headers: serif name,
+   tinted count badge, right-aligned muted descriptor, 2px bottom border in
+   the column's status color. */
 
 .kanban {
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .kanban-columns {
@@ -1363,19 +1327,47 @@ a:hover {
   align-items: start;
 }
 
+.kanban-col.c-idea {
+  --col-status: var(--status-open);
+  --col-tint: var(--tint-open);
+}
+
+.kanban-col.c-review {
+  --col-status: var(--status-review);
+  --col-tint: var(--tint-review);
+}
+
+.kanban-col.c-solved {
+  --col-status: var(--status-solved);
+  --col-tint: var(--tint-solved);
+}
+
 .kanban-col h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: 19px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-strong);
+  border-bottom: 2px solid var(--col-status);
   margin-bottom: 14px;
 }
 
 .kanban-col h2 .count {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--col-status);
+  background: var(--col-tint);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.kanban-desc {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
   font-weight: 400;
   color: var(--ink-muted);
-  margin-left: 8px;
 }
 
 .kanban-none {
@@ -1401,27 +1393,39 @@ a:hover {
   background: var(--surface);
 }
 
-.cluster-ideas {
-  margin-top: 10px;
-  border-left: 2px solid var(--status-solved);
-  padding-left: 10px;
+/* Duplicate strip on a board card (v3 §3.3): tinted --tint-duplicate strip
+   with a 6px dot and the count; expandable to title-cited candidates. */
+
+.dup-strip {
+  font-size: 12px;
 }
 
-.cluster-idea-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 4px 0 0;
+.dup-strip summary {
+  cursor: pointer;
+  color: var(--status-duplicate);
+  background: var(--tint-duplicate);
+  border-radius: var(--radius);
+  padding: 6px 10px;
 }
 
-.cluster-idea-desc {
-  font-size: 12.5px;
+.dup-strip summary::-webkit-details-marker {
+  display: none;
+}
+
+.dup-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--status-duplicate);
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+.dup-strip ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
   color: var(--ink-muted);
-  margin: 2px 0 0;
-}
-
-.cluster-idea-summary {
-  font-size: 12.5px;
-  margin: 2px 0 0;
 }
 
 .jump-flash {
@@ -1466,9 +1470,7 @@ a:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sol-card,
-  .idea-row,
-  .card {
+  .board-card {
     transition: none;
   }
 }

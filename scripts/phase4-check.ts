@@ -49,7 +49,7 @@ check("year options include 2025 and 2026", options.years.includes("2025") && op
 const expectedOpen = catalog.ideas.filter((i) => i.status !== "solved" && !i.linked_solution_id).length;
 const all = applyFilters(catalog, meta, EMPTY_FILTERS);
 check("no filters -> all 25 solutions", all.solutions.length === dataset.solutions.length);
-check(`no filters -> ${expectedOpen} open ideas`, all.openIdeas.length === expectedOpen);
+check(`no filters -> ${expectedOpen} open ideas`, all.ideas.length === expectedOpen);
 
 const tagF = { ...EMPTY_FILTERS, tags: ["invoice-processing"] };
 const tagApplied = applyFilters(catalog, meta, tagF);
@@ -60,7 +60,7 @@ check(
 );
 check(
   "tag filter: ideas matched via solution_tags (post-enrichment)",
-  tagApplied.openIdeas.every((i) => i.solution_tags.includes("invoice-processing"))
+  tagApplied.ideas.every((i) => i.solution_tags.includes("invoice-processing"))
 );
 
 const andF = { ...EMPTY_FILTERS, orgs: ["Finance Operations"], technologyTypes: ["RPA"] };

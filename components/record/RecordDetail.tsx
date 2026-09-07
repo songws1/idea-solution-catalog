@@ -5,9 +5,9 @@ import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
 
 /**
- * The ONE shared card-detail treatment (Addendum A §2.4), used by the landing
- * grid, the Kanban view, and (later) the governance duplicate clusters and the
- * graph view — not one detail UI per screen.
+ * The ONE shared card-detail treatment (Addendum A §2.4), used by the Kanban
+ * board and (later) the governance duplicate clusters and the graph view —
+ * not one detail UI per screen.
  *
  * All actions are real (fixes UAT #5 and #7):
  *  - "Open the artifact" is a primary button (solutions).
@@ -15,8 +15,8 @@ import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
  *    card wherever it is in the current view; onNavigate falls back to opening
  *    that record's detail when no card is rendered for it.
  *  - Duplicate candidates are real links using the jump-to-tile contract
- *    (onJumpToDuplicate): land on the record's tile in the card grid —
- *    clearing search/filters to reach the full browse grid when needed — and
+ *    (onJumpToDuplicate): land on the record's tile on the board —
+ *    clearing search/filters to reach the full browse board when needed — and
  *    only open the candidate's detail when no tile can exist anywhere.
  *  - NO "flag as reviewed" / "Not a duplicate" action — explicitly out of
  *    scope (§2.4; no write-back store exists).
@@ -65,9 +65,12 @@ function fmtDate(iso: string | null): string {
 function DuplicateDisclosure({
   record,
   onJumpToDuplicate,
+  titleOf,
 }: {
   record: ClientRecord;
   onJumpToDuplicate: (id: string) => void;
+  /** Record id → display title/name: candidates cite titles, not raw ids (v3 §2.1). */
+  titleOf: (id: string) => string | undefined;
 }) {
   const candidates = record.duplicate_candidates;
   if (candidates.length === 0 && !record.duplicate_of) return null;
@@ -86,7 +89,7 @@ function DuplicateDisclosure({
               onClick={() => onJumpToDuplicate(record.duplicate_of as string)}
               title="Go to this record"
             >
-              {record.duplicate_of}
+              {titleOf(record.duplicate_of) ?? record.duplicate_of}
             </button>{" "}
             (confirmed duplicate, human-validated)
           </li>
@@ -99,7 +102,7 @@ function DuplicateDisclosure({
               onClick={() => onJumpToDuplicate(c.id)}
               title="Go to this record"
             >
-              {c.id}
+              {titleOf(c.id) ?? c.id}
             </button>{" "}
             — similarity {c.score.toFixed(2)}
           </li>
@@ -158,6 +161,11 @@ export default function RecordDetail({
       }
     }
   }
+
+  // Record id → display title/name for the duplicate disclosure (v3 §2.1:
+  // clickable references cite the title; the record's own id stays in the
+  // muted line below).
+  const titleOf = (id: string) => ideasById?.[id]?.title ?? solutionsById?.[id]?.name;
 
   return (
     <div className="detail-body">
@@ -256,7 +264,11 @@ export default function RecordDetail({
         )}
       </div>
 
-      <DuplicateDisclosure record={record} onJumpToDuplicate={onJumpToDuplicate} />
+      <DuplicateDisclosure
+        record={record}
+        onJumpToDuplicate={onJumpToDuplicate}
+        titleOf={titleOf}
+      />
 
       {linkedInfo && <p className="linked-record-info">{linkedInfo}</p>}
 

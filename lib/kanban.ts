@@ -14,25 +14,25 @@
  * unclusteredSolved (data ready, rendering pending a design decision —
  * deliberately not rendered in this phase).
  */
-import type { ClientScoredResult } from "./types";
+import type { BoardItem } from "./types";
 
 export interface KanbanSolutionCard {
   key: string;
-  solution: ClientScoredResult;
+  solution: BoardItem;
   /** Solved ideas from the result set clustered into this solution card. */
-  ideas: ClientScoredResult[];
+  ideas: BoardItem[];
 }
 
 export interface KanbanColumns {
-  ideaColumn: ClientScoredResult[];
-  inProgressColumn: ClientScoredResult[];
+  ideaColumn: BoardItem[];
+  inProgressColumn: BoardItem[];
   solutionColumn: KanbanSolutionCard[];
   /**
    * Solved ideas in the result set whose linked solution is not itself in the
    * result set. Not rendered in this phase — see the design note in the build
    * report before implementing a card for them.
    */
-  unclusteredSolved: ClientScoredResult[];
+  unclusteredSolved: BoardItem[];
   /**
    * "Likely already solved" pointers (§2.3): an idea in the Idea or In
    * progress column whose duplicate_candidates include a solved idea whose
@@ -42,16 +42,22 @@ export interface KanbanColumns {
   likelySolved: Record<string, string>; // idea id -> solution card id
 }
 
+/**
+ * Column membership (v3 §3.2): ideas status "open" → Idea; "in_progress" →
+ * In progress; solutions → Solution. A solved idea never gets its own card —
+ * it appears as the Resolves line on the solution that resolved it, keeping
+ * one topic to one card.
+ */
 export function buildKanbanColumns(
-  ideas: ClientScoredResult[],
-  solutions: ClientScoredResult[]
+  ideas: BoardItem[],
+  solutions: BoardItem[]
 ): KanbanColumns {
   const solutionById = new Map(solutions.map((r) => [r.record.id, r]));
   const ideaById = new Map(ideas.map((r) => [r.record.id, r]));
 
-  const ideaColumn: ClientScoredResult[] = [];
-  const inProgressColumn: ClientScoredResult[] = [];
-  const unclusteredSolved: ClientScoredResult[] = [];
+  const ideaColumn: BoardItem[] = [];
+  const inProgressColumn: BoardItem[] = [];
+  const unclusteredSolved: BoardItem[] = [];
 
   for (const r of ideas) {
     if (r.record.doc_type !== "idea") continue;
@@ -68,7 +74,7 @@ export function buildKanbanColumns(
   const solutionColumn: KanbanSolutionCard[] = [];
   for (const sol of solutions) {
     if (sol.record.doc_type !== "solution") continue;
-    const clusterIdeas: ClientScoredResult[] = [];
+    const clusterIdeas: BoardItem[] = [];
     const resolves = sol.record.resolves_idea_id;
     if (resolves) {
       const ideaResult = ideaById.get(resolves);

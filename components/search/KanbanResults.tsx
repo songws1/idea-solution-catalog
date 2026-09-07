@@ -1,127 +1,150 @@
 "use client";
 
 import { useMemo } from "react";
-import type { ClientScoredResult } from "@/lib/types";
+import type { BoardItem } from "@/lib/types";
 import { topScoreOf } from "@/lib/match-label";
+import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import { buildKanbanColumns } from "@/lib/kanban";
 import KanbanCard from "./KanbanCard";
 
 /**
- * Kanban results view — the default post-search presentation (Addendum A
- * §2.1-§2.3), replacing the retired ResultsPanels/ConnectorLayer view. Three
- * columns populated purely from the /api/search response (no backend change);
- * collapses to a single scrollable column with section headers below the
- * 900px breakpoint that ConnectorLayer used (§2.5).
+ * The Kanban board (v3 §0/§3.2) — the ONLY layout on `/`, serving both browse
+ * (full dataset, no scores) and search (filtered + ranked results, summary +
+ * match labels on the same cards; no component swap). Three lifecycle columns:
+ * Idea / In progress / Solution; column membership and the one-topic-one-card
+ * clustering live in lib/kanban.ts. Collapses to a single scrollable column
+ * below the 900px breakpoint (§2.5).
  */
 
 interface Props {
-  ideas: ClientScoredResult[];
-  solutions: ClientScoredResult[];
-  onOpen: (item: ClientScoredResult) => void;
+  ideas: BoardItem[];
+  solutions: BoardItem[];
+  onOpen: (item: BoardItem) => void;
   /** Duplicate-candidate contract: jump to the record's tile, drawer last resort. */
   onJumpToDuplicate: (id: string) => void;
+  /** Jump to a record's tile wherever rendered; open its detail otherwise. */
+  onNavigate: (id: string) => void;
+  /** Resolved service/sub-service per solution id (card footer facets). */
+  solutionMeta?: SolutionMetaMap;
+  /** Footer facet click: filter by this value (§2.2 third case). */
+  onFacetClick: (facet: "orgs" | "services", value: string) => void;
+  /** Record id → display title/name (duplicate strips cite titles, not ids — §2.1). */
+  titleOf: (id: string) => string | undefined;
 }
 
-export default function KanbanResults({ ideas, solutions, onOpen, onJumpToDuplicate }: Props) {
+/** Scroll a rendered tile into view and flash it; fall back to the source card's own detail. */
+function jumpToTile(id: string, fallback: () => void) {
+  const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("jump-flash");
+    window.setTimeout(() => el.classList.remove("jump-flash"), 1600);
+  } else {
+    fallback();
+  }
+}
+
+export default function KanbanResults({
+  ideas,
+  solutions,
+  onOpen,
+  onJumpToDuplicate,
+  onNavigate,
+  solutionMeta,
+  onFacetClick,
+  titleOf,
+}: Props) {
+  const anyScored = [...ideas, ...solutions].some((r) => r.score !== undefined);
   const topScore = useMemo(
-    () => topScoreOf([...ideas, ...solutions].map((r) => r.score)),
-    [ideas, solutions]
+    () => (anyScored ? topScoreOf(ideas.concat(solutions).map((r) => r.score ?? 0)) : undefined),
+    [ideas, solutions, anyScored]
   );
   const columns = useMemo(() => buildKanbanColumns(ideas, solutions), [ideas, solutions]);
 
   return (
     <div className="kanban" data-testid="kanban-view">
       <div className="kanban-columns">
-        <section className="kanban-col" aria-label="Open ideas">
+        <section className="kanban-col c-idea" aria-label="Idea">
           <h2>
             Idea
-            <span className="count">{columns.ideaColumn.length}</span>
+            <span className="count col-count">{columns.ideaColumn.length}</span>
+            <span className="kanban-desc">not yet started</span>
           </h2>
           {columns.ideaColumn.length > 0 ? (
             columns.ideaColumn.map((item) => (
               <KanbanCard
                 key={item.record.id}
                 item={item}
+                column="idea"
                 topScore={topScore}
                 likelySolved={columns.likelySolved[item.record.id]}
                 onOpen={onOpen}
                 onJumpToDuplicate={onJumpToDuplicate}
-                onJumpToSolution={(id) => {
-                  const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    el.classList.add("jump-flash");
-                    window.setTimeout(() => el.classList.remove("jump-flash"), 1600);
-                  } else {
-                    onOpen(item); // fallback: open this card's own detail
-                  }
-                }}
+                onNavigate={onNavigate}
+                onJumpToSolution={(id) => jumpToTile(id, () => onOpen(item))}
+                solutionMeta={solutionMeta}
+                onFacetClick={onFacetClick}
+                titleOf={titleOf}
               />
             ))
           ) : (
-            <p className="kanban-none">No open ideas in these results.</p>
+            <p className="kanban-none">No ideas to show.</p>
           )}
         </section>
 
-        <section className="kanban-col" aria-label="In progress">
+        <section className="kanban-col c-review" aria-label="In progress">
           <h2>
             In progress
-            <span className="count">{columns.inProgressColumn.length}</span>
+            <span className="count col-count">{columns.inProgressColumn.length}</span>
+            <span className="kanban-desc">being built</span>
           </h2>
           {columns.inProgressColumn.length > 0 ? (
             columns.inProgressColumn.map((item) => (
               <KanbanCard
                 key={item.record.id}
                 item={item}
+                column="review"
                 topScore={topScore}
                 likelySolved={columns.likelySolved[item.record.id]}
                 onOpen={onOpen}
                 onJumpToDuplicate={onJumpToDuplicate}
-                onJumpToSolution={(id) => {
-                  const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    el.classList.add("jump-flash");
-                    window.setTimeout(() => el.classList.remove("jump-flash"), 1600);
-                  } else {
-                    onOpen(item);
-                  }
-                }}
+                onNavigate={onNavigate}
+                onJumpToSolution={(id) => jumpToTile(id, () => onOpen(item))}
+                solutionMeta={solutionMeta}
+                onFacetClick={onFacetClick}
+                titleOf={titleOf}
               />
             ))
           ) : (
-            <p className="kanban-none">Nothing being worked in these results.</p>
+            <p className="kanban-none">Nothing is being built right now.</p>
           )}
         </section>
 
-        <section className="kanban-col" aria-label="Solutions">
+        <section className="kanban-col c-solved" aria-label="Solution">
           <h2>
             Solution
-            <span className="count">{columns.solutionColumn.length}</span>
+            <span className="count col-count">{columns.solutionColumn.length}</span>
+            <span className="kanban-desc">already built</span>
           </h2>
           {columns.solutionColumn.length > 0 ? (
             columns.solutionColumn.map((cluster) => (
               <KanbanCard
                 key={cluster.key}
                 item={cluster.solution}
+                column="solution"
                 topScore={topScore}
                 clusterIdeas={cluster.ideas}
                 onOpen={onOpen}
                 onJumpToDuplicate={onJumpToDuplicate}
-                onJumpToSolution={(id) => {
-                  const el = document.querySelector<HTMLElement>(`[data-record-id="${id}"]`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    el.classList.add("jump-flash");
-                    window.setTimeout(() => el.classList.remove("jump-flash"), 1600);
-                  } else {
-                    onOpen(cluster.solution);
-                  }
-                }}
+                onNavigate={onNavigate}
+                onJumpToSolution={(id) => jumpToTile(id, () => onOpen(cluster.solution))}
+                solutionMeta={solutionMeta}
+                onFacetClick={onFacetClick}
+                titleOf={titleOf}
               />
             ))
           ) : (
-            <p className="kanban-none">Nothing built yet for these matches.</p>
+            <p className="kanban-none">No solutions to show.</p>
           )}
         </section>
       </div>

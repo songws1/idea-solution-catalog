@@ -1,6 +1,6 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 6, 2026
+**Last updated:** September 7, 2026
 **Status:** Phases 1-4.1 complete and verified. Next: the UX redesign v3
 build sequence (`docs/ux-redesign-v3.md` §8).
 
@@ -94,10 +94,10 @@ click-through; `npm run build` + `npx tsc --noEmit` clean after each):
    change, touches every later step. **Done — commit `952afe2`.**
 2. **Naming pass** (§1) — every user-facing label on all three tabs;
    `org`/`service` relabelled Service/Sub-service in the UI with stored
-   field names unchanged. **Done.**
+   field names unchanged. **Done — commit `6836883`.**
 3. **Card anatomy and the board** (§3) — the largest step: grid deleted,
    nested "Resolved idea" block replaced by a one-line `Resolves` title
-   link, record-id policy enforced on the board.
+   link, record-id policy enforced on the board. **Done.**
 4. **Synthesis prompt** (§3.5) — small, but re-run the §0 Q1/Q2 queries
    and diff rankings/scores to 4 decimal places; a prompt change must not
    move retrieval.

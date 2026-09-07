@@ -63,7 +63,8 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
             <strong>{m.title}</strong>
           </button>{" "}
           <span className="member-id">
-            ({m.id} — {m.org})
+            {/* v3 §2.1: cluster listings cite the title (already the toggle text) — never the raw id. */}
+            ({m.org})
           </span>
           <div className="member-meta">
             {m.actorLabel}{" "}
@@ -115,7 +116,8 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
                 return (
                   <Fragment key={o.id}>
                     <button type="button" className="xlink-chip" title={tip} onClick={() => toggle(o.id)}>
-                      {o.id}
+                      {/* v3 §2.1: the member's title, not its raw id. */}
+                      {o.title}
                     </button>
                     {i < others(m.id).length - 1 ? ", " : ""}
                   </Fragment>
