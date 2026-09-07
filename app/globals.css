@@ -17,6 +17,16 @@
   --accent-tint: #eef2f6;
   --accent-tint-strong: #e2eaf1;
 
+  /* Derived tints — v3 §2.5. Each is its status color mixed over --bg at low
+     opacity; values are fixed by the spec, not recomputed here. */
+  --tint-open: #f1efe9;       /* ≈8%  --status-open      over --bg */
+  --tint-review: #f7efe2;     /* ≈7%  --status-review    over --bg */
+  --tint-solved: #eaf0ea;     /* ≈8%  --status-solved    over --bg */
+  --tint-duplicate: #fbf3f1;  /* ≈3%  --status-duplicate over --bg */
+
+  /* Value-label background — v3 §2.2 control/value table. ≈3% --ink-muted over --bg. */
+  --tint-value: #f6f4ef;
+
   --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
@@ -986,12 +996,13 @@ a:hover {
   position: relative;
 }
 
+/* §2.2 control chip: bordered pill on --bg. (Was --surface; v3 step 1.) */
 .filter-chip-btn,
 .filter-more-btn {
   font: inherit;
   font-size: 13px;
   padding: 5px 12px;
-  background: var(--surface);
+  background: var(--bg);
   color: var(--ink-muted);
   border: 1px solid var(--border-strong);
   border-radius: 999px;
@@ -1004,11 +1015,25 @@ a:hover {
   border-color: var(--ink-muted);
 }
 
+/* §2.2 active state: accent-tint-strong fill, accent border and text. */
 .filter-chip-btn.has-selection,
 .filter-more-btn.has-selection {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--accent-tint);
+  background: var(--accent-tint-strong);
+}
+
+/* §2.2 caret affordance — pure CSS; FilterBar already sets aria-expanded. */
+.filter-chip-btn::after,
+.filter-more-btn::after {
+  content: "▾";
+  margin-left: 6px;
+  font-size: 10px;
+}
+
+.filter-chip-btn[aria-expanded="true"]::after,
+.filter-more-btn[aria-expanded="true"]::after {
+  content: "▴";
 }
 
 .filter-count {
@@ -1446,4 +1471,41 @@ a:hover {
   .card {
     transition: none;
   }
+}
+
+/* §2.2 control/value contract — reusable utility classes (v3 §8 step 1).
+   Defined here, adopted by later steps: .value-tag on card tag rows and
+   governance chips (steps 3 and 5); .facet-link on card-footer service and
+   sub-service values (step 3). Intentionally referenced by no component yet. */
+
+/* Value (tag, facet): flat tinted label, no border — never a pill. */
+.value-tag {
+  display: inline-block;
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 3px 8px;
+  background: var(--tint-value);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+}
+
+/* Clickable facet inside a card footer (§2.2 third case): accent text with a
+   DASHED underline, so a filter link is visibly not a navigation link — the
+   global anchor style uses a solid one. */
+.facet-link {
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.facet-link:hover {
+  text-decoration-thickness: 2px;
 }
