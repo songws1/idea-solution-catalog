@@ -51,10 +51,8 @@ build sequence (`docs/ux-redesign-v3.md` §8).
     results, Kanban cards, and the detail view: field usage is consistent
     everywhere; the wording divergence is seed data, not presentation.
     No code change needed.
-  Verified working in the running app. The code changes are in the
-  working tree pending their own commit — this docs update deliberately
-  excludes application code, so no hash exists yet; record it here when
-  the commit lands.
+  Verified working in the running app (`npm run build` and
+  `npx tsc --noEmit` clean). Committed as `2810dd4`.
 
 ---
 
