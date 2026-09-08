@@ -5,48 +5,62 @@ import { retrieve } from "@/lib/retrieval";
 import { chatComplete, embedTexts, getApiKey, OpenRouterError } from "@/lib/openrouter";
 import type { ChatMessage } from "@/lib/openrouter";
 import { checkRateLimit, clientKey } from "@/lib/rate-limit";
+import { stripRecordIds, SYNTHESIS_SYSTEM_PROMPT } from "@/lib/synthesis";
 import type { ScoredResult, SearchApiResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Context for the synthesis call (v3 §3.5).
+ *
+ * Record ids are deliberately absent from every line. The model can only cite
+ * what it is shown, so withholding ids here is what actually stops "Idea
+ * idea-0006 and its solution sol-0003" from reaching the page — the system
+ * prompt alone would just be a request. `resolves_idea_id` is resolved to the
+ * idea's title for the same reason.
+ *
+ * This function feeds the chat call only. Retrieval has already run and ranked
+ * by the time it is called, so nothing here can move a score.
+ */
 function buildContext(
   query: string,
   ideas: ScoredResult[],
-  solutions: ScoredResult[]
+  solutions: ScoredResult[],
+  titleOfIdea: (id: string) => string | undefined
 ): string {
   const fmt = (r: ScoredResult): string => {
     const rec = r.record;
     if (rec.doc_type === "idea") {
-      return `Idea ${rec.id} (${rec.org} / ${rec.service}, status ${rec.status}): ${rec.title}. ${rec.description}${
-        rec.solution_summary ? ` Built solution on file: ${rec.solution_summary}` : ""
+      return `- "${rec.title}" (an idea; ${rec.org} / ${rec.service}; status ${rec.status})\n  ${rec.description}${
+        rec.solution_summary ? `\n  Built solution on file: ${rec.solution_summary}` : ""
       }`;
     }
-    return `Solution ${rec.id} (${rec.artifact_type}, resolves ${
-      rec.resolves_idea_id ?? "no recorded idea"
-    }): ${rec.name}. ${rec.ai_generated_summary ?? rec.raw_description}`;
+    const resolved = rec.resolves_idea_id ? titleOfIdea(rec.resolves_idea_id) : undefined;
+    return `- "${rec.name}" (a built solution; ${rec.artifact_type}; ${
+      resolved ? `resolves "${resolved}"` : "no recorded idea"
+    })\n  ${rec.ai_generated_summary ?? rec.raw_description}`;
   };
   const blocks = [...ideas.slice(0, 6), ...solutions.slice(0, 6)].map(fmt).join("\n\n");
-  return `Context records from the catalog:\n\n${blocks}\n\nUser question: ${query}`;
+  return `Catalog records:\n\n${blocks}\n\nUser question: ${query}`;
 }
+
 
 async function synthesizeAnswer(
   query: string,
   ideas: ScoredResult[],
-  solutions: ScoredResult[]
+  solutions: ScoredResult[],
+  titleOfIdea: (id: string) => string | undefined
 ): Promise<string> {
   const direct = ideas.filter((r) => !r.via_link).length + solutions.filter((r) => !r.via_link).length;
   if (direct === 0) return ""; // nothing retrieved; let the empty state speak
   const messages: ChatMessage[] = [
-    {
-      role: "system",
-      content:
-        "You answer questions about an internal catalog of improvement ideas and built solutions. Use only the provided context records. Be brief (3 sentences or fewer), plain, and concrete. If the context does not contain anything relevant, say that nothing in the catalog matches.",
-    },
-    { role: "user", content: buildContext(query, ideas, solutions) },
+    { role: "system", content: SYNTHESIS_SYSTEM_PROMPT },
+    { role: "user", content: buildContext(query, ideas, solutions, titleOfIdea) },
   ];
   const raw = await chatComplete(messages, { maxTokens: 300, temperature: 0.2 });
-  return raw.trim();
+  return stripRecordIds(raw.trim());
 }
+
 
 /** Longest question accepted. Caps what reaches the embedding and chat calls,
  *  which are billed per token against the deployment's OpenRouter key. */
@@ -114,9 +128,18 @@ export async function POST(request: Request) {
   const ideas = outcome.ideas.map((r) => ({ ...r, record: toClientRecord(r.record) }));
   const solutions = outcome.solutions.map((r) => ({ ...r, record: toClientRecord(r.record) }));
 
+  // Titles for §3.5: the context cites the resolved idea by title, never by id.
+  const ideaTitles = new Map(dataset.ideas.map((i) => [i.id, i.title]));
+  const titleOfIdea = (id: string): string | undefined => ideaTitles.get(id);
+
   let answer: string | null = null;
   try {
-    const synthesized = await synthesizeAnswer(query, outcome.ideas, outcome.solutions);
+    const synthesized = await synthesizeAnswer(
+      query,
+      outcome.ideas,
+      outcome.solutions,
+      titleOfIdea
+    );
     answer = synthesized || null;
   } catch {
     answer = null; // synthesis is optional; results still stand on their own

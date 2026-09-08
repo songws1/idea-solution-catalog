@@ -22,7 +22,14 @@ function toCsv(headers: string[], rows: unknown[][]): string {
 // csvField and csvEscape are the same function; kept as one alias for clarity.
 const csvField = csvEscape;
 
-const IDEA_HEADERS = [
+/**
+ * Column order for each CSV, exported so the /export page can list the real
+ * columns instead of a hand-maintained prose sentence that would drift from the
+ * file (v3 §5). These are the stored field names, per §1's do-not-rename rule
+ * and Addendum A §5's "flattened IdeaRecord fields" — the UI relabels org and
+ * service, the file does not.
+ */
+export const IDEA_HEADERS = [
   "id",
   "doc_type",
   "org",
@@ -68,7 +75,7 @@ function ideaRow(idea: IdeaRecord): unknown[] {
   ];
 }
 
-const SOLUTION_HEADERS = [
+export const SOLUTION_HEADERS = [
   "id",
   "doc_type",
   "resolves_idea_id",

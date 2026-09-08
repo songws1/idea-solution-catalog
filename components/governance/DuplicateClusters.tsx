@@ -56,6 +56,15 @@ function memberView(
   const r = m.record;
   const candScore = new Map(r.duplicate_candidates.map((c) => [c.id, c.score] as const));
 
+  // Best similarity this member has to any other member of its own cluster —
+  // the number the row's match label is graded from.
+  let bestInCluster: number | null = null;
+  for (const other of cluster.members) {
+    if (other.record.id === r.id) continue;
+    const s = candScore.get(other.record.id);
+    if (s !== undefined && (bestInCluster === null || s > bestInCluster)) bestInCluster = s;
+  }
+
   const shared = {
     id: r.id,
     org: m.org,
@@ -65,6 +74,7 @@ function memberView(
     managerName: m.managerName ?? null,
     managerEmail: m.managerName ? syntheticEmail(m.managerName) : null,
     links: linksToMembers(cluster, r.id, candScore, clusterTop),
+    matchLabel: bestInCluster === null ? null : matchLabel(bestInCluster, clusterTop),
   };
 
   if (r.doc_type === "idea") {
@@ -72,9 +82,6 @@ function memberView(
     const linked = idea.linked_solution_id
       ? findSolution(dataset, idea.linked_solution_id)
       : undefined;
-    const notes: string[] = [];
-    if (idea.status === "solved") notes.push("solved");
-    if (linked) notes.push(`linked solution: ${linked.name}`);
     return {
       ...shared,
       title: idea.title,
@@ -82,7 +89,11 @@ function memberView(
       statusChipClass: `status-chip s-${idea.status}`,
       description: oneLine(idea.description),
       artifactLink: null,
-      linkedNote: notes.join(" — ") || null,
+      // §4.3 line 3: the counterpart is named by title and linked. The raw id
+      // that used to sit here was a §2.1 violation on a governance surface.
+      relationLabel: linked ? "Solved" : null,
+      relationTitle: linked ? linked.name : null,
+      relationId: linked ? linked.id : null,
     };
   }
 
@@ -95,21 +106,31 @@ function memberView(
     statusChipClass: "chip",
     description: oneLine(sol.ai_generated_summary ?? sol.raw_description),
     artifactLink: sol.artifact_link,
-    linkedNote: sol.resolves_idea_id
-      ? `resolves ${sol.resolves_idea_id}${resolves ? ` — ${resolves.title}` : ""}`
-      : "no linked idea",
+    relationLabel: resolves ? "Resolves" : null,
+    relationTitle: resolves ? resolves.title : null,
+    relationId: resolves ? resolves.id : null,
   };
 }
 
 function buildClusterView(cluster: DuplicateCluster, dataset: Dataset): ClusterView {
-  let clusterTop = 0;
+  // Similarity range shown in the cluster header (§4.3): only scores between
+  // members of THIS cluster count, so a member's link to an outside candidate
+  // cannot widen the range misleadingly.
+  const ids = new Set(cluster.members.map((m) => m.record.id));
+  const inCluster: number[] = [];
   for (const m of cluster.members) {
     for (const c of m.record.duplicate_candidates) {
-      if (c.score > clusterTop) clusterTop = c.score;
+      if (ids.has(c.id)) inCluster.push(c.score);
     }
   }
+  const clusterTop = inCluster.length > 0 ? Math.max(...inCluster) : 0;
+  const range =
+    inCluster.length > 0
+      ? { low: Math.min(...inCluster), high: clusterTop }
+      : null;
+
   const members = cluster.members.map((m) => memberView(m, cluster, dataset, clusterTop));
-  return { docType: cluster.docType, confirmed: cluster.confirmed, members };
+  return { docType: cluster.docType, confirmed: cluster.confirmed, members, range };
 }
 
 export default function DuplicateClusters({ clusters, dataset }: Props) {
@@ -117,13 +138,12 @@ export default function DuplicateClusters({ clusters, dataset }: Props) {
   // the client component; it only receives the flattened display fields.
   const views = clusters.map((c) => buildClusterView(c, dataset));
   return (
-    <section className="widget wide">
+    <section className="widget wide" id="duplicate-clusters">
       <h2>Duplicate clusters</h2>
       <p className="widget-sub">
-        Groups of records flagged as similar to each other, detected offline and
-        awaiting review — nothing is merged automatically. Click a record (or an
-        &ldquo;also flagged with&rdquo; chip) for an inline summary. Idea clusters show
-        the submitter and their manager; solution clusters show the solution owner.
+        Records flagged as similar to each other, detected offline and awaiting
+        review — nothing is merged automatically. Open a record for its summary,
+        or jump to its card on the catalog board.
       </p>
       {views.length === 0 ? (
         <div className="empty-state" style={{ boxShadow: "none" }}>
@@ -135,9 +155,11 @@ export default function DuplicateClusters({ clusters, dataset }: Props) {
           </p>
         </div>
       ) : (
-        views.map((view, idx) => (
-          <ClusterMembers key={`${view.docType}-${idx}`} cluster={view} />
-        ))
+        <div className="cluster-list">
+          {views.map((view, idx) => (
+            <ClusterMembers key={`${view.docType}-${idx}`} cluster={view} />
+          ))}
+        </div>
       )}
     </section>
   );

@@ -2,7 +2,7 @@ import type { StatusByOrgRow } from "@/lib/governance";
 
 export default function StatusByOrgWidget({ rows }: { rows: StatusByOrgRow[] }) {
   return (
-    <section className="widget wide">
+    <section className="widget wide" id="status-by-service">
       {/* v3 §1: stored `org` renders as "Service". The component name keeps the
           stored-field name; only rendered text changes. */}
       <h2>Status by service</h2>
@@ -24,12 +24,15 @@ export default function StatusByOrgWidget({ rows }: { rows: StatusByOrgRow[] }) 
         <tbody>
           {rows.map((r) => (
             <tr key={r.org}>
-              <td>{r.org}</td>
+              <td>
+                {/* §4.7 cross-navigation: the service opens the board pre-filtered. */}
+                <a href={`/?service=${encodeURIComponent(r.org)}`}>{r.org}</a>
+              </td>
               <td>{r.ideasOpen}</td>
               <td>{r.ideasInProgress}</td>
               <td>{r.ideasSolved}</td>
               <td>{r.solutionsLinked}</td>
-              <td>{r.solutionsOrphan || "—"}</td>
+              <td>{r.solutionsOrphan === 0 ? <span className="num-zero">0</span> : r.solutionsOrphan}</td>
             </tr>
           ))}
         </tbody>

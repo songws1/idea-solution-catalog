@@ -250,6 +250,30 @@ export default function CatalogHome({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingJump]);
 
+  /**
+   * Cross-navigation from Governance (v3 §4.7). That tab used to dead-end: a
+   * reviewer who spotted a problem had no way to reach it. Two entry params:
+   *
+   *   /?service=<name>  pre-filter the board to one service
+   *   /?record=<id>     land on that record's tile, or its drawer if it has none
+   *
+   * The param is stripped from the URL once consumed, so a refresh or a shared
+   * link doesn't silently re-apply a filter the person didn't choose. Runs once
+   * on mount — this is an entry point, not a synced route state.
+   */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const service = params.get("service");
+    const record = params.get("record");
+    if (!service && !record) return;
+
+    if (service) setFilters((f) => ({ ...f, orgs: [service] }));
+    if (record) setPendingJump(record);
+
+    window.history.replaceState(null, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const filterDescriptions = isFilterActive(filters) ? describeFilters(filters) : [];
   // Board data for the active mode: search results (chip-narrowed) or browse.
   const board =

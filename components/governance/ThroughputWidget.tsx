@@ -12,7 +12,7 @@ export default function ThroughputWidget({ points, conversionPct }: Props) {
   const labelEvery = Math.ceil(points.length / 12);
 
   return (
-    <section className="widget">
+    <section className="widget" id="throughput">
       <h2>Build throughput</h2>
       <p className="widget-sub">
         Ideas submitted versus solutions built, by month. Conversion so far:{" "}

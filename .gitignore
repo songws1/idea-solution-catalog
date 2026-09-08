@@ -152,3 +152,4 @@ Claude outputs/
 .shots/
 shot.mjs
 rebuild.sh
+gov-shot.mjs

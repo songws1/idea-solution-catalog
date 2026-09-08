@@ -21,7 +21,12 @@ export interface ClusterMemberView {
   managerName: string | null;
   managerEmail: string | null;
   artifactLink: string | null;
-  linkedNote: string | null;
+  /** §4.3 line 3 — the counterpart record, named and linked, never by id. */
+  relationLabel: string | null;
+  relationTitle: string | null;
+  relationId: string | null;
+  /** This member's similarity to the cluster's closest other member. */
+  matchLabel: string | null;
   links: Record<string, ClusterLink>;
 }
 
@@ -29,13 +34,21 @@ export interface ClusterView {
   docType: "idea" | "solution";
   confirmed: boolean;
   members: ClusterMemberView[];
+  range: { low: number; high: number } | null;
 }
 
 /**
- * Duplicate-cluster member list with inline card-detail (Addendum A §4.4).
- * Phase 1 interim treatment: clicking a member or an "also flagged with" chip
- * expands a small summary card inline — no navigation, no new route. Phase 4
- * replaces this expansion with the shared §2.4 card-detail component.
+ * A duplicate cluster as a bordered card (v3 §4.3).
+ *
+ * The rework is presentational: the inline expansion from Phase 1 is kept
+ * exactly as it was, because a reviewer scanning clusters should not be thrown
+ * onto another page to see what a record says. What changed is that a member is
+ * now a row with a clear left column (who and what) and right column (how close
+ * a match, and the way out to the board), instead of three lines of prose.
+ *
+ * Record ids appear nowhere on this surface (§2.1) — every reference is a title.
+ * `Jump to card` carries the id in a URL parameter, which is addressing rather
+ * than content, and the catalog page strips it from the address bar on arrival.
  */
 export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -47,47 +60,74 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
     <div className="cluster">
       <div className="cluster-head">
         <span className="chip">
-          {cluster.docType === "idea" ? "idea cluster" : "solution cluster"} ·{" "}
+          {cluster.docType === "idea" ? "Idea cluster" : "Solution cluster"} ·{" "}
           {cluster.members.length} records
         </span>
-        {cluster.confirmed && <span className="chip confirmed-chip">contains confirmed link</span>}
+        {cluster.confirmed && (
+          <span className="chip confirmed-chip">contains confirmed link</span>
+        )}
+        {cluster.range && (
+          <span className="cluster-range">
+            {cluster.range.low.toFixed(2)} – {cluster.range.high.toFixed(2)} similarity
+          </span>
+        )}
       </div>
+
       {cluster.members.map((m) => (
         <div className="cluster-member" key={m.id}>
-          <button
-            type="button"
-            className="member-toggle"
-            aria-expanded={expandedId === m.id}
-            onClick={() => toggle(m.id)}
-          >
-            <strong>{m.title}</strong>
-          </button>{" "}
-          <span className="member-id">
-            {/* v3 §2.1: cluster listings cite the title (already the toggle text) — never the raw id. */}
-            ({m.org})
-          </span>
-          <div className="member-meta">
-            {m.actorLabel}{" "}
-            <a
-              className="contact-link"
-              href={`mailto:${m.actorEmail}`}
-              title={`Contact ${m.actorName} (synthetic demo address)`}
-            >
-              {m.actorName}
-            </a>
-            {m.managerName && m.managerEmail && (
-              <>
-                {" "}— reports to{" "}
+          <div className="member-row">
+            <div className="member-main">
+              <p className="member-line">
+                <button
+                  type="button"
+                  className="member-toggle"
+                  aria-expanded={expandedId === m.id}
+                  onClick={() => toggle(m.id)}
+                >
+                  {m.title}
+                </button>{" "}
+                <span className="member-org">{m.org}</span>
+              </p>
+
+              <p className="member-meta">
+                {m.actorLabel}{" "}
                 <a
                   className="contact-link"
-                  href={`mailto:${m.managerEmail}`}
-                  title={`Contact ${m.managerName} (synthetic demo address)`}
+                  href={`mailto:${m.actorEmail}`}
+                  title={`Contact ${m.actorName} (synthetic demo address)`}
                 >
-                  {m.managerName}
+                  {m.actorName}
                 </a>
-              </>
-            )}
-            {m.linkedNote ? ` — ${m.linkedNote}` : ""}
+                {m.managerName && m.managerEmail && (
+                  <>
+                    , reports to{" "}
+                    <a
+                      className="contact-link"
+                      href={`mailto:${m.managerEmail}`}
+                      title={`Contact ${m.managerName} (synthetic demo address)`}
+                    >
+                      {m.managerName}
+                    </a>
+                  </>
+                )}
+              </p>
+
+              {m.relationLabel && m.relationTitle && (
+                <p className="member-relation">
+                  {m.relationLabel}{" "}
+                  <a href={`/?record=${encodeURIComponent(m.relationId ?? "")}`}>
+                    {m.relationTitle}
+                  </a>
+                </p>
+              )}
+            </div>
+
+            <div className="member-side">
+              {m.matchLabel && <span className="member-match">{m.matchLabel}</span>}
+              <a className="member-jump" href={`/?record=${encodeURIComponent(m.id)}`}>
+                Jump to card
+              </a>
+            </div>
           </div>
 
           {expandedId === m.id && (
@@ -98,7 +138,12 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
               </p>
               <p className="detail-desc">{m.description}</p>
               {m.artifactLink && (
-                <a className="artifact-button" href={m.artifactLink} target="_blank" rel="noreferrer">
+                <a
+                  className="btn-primary"
+                  href={m.artifactLink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Open the artifact
                 </a>
               )}
@@ -115,11 +160,16 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
                   : "flagged as similar via a confirmed duplicate link";
                 return (
                   <Fragment key={o.id}>
-                    <button type="button" className="xlink-chip" title={tip} onClick={() => toggle(o.id)}>
+                    <button
+                      type="button"
+                      className="xlink-chip"
+                      title={tip}
+                      onClick={() => toggle(o.id)}
+                    >
                       {/* v3 §2.1: the member's title, not its raw id. */}
                       {o.title}
                     </button>
-                    {i < others(m.id).length - 1 ? ", " : ""}
+                    {i < others(m.id).length - 1 ? " " : ""}
                   </Fragment>
                 );
               })}

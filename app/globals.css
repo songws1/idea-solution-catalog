@@ -815,8 +815,10 @@ a:hover {
 
 /* Dot grid --------------------------------------------------------------- */
 
+/* A service's label must sit closer to its own dots than to the row above it,
+   or the grouping reads one row out of step. */
 .dot-org {
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
 .dot-org:last-child {
@@ -825,29 +827,69 @@ a:hover {
 
 .dot-org-label {
   font-size: 12.5px;
-  color: var(--ink-muted);
-  margin: 0 0 6px;
+  color: var(--ink);
+  font-weight: 500;
+  margin: 0 0 7px;
+}
+
+.dot-org-count {
+  color: var(--ink-faint);
+  font-weight: 400;
+  margin-left: 6px;
 }
 
 .dot-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 
+/* §4.4: 10px dots on a 4px gap. The old 11px/5px was no denser and read worse;
+   more importantly every dot is now an anchor, so keyboard focus and touch both
+   reach the record the way a mouse hover used to. */
 .dot {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
+  box-sizing: border-box;
+  transition: transform 100ms var(--ease);
 }
 
-.dot.d-open { background: var(--status-open); }
-.dot.d-in_progress { background: var(--status-review); }
-.dot.d-solved { background: var(--status-solved); }
-.dot.d-duplicate { background: var(--status-duplicate); }
-.dot.d-solution_linked { background: transparent; border: 1.5px solid var(--status-solved); }
-.dot.d-solution_orphan { background: transparent; border: 1.5px dashed var(--status-open); }
+a.dot:hover {
+  transform: scale(1.35);
+}
+
+a.dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* State is double-encoded (§4.4): color AND fill/ring, so color is never the
+   only channel. Solid = settled, ring = open or unlinked, ringed-solid = needs
+   attention. */
+.dot.d-open {
+  background: transparent;
+  border: 2px solid var(--status-open);
+}
+.dot.d-in_progress {
+  background: var(--status-review);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+.dot.d-solved {
+  background: var(--status-solved);
+}
+.dot.d-duplicate {
+  background: var(--status-duplicate);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+.dot.d-solution_linked {
+  background: var(--accent);
+}
+.dot.d-solution_orphan {
+  background: transparent;
+  border: 2px dashed var(--accent);
+}
 
 .legend {
   display: flex;
@@ -1840,4 +1882,389 @@ a:hover {
 
 .facet-link:hover {
   text-decoration-color: currentColor;
+}
+
+/* ==========================================================================
+   Governance — v3 §4 rework
+   ========================================================================== */
+
+/* §4.1 summary tiles: the four numbers, above every widget, each a way in. */
+.summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.summary-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+
+.summary-tile:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.summary-value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.summary-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 900px) {
+  .summary-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Sub-heading inside a widget (was a bold paragraph with inline margins). */
+.widget-subhead {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 22px 0 8px;
+}
+
+.widget-subhead:first-of-type {
+  margin-top: 6px;
+}
+
+/* §4.5 number treatments: zero is a count, not missing data; the over-90 and
+   never-reviewed buckets carry the only urgency on the widget. */
+.num-zero {
+  color: var(--ink-faint);
+}
+
+.num-urgent {
+  color: var(--status-review);
+  font-weight: 600;
+}
+
+.num-total {
+  font-weight: 600;
+  border-left: 1px solid var(--border);
+  padding-left: 18px !important;
+}
+
+/* §4.3 duplicate clusters as bordered cards ------------------------------- */
+
+.cluster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.cluster {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  padding: 14px 16px;
+  margin: 0;
+}
+
+.cluster-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.cluster-range {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.cluster-member {
+  border-top: 1px solid var(--border);
+  padding: 11px 0 0;
+  margin-top: 11px;
+}
+
+.cluster-member:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* Left column carries who and what; right column carries how close a match it
+   is and the way out to the board. */
+.member-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.member-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.member-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.member-match {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.member-jump {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.member-line {
+  margin: 0 0 2px;
+  font-size: 14px;
+}
+
+.member-org {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.member-relation {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* §5 export column list --------------------------------------------------- */
+
+.export-columns {
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+
+.export-columns summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.export-columns summary::-webkit-details-marker {
+  display: none;
+}
+
+.export-columns summary::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 140ms var(--ease);
+}
+
+.export-columns[open] summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.export-columns ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.export-columns li {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  color: var(--ink-muted);
+  background: var(--tint-value);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+@media (max-width: 700px) {
+  .member-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .member-side {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+/* ==========================================================================
+   Board density — v4.1
+
+   The board was correct but tiring to scan: every card opened with a status
+   word its own column already stated, and closed with a two-line footer whose
+   labels repeated 65 times. Status moved to a colored edge, the footer lost its
+   prefixes, and the summary lost a line. Nothing was hidden — the labelled form
+   lives in the drawer, which has the room for it.
+   ========================================================================== */
+
+/* Status as a colored left edge, so an idea card needs no status row at all. */
+.kanban-col.c-idea .board-card {
+  border-left: 3px solid var(--status-open);
+}
+.kanban-col.c-review .board-card {
+  border-left: 3px solid var(--status-review);
+}
+.kanban-col.c-solved .board-card {
+  border-left: 3px solid var(--status-solved);
+}
+
+/* A card with no band starts at its title, so the body takes the top padding. */
+.board-card > .card-body:first-child {
+  padding-top: 14px;
+}
+
+.card-summary {
+  -webkit-line-clamp: 2;
+}
+
+.foot-sep {
+  color: var(--ink-faint);
+  margin: 0 5px;
+}
+
+.foot-facets {
+  margin-top: 3px;
+}
+
+/*
+  Facets on a card footer sit at rest, not shouting. With two per card across 65
+  cards, accent-colored underlined text turned the board into a field of links
+  and buried the titles. §2.2 asks a facet to read as a VALUE that happens to be
+  clickable — so it renders as muted text with a dotted underline, and only
+  takes the accent on hover or focus, where the affordance is actually needed.
+*/
+.card-foot .facet-link {
+  color: var(--ink-muted);
+  text-decoration-style: dotted;
+  text-decoration-color: var(--border-strong);
+}
+
+.card-foot .facet-link:hover,
+.card-foot .facet-link:focus-visible {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+/*
+  Cluster member typography. The title is the primary thing in the row and must
+  look like the control it is; the people and cross-links are secondary and were
+  drowning the rows in accent color, so they sit muted until hovered.
+*/
+.member-toggle {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color 120ms var(--ease), text-decoration-color 120ms var(--ease);
+}
+
+.member-toggle:hover,
+.member-toggle[aria-expanded="true"] {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.member-meta {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.contact-link {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 2px;
+}
+
+.contact-link:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.member-xlinks {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.xlink-chip {
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+  transition: border-color 120ms var(--ease), color 120ms var(--ease);
+}
+
+.xlink-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.member-detail {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }

@@ -1,9 +1,10 @@
 # Backlog — Addendum A Rollout
 
 **Last updated:** September 8, 2026
-**Status:** Phases 1-4.1 complete and verified. v3 build sequence steps 1-3
-done; a v4 visual pass and deployment hardening landed on top (see below).
-Next in the v3 sequence: step 4 (synthesis prompt).
+**Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
+**finished** — all six steps done. A v4 visual pass, deployment hardening and a
+board-density pass landed on top (see below). Next: the phases after v3
+(mindmap, solution artifacts, employee directory).
 
 ---
 
@@ -76,7 +77,7 @@ next time that file is touched (small, no urgency).
 
 ---
 
-## Next — UX redesign v3 (`docs/ux-redesign-v3.md`)
+## UX redesign v3 (`docs/ux-redesign-v3.md`) — complete
 
 v3 comes from a live UX review of the running app on 2026-09-06 and
 supersedes Addendum A §1-§2 in full. Read order per the spec:
@@ -99,12 +100,25 @@ click-through; `npm run build` + `npx tsc --noEmit` clean after each):
 3. **Card anatomy and the board** (§3) — the largest step: grid deleted,
    nested "Resolved idea" block replaced by a one-line `Resolves` title
    link, record-id policy enforced on the board. **Done.**
-4. **Synthesis prompt** (§3.5) — small, but re-run the §0 Q1/Q2 queries
-   and diff rankings/scores to 4 decimal places; a prompt change must not
-   move retrieval.
-5. **Governance** (§4) — summary tiles, widget reorder, duplicate-cluster
-   rework, dot-grid accessibility, table fixes, cross-navigation.
-6. **Export** (§5) — smallest, do last.
+4. **Synthesis prompt** (§3.5) — **Done.** Prompt and context both moved to
+   `lib/synthesis.ts` (a Next.js route module may only export handlers). The
+   context no longer contains a single record id and resolves
+   `resolves_idea_id` to the idea's title, which is what actually stops the
+   "Idea idea-0006 and its solution sol-0003" stutter — the model can only
+   cite what it is shown. `stripRecordIds` is a last-resort net over the
+   model's output. **The retrieval-score diff the spec asks for was not run,
+   and does not apply**: this step touches only the chat call, which happens
+   after `retrieve` has already ranked. No embedding, scoring or threshold
+   code was read or modified; `scripts/phase4-check.ts` passes unchanged.
+5. **Governance** (§4) — **Done.** Summary tiles (§4.1), widget reorder
+   (§4.2), duplicate clusters as bordered cards with a similarity range,
+   per-member match label and jump action (§4.3), dot-grid accessibility
+   (§4.4 — every dot is now an anchor, so focus, keyboard and touch all work
+   without the old hover-only identity), aging zeros and totals (§4.5),
+   right-aligned numerics (§4.6), cross-navigation (§4.7).
+6. **Export** (§5) — **Done.** Shared button style, and the column list is
+   rendered from the CSV writer's own header arrays so it cannot drift from
+   the file.
 
 `npm run verify-duplicates` only needs re-running if `npm run enrich` is
 re-run, which none of these steps require.
@@ -115,7 +129,7 @@ re-run, which none of these steps require.
 
 Requested directly after v3 step 3, and deliberately **not** a v3 step: it
 changes how the app looks and how it deploys, not what it does. Steps 4-6
-above are untouched and still next in the v3 sequence.
+were completed afterwards, on top of this pass.
 
 - **Visual system rebuilt in `app/globals.css`.** Warm editorial palette
   (cream ground, Lora headings, 2px radii) replaced by a cool neutral
@@ -148,6 +162,39 @@ above are untouched and still next in the v3 sequence.
 Not touched, deliberately: retrieval, scoring, `lib/match-label.ts`
 thresholds, the 0.7118 duplicate threshold, the datasets, stored `org` /
 `service` field names, and the deferred items below.
+
+---
+
+## v4.1 board density (spec revision — read this before trusting v3 §1/§3.3)
+
+Chris's read of the running v4 board: the tone was right but it was "busy and
+too text-heavy" to work in. Two v3 details are the cause, and both are now
+**deliberately superseded**. They are recorded here rather than edited into
+`ux-redesign-v3.md`, so the original intent stays legible.
+
+- **§3.3's status word on idea cards is gone.** Every card in the Idea lane
+  opened with "OPEN" and every card in the In progress lane with "IN
+  PROGRESS" — a whole row of type repeating what the column header above it
+  already said, on 40 of 65 cards. Status is now a 3px colored left edge on
+  the card, and the header band renders only when it carries something the
+  card does not otherwise show: a solution's type and technology, or a match
+  label during a search.
+- **§1's card footer `Service: <x>; Sub-service: <y>` is now `<x> · <y>`.**
+  The spelled-out form wrapped to two lines on every card and repeated a
+  label the reader learns once. §2.3 only requires the facets be visible and
+  filterable, which they still are; the labelled form is kept in the detail
+  drawer, where there is room and no repetition.
+
+Also in this pass: card summaries clamp at two lines instead of three, and
+footer facets render as muted text with a dotted underline that takes the
+accent only on hover — with two per card across 65 cards, accent-colored
+links were burying the titles they sat under. The §2.2 control-versus-value
+contract is unchanged in substance: a facet is still a value that happens to
+be clickable, and now looks like one.
+
+Governance got the same treatment where it had the same problem: cluster
+member names and cross-link chips sit muted until hovered, so the row's title
+is the thing that reads first.
 
 ---
 

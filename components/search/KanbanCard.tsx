@@ -113,6 +113,9 @@ export default function KanbanCard({
   const classes = ["board-card", via_link ? "via-link" : ""].filter(Boolean).join(" ");
 
   const bandLabel = label ?? (score !== undefined ? score.toFixed(2) : null);
+  // A solution's band carries type + technology, which appears nowhere else on
+  // the card. An idea's band only earns its row when a search put a label in it.
+  const showBand = record.doc_type === "solution" || bandLabel !== null;
 
   const facet = (facetKey: "orgs" | "services", value: string, label: string) =>
     value && value !== "Unassigned" ? (
@@ -163,12 +166,17 @@ export default function KanbanCard({
         }
       }}
     >
+      {/*
+        Density (v4.1): an idea card used to open with its own status word —
+        "OPEN" on every card in the Idea lane, "IN PROGRESS" on every card in the
+        In progress lane. The lane header already says that, so the row was pure
+        repetition on 40 of 65 cards. Status is now carried by the card's colored
+        left edge, and the band renders only when it has something to say: the
+        solution's type and technology, or a match label during a search.
+      */}
+      {showBand && (
       <div className={`card-band band-${column}`}>
-        {record.doc_type === "idea" ? (
-          <span className={`band-status status-${record.status}`}>
-            {record.status === "in_progress" ? "In progress" : "Open"}
-          </span>
-        ) : (
+        {record.doc_type === "idea" ? null : (
           <>
             <svg
               className="strip-icon"
@@ -198,6 +206,7 @@ export default function KanbanCard({
           </span>
         )}
       </div>
+      )}
 
       <div className="card-body">
         <h3>{record.doc_type === "idea" ? record.title : record.name}</h3>
@@ -289,9 +298,20 @@ export default function KanbanCard({
           <span className="foot-date">{foot.date}</span>
         </div>
         <div className="foot-line foot-facets">
-          {/* stored `org` renders as "Service", stored `service` as "Sub-service" (v3 §1). */}
-          <span>
-            Service: {facet("orgs", foot.org, "Unassigned")}; Sub-service:{" "}
+          {/*
+            stored `org` renders as Service, stored `service` as Sub-service
+            (v3 §1). Density (v4.1): the two values are shown without their
+            "Service:" / "Sub-service:" prefixes. §1's spelled-out form wrapped
+            to two lines on every one of 65 cards and repeated a label the
+            reader learns once; §2.3 only requires the facets be visible and
+            filterable, which they still are. The labelled form is kept in the
+            detail drawer, where there is room and no repetition.
+          */}
+          <span title="Service · Sub-service">
+            {facet("orgs", foot.org, "Unassigned")}
+            <span className="foot-sep" aria-hidden="true">
+              ·
+            </span>
             {facet("services", foot.service, "Unassigned")}
           </span>
         </div>

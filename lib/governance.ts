@@ -320,3 +320,69 @@ export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
 
 
 
+
+// ---------------------------------------------------------------------------
+// Summary tiles — v3 §4.1
+//
+// The four numbers a reviewer needs before reading any table. Every figure is
+// counted from the dataset's static fields; nothing here is a trend or an
+// estimate, which is why no tile carries a delta or a sparkline.
+// ---------------------------------------------------------------------------
+
+export interface SummaryTile {
+  /** Stable id, used as the tile's link target on the widget it summarizes. */
+  anchor: string;
+  label: string;
+  value: number;
+  subLabel: string;
+}
+
+export function summaryTiles(
+  dataset: Dataset,
+  now: Date = new Date()
+): SummaryTile[] {
+  const services = new Set(dataset.ideas.map((i) => i.org));
+  for (const sol of dataset.solutions) services.add(orgOfSolution(dataset, sol));
+
+  const unresolved = dataset.ideas.filter((i) => i.status !== "solved");
+  const unresolvedOver90 = unresolved.filter(
+    (i) => agingBucket(ideaAgeDays(i.submitted_date, now)) === "over 90 days"
+  ).length;
+
+  const neverReviewed = dataset.solutions.filter(
+    (s) => solutionReviewAgeDays(s.date_last_reviewed, now) === null
+  ).length;
+
+  const flagged = [...dataset.ideas, ...dataset.solutions].filter(isFlagged).length;
+  const clusterCount = duplicateClusters(dataset).length;
+
+  const plural = (n: number, one: string, many = `${one}s`) =>
+    `${n} ${n === 1 ? one : many}`;
+
+  return [
+    {
+      anchor: "status-by-service",
+      label: "Records",
+      value: dataset.ideas.length + dataset.solutions.length,
+      subLabel: `in ${plural(services.size, "service")}`,
+    },
+    {
+      anchor: "aging",
+      label: "Awaiting resolution",
+      value: unresolved.length,
+      subLabel: `${unresolvedOver90} over 90 days`,
+    },
+    {
+      anchor: "aging",
+      label: "Solutions never reviewed",
+      value: neverReviewed,
+      subLabel: `of ${plural(dataset.solutions.length, "solution")} built`,
+    },
+    {
+      anchor: "duplicate-clusters",
+      label: "Flagged for review",
+      value: flagged,
+      subLabel: `in ${plural(clusterCount, "cluster")}`,
+    },
+  ];
+}

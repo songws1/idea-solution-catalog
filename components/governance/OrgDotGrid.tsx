@@ -9,7 +9,7 @@ const STATE_LABELS: Record<DotState, string> = {
   solution_orphan: "solution, no linked idea",
 };
 
-/** Repeat a compact key every N org rows so it never requires scrolling back up (§4.2). */
+/** Repeat a compact key every N service rows so it never requires scrolling back up (§4.2). */
 const LEGEND_REPEAT_EVERY = 6;
 
 function Legend({ compact }: { compact?: boolean }) {
@@ -24,16 +24,27 @@ function Legend({ compact }: { compact?: boolean }) {
   );
 }
 
+/**
+ * One dot per record (v3 §4.4).
+ *
+ * Each dot is an anchor rather than a styled span, which is what actually fixes
+ * the accessibility problems: it is focusable and activatable by keyboard for
+ * free, it works on touch where the old hover-only identity did not, and it
+ * carries the same cross-navigation contract as the rest of this tab. Shape and
+ * fill double-encode the state so color is never the only channel, and the
+ * label names the record by title — never by id (§2.1).
+ */
 export default function OrgDotGrid({ rows }: { rows: OrgDotGridRow[] }) {
   return (
-    <section className="widget wide">
+    <section className="widget wide" id="dot-grid">
       {/* v3 §1: heading uses the UI label — rows are stored `org` values rendered
           as service lines. */}
       <h2>Every record, by service</h2>
       <p className="widget-sub">
-        One dot per record. Color carries state; hover any dot for the record it
-        stands for. Duplicate flags override status color so the scale of
-        duplication is visible at a glance.
+        One dot per record. Shape and color both carry state, so neither is
+        load-bearing alone. Select a dot to open that record on the board.
+        Duplicate flags override status so the scale of duplication stays
+        visible at a glance.
       </p>
       {/* Legend sits above the dot rows so the key is read first — §4.2. */}
       <Legend />
@@ -41,16 +52,17 @@ export default function OrgDotGrid({ rows }: { rows: OrgDotGridRow[] }) {
         <div key={row.org}>
           <div className="dot-org">
             <p className="dot-org-label">
-              {row.org} — {row.dots.length} records
+              <a href={`/?service=${encodeURIComponent(row.org)}`}>{row.org}</a>{" "}
+              <span className="dot-org-count">{row.dots.length} records</span>
             </p>
             <div className="dot-row">
               {row.dots.map((dot) => (
-                <span
+                <a
                   key={dot.recordId}
                   className={`dot d-${dot.state}`}
-                  role="img"
-                  aria-label={`${dot.recordId} — ${dot.title} (${STATE_LABELS[dot.state]})`}
-                  title={`${dot.recordId} — ${dot.title} (${STATE_LABELS[dot.state]})`}
+                  href={`/?record=${encodeURIComponent(dot.recordId)}`}
+                  aria-label={`${dot.title} — ${STATE_LABELS[dot.state]}`}
+                  title={`${dot.title} — ${STATE_LABELS[dot.state]}`}
                 />
               ))}
             </div>
