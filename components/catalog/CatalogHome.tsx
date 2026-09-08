@@ -264,12 +264,15 @@ export default function CatalogHome({
     <div>
       <div className="search-panel">
         <form className="search-bar" onSubmit={runSearch} role="search">
+          {/* maxLength mirrors MAX_QUERY_CHARS in app/api/search/route.ts. The
+              route is the enforcement; this is only the input-level hint. */}
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="e.g. has anything been built to handle invoice disputes?"
             aria-label="Search the idea catalog"
+            maxLength={300}
           />
           <button type="submit" disabled={loading || !query.trim()}>
             {loading ? "Searching" : "Search"}

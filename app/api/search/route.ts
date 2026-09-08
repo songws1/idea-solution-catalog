@@ -4,6 +4,7 @@ import { toClientRecord } from "@/lib/client-records";
 import { retrieve } from "@/lib/retrieval";
 import { chatComplete, embedTexts, getApiKey, OpenRouterError } from "@/lib/openrouter";
 import type { ChatMessage } from "@/lib/openrouter";
+import { checkRateLimit, clientKey } from "@/lib/rate-limit";
 import type { ScoredResult, SearchApiResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,23 @@ async function synthesizeAnswer(
   return raw.trim();
 }
 
+/** Longest question accepted. Caps what reaches the embedding and chat calls,
+ *  which are billed per token against the deployment's OpenRouter key. */
+const MAX_QUERY_CHARS = 300;
+
 export async function POST(request: Request) {
+  // Spend guard before any paid work: this route costs credit on every call
+  // and a public deployment has no other gate in front of it.
+  const limit = checkRateLimit(clientKey(request));
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: `Too many searches from this client. Try again in ${limit.retryAfterSeconds}s.`,
+      },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
+    );
+  }
+
   let query = "";
   try {
     const body = (await request.json()) as { query?: unknown };
@@ -58,6 +75,15 @@ export async function POST(request: Request) {
 
   if (!query) {
     return NextResponse.json({ error: "Type something to search for." }, { status: 400 });
+  }
+
+  if (query.length > MAX_QUERY_CHARS) {
+    return NextResponse.json(
+      {
+        error: `That question is too long — keep it under ${MAX_QUERY_CHARS} characters.`,
+      },
+      { status: 400 }
+    );
   }
 
   if (!getApiKey()) {

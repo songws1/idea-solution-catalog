@@ -147,3 +147,8 @@ vite.config.ts.timestamp-*
 
 # Files delivered from Claude sessions (not part of the app)
 Claude outputs/
+
+# Local visual-verification tooling (screenshots + rebuild helper)
+.shots/
+shot.mjs
+rebuild.sh

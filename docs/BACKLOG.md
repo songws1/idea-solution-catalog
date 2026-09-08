@@ -1,8 +1,9 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 7, 2026
-**Status:** Phases 1-4.1 complete and verified. Next: the UX redesign v3
-build sequence (`docs/ux-redesign-v3.md` §8).
+**Last updated:** September 8, 2026
+**Status:** Phases 1-4.1 complete and verified. v3 build sequence steps 1-3
+done; a v4 visual pass and deployment hardening landed on top (see below).
+Next in the v3 sequence: step 4 (synthesis prompt).
 
 ---
 
@@ -107,6 +108,46 @@ click-through; `npm run build` + `npx tsc --noEmit` clean after each):
 
 `npm run verify-duplicates` only needs re-running if `npm run enrich` is
 re-run, which none of these steps require.
+
+---
+
+## v4 visual pass + deployment readiness (out of the v3 sequence)
+
+Requested directly after v3 step 3, and deliberately **not** a v3 step: it
+changes how the app looks and how it deploys, not what it does. Steps 4-6
+above are untouched and still next in the v3 sequence.
+
+- **Visual system rebuilt in `app/globals.css`.** Warm editorial palette
+  (cream ground, Lora headings, 2px radii) replaced by a cool neutral
+  ground, one indigo accent, a radius/shadow scale, and Inter throughout.
+  Structure was preserved: no class was renamed and no component markup
+  changed for the palette work, so the v3 rules that matter — Kanban as
+  the only layout, the §2.2 control/value split, the record-id policy —
+  carry over intact. Lanes became sunken containers with a status dot and
+  count badge; governance numerics right-align and shrink to fit.
+- **Fonts self-hosted** via `@fontsource-variable/inter`, replacing
+  `next/font/google`. The build no longer fails when Google Fonts is
+  unreachable, and the running page makes no third-party font request.
+- **Header nav gained an active state** (`components/shell/SiteNav.tsx`,
+  split out because `usePathname` needs a client component) and the
+  wordmark swaps to a short label under 700px.
+- **`/api/search` spend guards.** The key was already server-only and
+  carries no `NEXT_PUBLIC_` prefix, and a grep of the built client chunks
+  confirms neither the key name nor the OpenRouter endpoint reaches the
+  browser. The exposure on a public deployment is the open *endpoint*, not
+  the key: every call spends credit. Added `lib/rate-limit.ts` (12 requests
+  per client per minute, per serverless instance) and a 300-character query
+  cap, both rejecting before any paid call. These are backstops — Vercel
+  Deployment Protection is the real gate, and the README says so.
+- **Security response headers** in `next.config.mjs` (nosniff, DENY
+  framing, referrer policy, permissions policy); `x-powered-by` removed.
+- **README** rewritten where it had gone stale (it still described two
+  linked search panels, a connector line, and the removed savings widget)
+  and given a real Vercel deployment section.
+
+Not touched, deliberately: retrieval, scoring, `lib/match-label.ts`
+thresholds, the 0.7118 duplicate threshold, the datasets, stored `org` /
+`service` field names, and the deferred items below.
 
 ---
 

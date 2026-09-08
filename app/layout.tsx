@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Lora, Inter } from "next/font/google";
+import "@fontsource-variable/inter";
 import "./globals.css";
-
-const lora = Lora({
-  subsets: ["latin"],
-  variable: "--font-lora",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+import { SiteNav } from "@/components/shell/SiteNav";
 
 export const metadata: Metadata = {
   title: "GBS idea + solution catalog",
@@ -24,18 +13,20 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${lora.variable} ${inter.variable}`}>
+    <html lang="en">
       <body>
         <header className="site-header">
           <div className="site-header-inner">
             <div className="site-title">
-              <a href="/">GBS idea + solution catalog</a>
+              <a href="/">
+                <span className="site-mark" aria-hidden="true" />
+                <span className="site-title-full">GBS idea + solution catalog</span>
+                <span className="site-title-short" aria-hidden="true">
+                  GBS
+                </span>
+              </a>
             </div>
-            <nav className="site-nav">
-              <a href="/">Catalog</a>
-              <a href="/governance">Governance</a>
-              <a href="/export">Export</a>
-            </nav>
+            <SiteNav />
           </div>
         </header>
         <main>{children}</main>

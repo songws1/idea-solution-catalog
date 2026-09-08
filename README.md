@@ -17,24 +17,27 @@ data, names, or terminology. "GBS" is a generic org name.
    findable in solution-side language. This is the core demo: try a query like
    *"has anything been built to handle invoice disputes?"* against each
    dataset and compare the ideas panel.
-2. **Cross-referencing is visible.** Search shows ideas and solutions in two
-   linked panels. Selecting a result highlights its counterpart and draws the
-   connector line between them; solution cards carry the artifact link so you
-   can go get the thing and reuse it.
+2. **Cross-referencing is visible.** Ideas and the solutions that resolved
+   them sit on one board. A solution card names the idea it resolves and links
+   straight to it; the detail drawer names the counterpart in both directions.
+   Solution cards carry the artifact link so you can go get the thing and
+   reuse it.
 3. **Duplication is detectable and legible.** Near-duplicate ideas and
    solutions are detected offline via cosine similarity over the search
    embeddings and surfaced as review candidates in the search view and the
    governance dashboard — never auto-merged.
 
-## The two views
+## The three views
 
-- **`/search`** — conversational search (RAG) across ideas and solutions,
-  two linked panels, optional synthesized answer above the results.
-- **`/governance`** — catalog health for leaders: status by org, aging,
-  build throughput, share of records flagged as duplicates, an org-by-org dot
-  grid (one dot per record), duplicate cluster listings (with submitter,
-  manager, and solution owner), and an estimated-reuse-savings figure that is
-  explicitly labeled as an illustrative placeholder.
+- **`/`** — the catalog board. One Kanban of the whole dataset in three lanes
+  (Idea / In progress / Solution), filterable by chips. Asking a question in
+  natural language filters and ranks that same board and adds a synthesized
+  answer plus match labels; it does not swap in a different layout.
+- **`/governance`** — catalog health for leaders: status by service, aging,
+  build throughput, share of records flagged as duplicates, a service-by-service
+  dot grid (one dot per record), and duplicate cluster listings with submitter,
+  manager, and solution owner.
+- **`/export`** — the catalog as two flat CSV files, one per record type.
 
 ## Architecture (why there is no database)
 
@@ -138,20 +141,55 @@ are flagged in either dataset.** Override with `DUP_THRESHOLD`,
 
 ## Deploying to Vercel
 
-1. Push this repo to GitHub (it contains no secrets; `.env.local` is
-   git-ignored).
-2. In Vercel, import the repo and set the environment variables above in
-   project settings (`OPENROUTER_API_KEY` is the only required one).
-3. Deploy. No database, no storage, no runtime filesystem access.
+1. Push this repo to GitHub. It contains no secrets: `.env.local` is
+   git-ignored and only the placeholder `.env.example` is tracked.
+2. In Vercel, **Add New → Project**, import the repo. The framework preset is
+   detected as Next.js; the default build command and output settings are
+   correct, so nothing needs changing on that screen.
+3. Under **Environment Variables**, add `OPENROUTER_API_KEY` with the real
+   key. Paste it here and nowhere else — never into a file in the repo, an
+   issue, or a chat. Add the optional vars from `.env.example` only if you
+   want to override the defaults.
+4. Deploy. No database, no storage, no runtime filesystem access.
+
+Fonts are self-hosted through `@fontsource-variable/inter`, so the build does
+not depend on Google Fonts being reachable and the running page makes no
+third-party font request.
+
+### Keeping the API key from being spent by strangers
+
+The key itself never reaches the browser: it is read only in `lib/openrouter.ts`,
+which is imported only by the server-side `/api/search` route, and it carries no
+`NEXT_PUBLIC_` prefix, so Next.js will not inline it into a client bundle.
+
+The real exposure on a public deployment is different — the *endpoint* is open
+even though the key is hidden, and every call to it spends OpenRouter credit
+(one embedding + one chat completion). Two guards ship in the code:
+
+- `/api/search` rate-limits each client to 12 searches per minute
+  (`lib/rate-limit.ts`).
+- Queries longer than 300 characters are rejected before any paid call.
+
+Both are per-serverless-instance and best-effort. They stop accidental loops
+and casual hammering, not a determined distributed abuser. **If the deployment
+should not be world-readable, turn on Vercel Deployment Protection**
+(Project → Settings → Deployment Protection → Vercel Authentication or
+Password Protection). That is the only real gate; the in-code limits are a
+backstop behind it.
+
+If a key is ever pasted somewhere public, rotate it in the OpenRouter
+dashboard — removing the text afterwards does not un-leak it.
 
 ## Project layout
 
 ```
-app/               Next.js App Router: /search, /governance, /api/search
-components/        search view (panels, cards, connector) + governance widgets
-lib/               types, dataset loading, retrieval, governance math, OpenRouter client
+app/               Next.js App Router: /, /governance, /export, /api/search
+components/        catalog board + cards, record drawer, governance widgets, shell
+lib/               types, dataset loading, retrieval, governance math,
+                   OpenRouter client, rate limiting
 scripts/           seed generator, enrichment pipeline, duplicate verifier
 data/              committed: users, seed records, both datasets (with embeddings)
+docs/              spec, v3 UX redesign spec, backlog
 ```
 
 ## Future seams (intentionally not built)
