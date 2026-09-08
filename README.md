@@ -39,6 +39,12 @@ data, names, or terminology. "GBS" is a generic org name.
   manager, and solution owner.
 - **`/export`** — the catalog as two flat CSV files, one per record type.
 
+Every solution card downloads a real artifact file, generated from the record
+at request time (`lib/artifact-file.ts`). The three artifact types produce
+different documents — a paste-ready prompt, a skill definition, or an
+automation runbook — and each says plainly that it is synthetic and does not
+pretend to be runnable code.
+
 ## Architecture (why there is no database)
 
 Vercel serverless functions are stateless and ephemeral, so nothing is

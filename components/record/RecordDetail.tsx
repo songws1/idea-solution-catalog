@@ -4,6 +4,7 @@ import { matchLabel } from "@/lib/match-label";
 import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
 import { mailtoFor } from "@/lib/contact";
+import { artifactHref } from "@/lib/artifact-file";
 
 /**
  * The ONE shared card-detail treatment (Addendum A §2.4), used by the Kanban
@@ -11,7 +12,8 @@ import { mailtoFor } from "@/lib/contact";
  * not one detail UI per screen.
  *
  * All actions are real (fixes UAT #5 and #7):
- *  - "Open the artifact" is a primary button (solutions).
+ *  - "Download the artifact" is a primary button (solutions) and now
+ *    serves a real generated file, not the sharepoint.example placeholder.
  *  - "View linked idea / solution" jumps to (scrolls + highlights) the paired
  *    card wherever it is in the current view; onNavigate falls back to opening
  *    that record's detail when no card is rendered for it.
@@ -327,8 +329,8 @@ export default function RecordDetail({
 
       <div className="detail-actions">
         {sol && (
-          <a className="btn-primary" href={sol.artifact_link} target="_blank" rel="noreferrer">
-            Open the artifact
+          <a className="btn-primary" href={artifactHref(sol.id)} download>
+            Download the artifact
           </a>
         )}
         {linkedId && (

@@ -6,6 +6,7 @@ import { matchLabel } from "@/lib/match-label";
 import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import DuplicateBadge from "./DuplicateBadge";
 import { mailtoFor } from "@/lib/contact";
+import { artifactHref } from "@/lib/artifact-file";
 
 /**
  * One card on the Kanban board (v3 §3.3) — three zones in one bordered
@@ -276,14 +277,18 @@ export default function KanbanCard({
 
         {record.doc_type === "solution" && (
           <div className="card-actions">
+            {/*
+              Real file now, not the sharepoint.example placeholder: the route
+              generates it from this record. `download` so the browser saves it
+              instead of navigating away from the board.
+            */}
             <a
               className="btn-primary"
-              href={record.artifact_link}
-              target="_blank"
-              rel="noreferrer"
+              href={artifactHref(record.id)}
+              download
               onClick={(e) => e.stopPropagation()}
             >
-              Open the artifact
+              Download the artifact
             </a>
             {/*
               Live as of the employee-directory phase — v3 §7 shipped this

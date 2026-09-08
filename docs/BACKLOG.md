@@ -3,8 +3,9 @@
 **Last updated:** September 8, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished** — all six steps done. On top of it: a v4 visual pass, deployment
-hardening, a board-density pass, and the employee directory (v4.2). Next: the
-mindmap/graph view and real solution artifacts.
+hardening, a board-density pass, the employee directory (v4.2) and real
+solution artifacts (v4.3). Next: the mindmap/graph view — the last item from
+the original roadmap.
 
 ---
 
@@ -202,10 +203,7 @@ is the thing that reads first.
 
 - **Mindmap / graph view** (Addendum §2.6) — still its own phase, built
   and reviewed after the v3 work is stable; v3 §7 leaves it unchanged.
-- **Solution artifacts** — `Open the artifact` currently points at a
-  placeholder `sharepoint.example` URL (a known no-op). Generating real
-  artifact files is its own phase; explicitly out of scope for v3 (§7).
-  Sequence after the v3 build steps.
+- ~~**Solution artifacts**~~ — **Done in v4.3, see below.**
 - ~~**Employee directory**~~ — **Done in v4.2, see below.**
 
 ---
@@ -252,6 +250,44 @@ decision that had been parked waiting on him.
   real match shows nothing rather than confident-looking noise. Kept in sync
   with `lib/match-label.ts` by hand — if those tiers move, the wording has to
   move with them.
+
+---
+
+## v4.3 — real solution artifacts
+
+Every solution card's primary action pointed at a placeholder
+`sharepoint.example` URL. The one thing a person comes to this catalog to do —
+"go get the thing" — was the one thing that did not work. All 25 now download a
+real file.
+
+- **Generated at request time, not committed.** `lib/artifact-file.ts` builds
+  the document from the record and `app/artifact/download/route.ts` serves it,
+  the same shape as `/export/download`. Committing 25 files would have meant a
+  copy of text that already lives in the dataset, drifting the moment
+  `npm run enrich` regenerates a summary.
+- **Three genuinely different documents**, because the three artifact types are
+  reached for with different intent: a *prompt* file leads with a
+  paste-ready block, a *skill* file with its definition and scope, an
+  *automation* file with what it does and the runbook the next person needs.
+  One shared template would have been a rename, not an artifact.
+- **They describe, they do not pretend to run.** Emitting a plausible-looking
+  automation script that cannot execute would be a more convincing lie than the
+  placeholder it replaces. The automation runbook is explicitly headed "to fill
+  in from the working copy" and says the catalog does not hold that detail.
+  Every file opens with a synthetic-data banner.
+- **The stored `artifact_link` field is deliberately unchanged** in the dataset
+  and the CSV. It is part of the synthetic story — where the artifact would
+  live in a real deployment — and Addendum A §5 defines the CSV as the
+  flattened record fields. Rewriting committed records to point at an app route
+  would confuse the two. The UI links to the route; the data keeps its field.
+
+Verified: all 25 generate with unique filenames, no record-id leak, no
+`undefined`/`null` in any output; the board carries 25 download links and zero
+remaining `sharepoint.example` links on any tab; a real download was driven in
+a browser and arrived as `access-grant-script.md`.
+
+Out of scope, unchanged: a real SharePoint integration, auth, and any
+folder-browsing UI.
 
 ---
 

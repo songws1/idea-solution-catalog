@@ -4,6 +4,7 @@ import { matchLabel } from "@/lib/match-label";
 import type { Dataset } from "@/lib/types";
 import ClusterMembers, { type ClusterMemberView, type ClusterView } from "./ClusterMembers";
 import MatchHelp from "@/components/search/MatchHelp";
+import { artifactHref } from "@/lib/artifact-file";
 
 interface Props {
   clusters: DuplicateCluster[];
@@ -96,7 +97,7 @@ function memberView(
     statusLabel: sol.artifact_type,
     statusChipClass: "chip",
     description: oneLine(sol.ai_generated_summary ?? sol.raw_description),
-    artifactLink: sol.artifact_link,
+    artifactLink: artifactHref(sol.id),
     relationLabel: resolves ? "Resolves" : null,
     relationTitle: resolves ? resolves.title : null,
     relationId: resolves ? resolves.id : null,

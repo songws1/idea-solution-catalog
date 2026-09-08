@@ -147,13 +147,8 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
               </p>
               <p className="detail-desc">{m.description}</p>
               {m.artifactLink && (
-                <a
-                  className="btn-primary"
-                  href={m.artifactLink}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open the artifact
+                <a className="btn-primary" href={m.artifactLink} download>
+                  Download the artifact
                 </a>
               )}
             </div>
