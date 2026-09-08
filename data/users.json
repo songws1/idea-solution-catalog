@@ -4,244 +4,279 @@
     "name": "Jordan Avery",
     "org": "Finance Operations",
     "service": "Accounts Payable",
-    "manager_id": null
+    "manager_id": null,
+    "email": "jordan.avery@gbs.example"
   },
   {
     "id": "synthetic-user-002",
     "name": "Morgan Blake",
     "org": "Finance Operations",
     "service": "Accounts Payable",
-    "manager_id": "synthetic-user-001"
+    "manager_id": "synthetic-user-001",
+    "email": "morgan.blake@gbs.example"
   },
   {
     "id": "synthetic-user-003",
     "name": "Casey Nguyen",
     "org": "Finance Operations",
     "service": "Accounts Receivable",
-    "manager_id": "synthetic-user-001"
+    "manager_id": "synthetic-user-001",
+    "email": "casey.nguyen@gbs.example"
   },
   {
     "id": "synthetic-user-004",
     "name": "Riley Patel",
     "org": "Finance Operations",
     "service": "Accounts Payable",
-    "manager_id": "synthetic-user-002"
+    "manager_id": "synthetic-user-002",
+    "email": "riley.patel@gbs.example"
   },
   {
     "id": "synthetic-user-005",
     "name": "Avery Kim",
     "org": "Finance Operations",
     "service": "Accounts Receivable",
-    "manager_id": "synthetic-user-003"
+    "manager_id": "synthetic-user-003",
+    "email": "avery.kim@gbs.example"
   },
   {
     "id": "synthetic-user-006",
     "name": "Quinn Foster",
     "org": "Finance Operations",
     "service": "Payroll",
-    "manager_id": "synthetic-user-002"
+    "manager_id": "synthetic-user-002",
+    "email": "quinn.foster@gbs.example"
   },
   {
     "id": "synthetic-user-007",
     "name": "Harper Silva",
     "org": "Finance Operations",
     "service": "Financial Reporting",
-    "manager_id": "synthetic-user-003"
+    "manager_id": "synthetic-user-003",
+    "email": "harper.silva@gbs.example"
   },
   {
     "id": "synthetic-user-008",
     "name": "Reese Donovan",
     "org": "HR Shared Services",
     "service": "Employee Onboarding",
-    "manager_id": null
+    "manager_id": null,
+    "email": "reese.donovan@gbs.example"
   },
   {
     "id": "synthetic-user-009",
     "name": "Parker Ellis",
     "org": "HR Shared Services",
     "service": "Employee Onboarding",
-    "manager_id": "synthetic-user-008"
+    "manager_id": "synthetic-user-008",
+    "email": "parker.ellis@gbs.example"
   },
   {
     "id": "synthetic-user-010",
     "name": "Sage Whitman",
     "org": "HR Shared Services",
     "service": "Benefits Administration",
-    "manager_id": "synthetic-user-008"
+    "manager_id": "synthetic-user-008",
+    "email": "sage.whitman@gbs.example"
   },
   {
     "id": "synthetic-user-011",
     "name": "Devon Marsh",
     "org": "HR Shared Services",
     "service": "Employee Onboarding",
-    "manager_id": "synthetic-user-009"
+    "manager_id": "synthetic-user-009",
+    "email": "devon.marsh@gbs.example"
   },
   {
     "id": "synthetic-user-012",
     "name": "Elliott Crane",
     "org": "HR Shared Services",
     "service": "Benefits Administration",
-    "manager_id": "synthetic-user-010"
+    "manager_id": "synthetic-user-010",
+    "email": "elliott.crane@gbs.example"
   },
   {
     "id": "synthetic-user-013",
     "name": "Rowan Delgado",
     "org": "HR Shared Services",
     "service": "Recruiting Coordination",
-    "manager_id": "synthetic-user-009"
+    "manager_id": "synthetic-user-009",
+    "email": "rowan.delgado@gbs.example"
   },
   {
     "id": "synthetic-user-014",
     "name": "Emerson Cole",
     "org": "HR Shared Services",
     "service": "Learning & Development",
-    "manager_id": "synthetic-user-010"
+    "manager_id": "synthetic-user-010",
+    "email": "emerson.cole@gbs.example"
   },
   {
     "id": "synthetic-user-015",
     "name": "Finley Ortega",
     "org": "Procurement Operations",
     "service": "Vendor Management",
-    "manager_id": null
+    "manager_id": null,
+    "email": "finley.ortega@gbs.example"
   },
   {
     "id": "synthetic-user-016",
     "name": "Blair Hutchins",
     "org": "Procurement Operations",
     "service": "Vendor Management",
-    "manager_id": "synthetic-user-015"
+    "manager_id": "synthetic-user-015",
+    "email": "blair.hutchins@gbs.example"
   },
   {
     "id": "synthetic-user-017",
     "name": "Kendall Frost",
     "org": "Procurement Operations",
     "service": "Purchase Orders",
-    "manager_id": "synthetic-user-015"
+    "manager_id": "synthetic-user-015",
+    "email": "kendall.frost@gbs.example"
   },
   {
     "id": "synthetic-user-018",
     "name": "Alexis Romero",
     "org": "Procurement Operations",
     "service": "Vendor Management",
-    "manager_id": "synthetic-user-016"
+    "manager_id": "synthetic-user-016",
+    "email": "alexis.romero@gbs.example"
   },
   {
     "id": "synthetic-user-019",
     "name": "Drew Lancaster",
     "org": "Procurement Operations",
     "service": "Purchase Orders",
-    "manager_id": "synthetic-user-017"
+    "manager_id": "synthetic-user-017",
+    "email": "drew.lancaster@gbs.example"
   },
   {
     "id": "synthetic-user-020",
     "name": "Jamie Fields",
     "org": "Procurement Operations",
     "service": "Contract Administration",
-    "manager_id": "synthetic-user-016"
+    "manager_id": "synthetic-user-016",
+    "email": "jamie.fields@gbs.example"
   },
   {
     "id": "synthetic-user-021",
     "name": "Taylor Brooks",
     "org": "Procurement Operations",
     "service": "Sourcing & Analysis",
-    "manager_id": "synthetic-user-017"
+    "manager_id": "synthetic-user-017",
+    "email": "taylor.brooks@gbs.example"
   },
   {
     "id": "synthetic-user-022",
     "name": "Skyler Warren",
     "org": "Facilities Support",
     "service": "Space Planning",
-    "manager_id": null
+    "manager_id": null,
+    "email": "skyler.warren@gbs.example"
   },
   {
     "id": "synthetic-user-023",
     "name": "Cameron Vale",
     "org": "Facilities Support",
     "service": "Space Planning",
-    "manager_id": "synthetic-user-022"
+    "manager_id": "synthetic-user-022",
+    "email": "cameron.vale@gbs.example"
   },
   {
     "id": "synthetic-user-024",
     "name": "Peyton Shin",
     "org": "Facilities Support",
     "service": "Maintenance Requests",
-    "manager_id": "synthetic-user-022"
+    "manager_id": "synthetic-user-022",
+    "email": "peyton.shin@gbs.example"
   },
   {
     "id": "synthetic-user-025",
     "name": "Addison Moss",
     "org": "Facilities Support",
     "service": "Space Planning",
-    "manager_id": "synthetic-user-023"
+    "manager_id": "synthetic-user-023",
+    "email": "addison.moss@gbs.example"
   },
   {
     "id": "synthetic-user-026",
     "name": "Logan Mercer",
     "org": "Facilities Support",
     "service": "Maintenance Requests",
-    "manager_id": "synthetic-user-024"
+    "manager_id": "synthetic-user-024",
+    "email": "logan.mercer@gbs.example"
   },
   {
     "id": "synthetic-user-027",
     "name": "Marlow Grant",
     "org": "Facilities Support",
     "service": "Mail & Logistics",
-    "manager_id": "synthetic-user-023"
+    "manager_id": "synthetic-user-023",
+    "email": "marlow.grant@gbs.example"
   },
   {
     "id": "synthetic-user-028",
     "name": "Tatum Reyes",
     "org": "Facilities Support",
     "service": "Reception Services",
-    "manager_id": "synthetic-user-024"
+    "manager_id": "synthetic-user-024",
+    "email": "tatum.reyes@gbs.example"
   },
   {
     "id": "synthetic-user-029",
     "name": "Bailey Chen",
     "org": "IT Service Delivery",
     "service": "Service Desk",
-    "manager_id": null
+    "manager_id": null,
+    "email": "bailey.chen@gbs.example"
   },
   {
     "id": "synthetic-user-030",
     "name": "Hayden Locke",
     "org": "IT Service Delivery",
     "service": "Service Desk",
-    "manager_id": "synthetic-user-029"
+    "manager_id": "synthetic-user-029",
+    "email": "hayden.locke@gbs.example"
   },
   {
     "id": "synthetic-user-031",
     "name": "Wren Calloway",
     "org": "IT Service Delivery",
     "service": "Access Management",
-    "manager_id": "synthetic-user-029"
+    "manager_id": "synthetic-user-029",
+    "email": "wren.calloway@gbs.example"
   },
   {
     "id": "synthetic-user-032",
     "name": "Grayson Pike",
     "org": "IT Service Delivery",
     "service": "Service Desk",
-    "manager_id": "synthetic-user-030"
+    "manager_id": "synthetic-user-030",
+    "email": "grayson.pike@gbs.example"
   },
   {
     "id": "synthetic-user-033",
     "name": "Sloane Vincent",
     "org": "IT Service Delivery",
     "service": "Access Management",
-    "manager_id": "synthetic-user-031"
+    "manager_id": "synthetic-user-031",
+    "email": "sloane.vincent@gbs.example"
   },
   {
     "id": "synthetic-user-034",
     "name": "Emerson Vaughn",
     "org": "IT Service Delivery",
     "service": "Software Provisioning",
-    "manager_id": "synthetic-user-030"
+    "manager_id": "synthetic-user-030",
+    "email": "emerson.vaughn@gbs.example"
   },
   {
     "id": "synthetic-user-035",
     "name": "Micah Torres",
     "org": "IT Service Delivery",
     "service": "Asset Management",
-    "manager_id": "synthetic-user-031"
+    "manager_id": "synthetic-user-031",
+    "email": "micah.torres@gbs.example"
   }
 ]

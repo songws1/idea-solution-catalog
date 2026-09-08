@@ -2,9 +2,9 @@
 
 **Last updated:** September 8, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
-**finished** — all six steps done. A v4 visual pass, deployment hardening and a
-board-density pass landed on top (see below). Next: the phases after v3
-(mindmap, solution artifacts, employee directory).
+**finished** — all six steps done. On top of it: a v4 visual pass, deployment
+hardening, a board-density pass, and the employee directory (v4.2). Next: the
+mindmap/graph view and real solution artifacts.
 
 ---
 
@@ -206,10 +206,52 @@ is the thing that reads first.
   placeholder `sharepoint.example` URL (a known no-op). Generating real
   artifact files is its own phase; explicitly out of scope for v3 (§7).
   Sequence after the v3 build steps.
-- **Employee directory** — the Contact-owner/mailto affordance ships
-  inert in v3 (the button exists so the card layout is final; §7 says do
-  not wire it here). Explicitly out of scope for v3; sequence after the
-  v3 build steps.
+- ~~**Employee directory**~~ — **Done in v4.2, see below.**
+
+---
+
+## v4.2 — employee directory, board order, match explainer
+
+Three things Chris hit while using the deployed app, plus the directory
+decision that had been parked waiting on him.
+
+- **`data/users.json` now carries an `email`.** This was the parked question
+  ("extend users.json or add a new file?") — answered: extend it. The address
+  is derived from the display name by `scripts/generate-seed.ts` onto the
+  reserved `gbs.example` TLD, which cannot resolve, so the app ships real
+  mailto links with no possibility of reaching a real inbox. `manager_id` was
+  already there, so no other field was needed.
+
+  The committed `users.json` was patched in place with the same derivation
+  rather than by re-running `npm run seed`: that script also rewrites
+  `seed-records.json`, which would invalidate the committed datasets and their
+  embeddings. Verified afterwards that all 35 addresses match what the seed
+  script would now generate, and that all 35 are unique.
+
+- **Owner and submitter names are contact links** on card footers, in the
+  detail drawer (owner and builder), and on governance cluster rows. The
+  "Contact owner" button that v3 §7 deliberately shipped inert is now live —
+  the only reason it was inert was the missing address. A name whose id does
+  not resolve renders as plain text: a dead mailto is worse than none. The
+  subject line names the record by title, never by id, so §2.1 does not leak
+  through the mail client. `DuplicateClusters` no longer derives its own
+  address locally; it reads the directory like everything else.
+
+- **The board has a stated order.** It had none: cards came out in whatever
+  order the seed script wrote them, which is stable but meaningless. Browse
+  mode now defaults to newest first with a visible Order control (newest,
+  oldest, title A–Z), sorted in `lib/board-sort.ts` with a title tiebreak so
+  the order is total and stable across renders. Search mode is deliberately
+  not sortable — there the order IS the answer — and says so in place of the
+  control rather than showing one that does nothing.
+
+- **The similarity scale is explained in plain language** (`MatchHelp`), as a
+  closed disclosure next to the results and on the duplicate-clusters widget.
+  It says what the number measures, that it is not a percentage, that labels
+  are relative to the best result in that one search, and that a set with no
+  real match shows nothing rather than confident-looking noise. Kept in sync
+  with `lib/match-label.ts` by hand — if those tiers move, the wording has to
+  move with them.
 
 ---
 

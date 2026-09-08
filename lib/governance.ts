@@ -1,5 +1,5 @@
 import { agingBucket, ideaAgeDays, solutionReviewAgeDays } from "./aging";
-import { userName, userById } from "./dataset";
+import { userEmail, userName, userById } from "./dataset";
 import type {
   Dataset,
   IdeaRecord,
@@ -242,7 +242,10 @@ export interface ClusterMember {
   /** Ideas: submitter and submitter's manager. Solutions: solution owner. */
   actorLabel: string;
   actorName: string;
+  /** Synthetic contact address from the directory, null when unresolvable. */
+  actorEmail: string | null;
   managerName?: string;
+  managerEmail?: string | null;
 }
 
 export interface DuplicateCluster {
@@ -294,7 +297,9 @@ export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
             org: idea.org,
             actorLabel: "submitted by",
             actorName: userName(idea.submitted_by),
+            actorEmail: userEmail(idea.submitted_by),
             managerName: userName(idea.submitted_by_manager),
+            managerEmail: userEmail(idea.submitted_by_manager),
           };
         }
         const sol = r as SolutionRecord;
@@ -303,6 +308,7 @@ export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
           org: orgOfSolution(dataset, sol),
           actorLabel: "owner",
           actorName: userName(sol.solution_owner),
+          actorEmail: userEmail(sol.solution_owner),
         };
       });
       const confirmed = group.some((r) => r.duplicate_of && byId.has(r.duplicate_of));

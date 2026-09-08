@@ -73,16 +73,25 @@ interface SeedUser {
   org: string;
   service: string;
   manager_id: string | null;
+  /**
+   * Synthetic contact address. Derived from the name so it is stable across
+   * regenerations and obviously fake: `gbs.example` is a reserved TLD that
+   * cannot resolve, which keeps the no-real-data rule intact while letting the
+   * UI ship real mailto affordances.
+   */
+  email: string;
 }
 
 function buildUsers(): SeedUser[] {
   const users: SeedUser[] = [];
   let n = 0;
+  const emailFor = (name: string): string =>
+    `${name.toLowerCase().replace(/[^a-z\s]/g, "").trim().replace(/\s+/g, ".")}@gbs.example`;
   for (const [org, services] of Object.entries(ORGS)) {
     const nextId = (): string => `synthetic-user-${String(++n).padStart(3, "0")}`;
-    const director: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[0], manager_id: null };
-    const lead1: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[0], manager_id: director.id };
-    const lead2: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[1], manager_id: director.id };
+    const director: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[0], manager_id: null, email: emailFor(NAMES[n - 1]) };
+    const lead1: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[0], manager_id: director.id, email: emailFor(NAMES[n - 1]) };
+    const lead2: SeedUser = { id: nextId(), name: NAMES[n - 1], org, service: services[1], manager_id: director.id, email: emailFor(NAMES[n - 1]) };
     const staff: SeedUser[] = [];
     for (let i = 0; i < 4; i++) {
       staff.push({
@@ -91,6 +100,7 @@ function buildUsers(): SeedUser[] {
         org,
         service: services[i % services.length],
         manager_id: i % 2 === 0 ? lead1.id : lead2.id,
+        email: emailFor(NAMES[n - 1]),
       });
     }
     users.push(director, lead1, lead2, ...staff);

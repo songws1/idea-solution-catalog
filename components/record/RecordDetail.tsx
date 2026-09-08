@@ -3,6 +3,7 @@
 import { matchLabel } from "@/lib/match-label";
 import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
+import { mailtoFor } from "@/lib/contact";
 
 /**
  * The ONE shared card-detail treatment (Addendum A §2.4), used by the Kanban
@@ -28,6 +29,32 @@ import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
  * "View linked …" action (Phase 4.1 #2), backed by the ideasById/solutionsById
  * lookups.
  */
+
+/**
+ * A person's name, rendered as a contact link when the directory resolved an
+ * address for them and as plain text when it did not. A dead mailto is worse
+ * than no affordance at all.
+ */
+function Contact({
+  name,
+  email,
+  title,
+}: {
+  name: string;
+  email: string | null;
+  title: string;
+}) {
+  if (!email) return <>{name}</>;
+  return (
+    <a
+      className="contact-link"
+      href={mailtoFor(email, title)}
+      title={`Email ${name} about this record (synthetic demo address)`}
+    >
+      {name}
+    </a>
+  );
+}
 
 export interface DetailRecord {
   record: ClientRecord;
@@ -241,9 +268,24 @@ export default function RecordDetail({
               Service: {idea.org}; Sub-service: {idea.service}
             </span>
             <span>
-              Submitted by {idea.submitted_by_name}
-              {idea.submitted_by_manager_name ? ` (manager: ${idea.submitted_by_manager_name})` : ""} on{" "}
-              {fmtDate(idea.submitted_date)}
+              Submitted by{" "}
+              <Contact
+                name={idea.submitted_by_name}
+                email={idea.submitted_by_email}
+                title={idea.title}
+              />
+              {idea.submitted_by_manager_name ? (
+                <>
+                  {" "}(manager:{" "}
+                  <Contact
+                    name={idea.submitted_by_manager_name}
+                    email={idea.submitted_by_manager_email}
+                    title={idea.title}
+                  />
+                  )
+                </>
+              ) : null}{" "}
+              on {fmtDate(idea.submitted_date)}
             </span>
           </>
         ) : (
@@ -254,8 +296,19 @@ export default function RecordDetail({
                 : "Service unassigned"}
             </span>
             <span>
-              Owner {sol?.solution_owner_name} — built by {sol?.built_by_name} on{" "}
-              {fmtDate(sol?.date_built ?? null)}
+              Owner{" "}
+              <Contact
+                name={sol?.solution_owner_name ?? ""}
+                email={sol?.solution_owner_email ?? null}
+                title={sol?.name ?? ""}
+              />{" "}
+              — built by{" "}
+              <Contact
+                name={sol?.built_by_name ?? ""}
+                email={sol?.built_by_email ?? null}
+                title={sol?.name ?? ""}
+              />{" "}
+              on {fmtDate(sol?.date_built ?? null)}
               {sol?.date_last_reviewed
                 ? ` — last reviewed ${fmtDate(sol.date_last_reviewed)}`
                 : " — never reviewed"}

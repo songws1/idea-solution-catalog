@@ -26,6 +26,8 @@ import {
 import type { ClientDataset } from "@/lib/client-records";
 import SynthesizedAnswer from "@/components/search/SynthesizedAnswer";
 import KanbanResults from "@/components/search/KanbanResults";
+import MatchHelp from "@/components/search/MatchHelp";
+import { DEFAULT_SORT, SORT_LABELS, sortBoardItems, type SortKey } from "@/lib/board-sort";
 
 /**
  * Client shell for the catalog page (v3 §0/§3.1). The Kanban board is the
@@ -54,6 +56,7 @@ export default function CatalogHome({
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [detail, setDetail] = useState<DetailRecord | null>(null);
   const [pendingJump, setPendingJump] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>(DEFAULT_SORT);
   void variant;
 
   // Whole-result-set noise gate — lib/match-label.ts, reused not reimplemented.
@@ -86,11 +89,17 @@ export default function CatalogHome({
   // column membership still comes from filtered.ideas alone.
   const browseView = useMemo(
     () => ({
-      ideas: filtered.ideas.map((r): BoardItem => ({ record: r })),
-      solutions: filtered.solutions.map((r): BoardItem => ({ record: r })),
+      ideas: sortBoardItems(
+        filtered.ideas.map((r): BoardItem => ({ record: r })),
+        sort
+      ),
+      solutions: sortBoardItems(
+        filtered.solutions.map((r): BoardItem => ({ record: r })),
+        sort
+      ),
       clusterPool: catalog.ideas.map((r): BoardItem => ({ record: r })),
     }),
-    [filtered, catalog]
+    [filtered, catalog, sort]
   );
 
   const resultsTopScore =
@@ -324,6 +333,34 @@ export default function CatalogHome({
           }
           onClearAll={() => setFilters(EMPTY_FILTERS)}
         />
+
+        {/*
+          Board order, stated rather than implied. In search mode the order IS
+          the answer — the board is ranked by match — so the control is replaced
+          by a line saying so instead of silently doing nothing.
+        */}
+        <div className="board-order">
+          {results && hasResults ? (
+            <span className="board-order-note">
+              Ranked by how well each record matches your question.
+            </span>
+          ) : (
+            <label className="board-order-control">
+              <span>Order</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+              >
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                  <option key={key} value={key}>
+                    {SORT_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {results && hasResults && <MatchHelp />}
+        </div>
 
         {results && !error && results.answer && (
           <SynthesizedAnswer answer={results.answer} />

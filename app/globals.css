@@ -2268,3 +2268,114 @@ a.dot:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+
+/* ==========================================================================
+   Board order + match explainer — v4.2
+   ========================================================================== */
+
+.board-order {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.board-order-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.board-order-control select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.board-order-control select:hover {
+  border-color: var(--ink-faint);
+}
+
+.board-order-note {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+/* The explainer stays closed by default: it answers a question people have
+   once, and should not cost space to everyone who already knows. */
+.match-help {
+  font-size: 12.5px;
+  margin-left: auto;
+}
+
+.match-help summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.match-help summary::-webkit-details-marker {
+  display: none;
+}
+
+.match-help summary::before {
+  content: "?";
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-faint);
+}
+
+.match-help summary:hover {
+  color: var(--ink);
+}
+
+.match-help-body {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-width: 70ch;
+}
+
+.match-help-body p {
+  margin: 0 0 8px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+.match-help-body p:last-child {
+  margin-bottom: 0;
+}
+
+.match-help-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* On governance the explainer sits under the widget's own sub-line. */
+.widget .match-help {
+  margin: 0 0 14px;
+  display: block;
+}

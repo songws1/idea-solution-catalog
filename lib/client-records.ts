@@ -5,7 +5,7 @@
  * page's server component reuses exactly the same shape the search API
  * returns — one source of truth for what the browser sees.
  */
-import { userName } from "./dataset";
+import { userEmail, userName } from "./dataset";
 import type {
   CatalogRecord,
   ClientIdea,
@@ -21,6 +21,8 @@ export function toClientIdea(record: IdeaRecord): ClientIdea {
     ...rest,
     submitted_by_name: userName(submitted_by),
     submitted_by_manager_name: userName(submitted_by_manager),
+    submitted_by_email: userEmail(submitted_by),
+    submitted_by_manager_email: userEmail(submitted_by_manager),
   } satisfies ClientIdea;
 }
 
@@ -30,6 +32,8 @@ export function toClientSolution(record: SolutionRecord): ClientSolution {
     ...rest,
     solution_owner_name: userName(solution_owner),
     built_by_name: userName(built_by),
+    solution_owner_email: userEmail(solution_owner),
+    built_by_email: userEmail(built_by),
   } satisfies ClientSolution;
 }
 

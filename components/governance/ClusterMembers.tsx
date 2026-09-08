@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { mailtoFor } from "@/lib/contact";
 
 export interface ClusterLink {
   score: number;
@@ -17,7 +18,7 @@ export interface ClusterMemberView {
   description: string;
   actorLabel: string;
   actorName: string;
-  actorEmail: string;
+  actorEmail: string | null;
   managerName: string | null;
   managerEmail: string | null;
   artifactLink: string | null;
@@ -91,23 +92,31 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
 
               <p className="member-meta">
                 {m.actorLabel}{" "}
-                <a
-                  className="contact-link"
-                  href={`mailto:${m.actorEmail}`}
-                  title={`Contact ${m.actorName} (synthetic demo address)`}
-                >
-                  {m.actorName}
-                </a>
-                {m.managerName && m.managerEmail && (
+                {m.actorEmail ? (
+                  <a
+                    className="contact-link"
+                    href={mailtoFor(m.actorEmail, m.title)}
+                    title={`Email ${m.actorName} about this record (synthetic demo address)`}
+                  >
+                    {m.actorName}
+                  </a>
+                ) : (
+                  m.actorName
+                )}
+                {m.managerName && (
                   <>
                     , reports to{" "}
-                    <a
-                      className="contact-link"
-                      href={`mailto:${m.managerEmail}`}
-                      title={`Contact ${m.managerName} (synthetic demo address)`}
-                    >
-                      {m.managerName}
-                    </a>
+                    {m.managerEmail ? (
+                      <a
+                        className="contact-link"
+                        href={mailtoFor(m.managerEmail, m.title)}
+                        title={`Email ${m.managerName} about this record (synthetic demo address)`}
+                      >
+                        {m.managerName}
+                      </a>
+                    ) : (
+                      m.managerName
+                    )}
                   </>
                 )}
               </p>

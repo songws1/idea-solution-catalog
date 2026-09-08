@@ -5,6 +5,7 @@ import type { BoardItem } from "@/lib/types";
 import { matchLabel } from "@/lib/match-label";
 import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import DuplicateBadge from "./DuplicateBadge";
+import { mailtoFor } from "@/lib/contact";
 
 /**
  * One card on the Kanban board (v3 §3.3) — three zones in one bordered
@@ -134,10 +135,13 @@ export default function KanbanCard({
       <span>{label}</span>
     );
 
+  const cardTitle = record.doc_type === "idea" ? record.title : record.name;
+
   const foot = (() => {
     if (record.doc_type === "idea") {
       return {
         who: record.submitted_by_name,
+        email: record.submitted_by_email,
         date: fmtDate(record.submitted_date),
         org: record.org,
         service: record.service,
@@ -145,7 +149,8 @@ export default function KanbanCard({
     }
     const meta = solutionMeta?.[record.id];
     return {
-      who: `${record.solution_owner_name}`,
+      who: record.solution_owner_name,
+      email: record.solution_owner_email,
       date: fmtDate(record.date_built),
       org: meta?.org ?? "Unassigned",
       service: meta?.service ?? "Unassigned",
@@ -280,21 +285,46 @@ export default function KanbanCard({
             >
               Open the artifact
             </a>
-            {/* Inert by design — wired in the employee-directory phase (v3 §7). */}
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Contact owner
-            </button>
+            {/*
+              Live as of the employee-directory phase — v3 §7 shipped this
+              inert only because users.json carried no address. It does now.
+            */}
+            {record.solution_owner_email ? (
+              <a
+                className="btn-secondary"
+                href={mailtoFor(record.solution_owner_email, record.name)}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Contact owner
+              </a>
+            ) : (
+              <button type="button" className="btn-secondary" disabled>
+                Contact owner
+              </button>
+            )}
           </div>
         )}
       </div>
 
       <div className="card-foot">
         <div className="foot-line">
-          <span>{foot.who}</span>
+          {/*
+            The person is a contact link now that users carry an address. A
+            record with an unresolvable owner renders a plain name instead: an
+            affordance that goes nowhere is worse than none.
+          */}
+          {foot.email ? (
+            <a
+              className="contact-link"
+              href={mailtoFor(foot.email, cardTitle)}
+              title={`Email ${foot.who} about this record (synthetic demo address)`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {foot.who}
+            </a>
+          ) : (
+            <span>{foot.who}</span>
+          )}
           <span className="foot-date">{foot.date}</span>
         </div>
         <div className="foot-line foot-facets">

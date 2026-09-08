@@ -47,6 +47,15 @@ export function userName(id: string | null | undefined): string {
   return USER_BY_ID.get(id ?? "")?.name ?? id ?? "unknown";
 }
 
+/**
+ * Resolve a user id to their synthetic contact address, or null when the id is
+ * unknown. Null is the signal to render a plain name instead of a mailto link —
+ * a contact affordance that goes nowhere is worse than none.
+ */
+export function userEmail(id: string | null | undefined): string | null {
+  return USER_BY_ID.get(id ?? "")?.email ?? null;
+}
+
 export function findIdea(dataset: Dataset, id: string): IdeaRecord | undefined {
   return dataset.ideas.find((i) => i.id === id);
 }

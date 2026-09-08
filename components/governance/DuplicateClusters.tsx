@@ -3,20 +3,11 @@ import { findIdea, findSolution } from "@/lib/dataset";
 import { matchLabel } from "@/lib/match-label";
 import type { Dataset } from "@/lib/types";
 import ClusterMembers, { type ClusterMemberView, type ClusterView } from "./ClusterMembers";
+import MatchHelp from "@/components/search/MatchHelp";
 
 interface Props {
   clusters: DuplicateCluster[];
   dataset: Dataset;
-}
-
-/** Deterministic synthetic address — users.json carries no email field (§4.4 allows synthetic emails). */
-function syntheticEmail(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, "")
-    .trim()
-    .replace(/\s+/g, ".");
-  return `${slug}@gbs.example`;
 }
 
 function oneLine(text: string, max = 200): string {
@@ -70,9 +61,9 @@ function memberView(
     org: m.org,
     actorLabel: m.actorLabel,
     actorName: m.actorName,
-    actorEmail: syntheticEmail(m.actorName),
+    actorEmail: m.actorEmail,
     managerName: m.managerName ?? null,
-    managerEmail: m.managerName ? syntheticEmail(m.managerName) : null,
+    managerEmail: m.managerEmail ?? null,
     links: linksToMembers(cluster, r.id, candScore, clusterTop),
     matchLabel: bestInCluster === null ? null : matchLabel(bestInCluster, clusterTop),
   };
@@ -145,6 +136,7 @@ export default function DuplicateClusters({ clusters, dataset }: Props) {
         review — nothing is merged automatically. Open a record for its summary,
         or jump to its card on the catalog board.
       </p>
+      <MatchHelp variant="cluster" />
       {views.length === 0 ? (
         <div className="empty-state" style={{ boxShadow: "none" }}>
           <p>No duplicate clusters in this dataset.</p>
