@@ -114,9 +114,13 @@ export default function KanbanCard({
     label === "Strong match" ? " m-strong" : label === "Related" ? " m-related" : "";
   const classes = ["board-card", via_link ? "via-link" : ""].filter(Boolean).join(" ");
 
-  const bandLabel = label ?? (score !== undefined ? score.toFixed(2) : null);
+  // No raw-number fallback (v4.7). This used to print the bare cosine score
+  // when the label came back null, which is the exact thing the label scale
+  // exists to avoid: "0.28" reads as a percentage to everyone who has not read
+  // lib/match-label.ts. No label means no claim.
+  const bandLabel = label;
   // A solution's band carries type + technology, which appears nowhere else on
-  // the card. An idea's band only earns its row when a search put a label in it.
+  // the card. An idea's band only earns its row when a check put a label in it.
   const showBand = record.doc_type === "solution" || bandLabel !== null;
 
   const facet = (facetKey: "orgs" | "services", value: string, label: string) =>
@@ -206,7 +210,7 @@ export default function KanbanCard({
         {bandLabel && (
           <span
             className={`card-score${labelClass}`}
-            title={`${label ? `${label} — ` : ""}${(score ?? 0).toFixed(2)} cosine similarity to your question`}
+            title={`${bandLabel} — ${(score ?? 0).toFixed(2)} cosine similarity to what you described`}
           >
             {bandLabel}
           </span>

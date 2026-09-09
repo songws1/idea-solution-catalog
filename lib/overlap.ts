@@ -134,17 +134,17 @@ export const VERDICT_COPY: Record<
   exists: {
     headline: "This may already be built.",
     action:
-      "Talk to the owner below before you start. If it does not quite fit, extending theirs is usually cheaper than a second build.",
+      "The closest build is first in the Solution column below. Take the artifact, or talk to its owner before you start — if it does not quite fit, extending theirs is usually cheaper than a second build.",
   },
   "already-asked": {
     headline: "Someone has already asked for this.",
     action:
-      "Add your case to the existing request instead of filing a second one. Two requests for the same thing compete for the same build slot.",
+      "The request is in the columns below. Add your case to it instead of filing a second one — two requests for the same thing compete for the same build slot.",
   },
   related: {
     headline: "Nothing covers this, but there is related work.",
     action:
-      "Worth a conversation with the owners below. They may have solved a piece of it, or hit something you would rather find out now.",
+      "The closest records are below. Worth a conversation with their owners: they may have solved a piece of it, or hit something you would rather find out now.",
   },
   clear: {
     headline: "Nothing in the catalog is close to this.",

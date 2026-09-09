@@ -34,17 +34,23 @@ export default function MatchHelp({
         {variant === "search" ? (
           <>
             <p>
-              Labels are relative to the best result in <em>this</em> search.
-              <strong> Strong match</strong> means a record is within about 10%
-              of the top result and clears an absolute bar on its own.{" "}
-              <strong>Related</strong> is further back but still clearly on
-              topic, and <strong>Loosely related</strong> is worth a glance, not
-              a click. The same record can carry different labels for different
-              questions — that is the point, not a bug.
+              Labels are relative to the closest record for <em>this</em>{" "}
+              description. <strong>Strong match</strong> means a record is within
+              about 10% of the closest one and clears an absolute bar on its
+              own. <strong>Related</strong> is further back but still clearly on
+              topic. The same record can carry different labels for different
+              descriptions — that is the point, not a bug.
             </p>
             <p>
-              When even the best result is too weak to mean anything, nothing is
-              shown at all rather than a page of confident-looking noise.
+              There is a third tier below those, and the board does not show it:
+              anything only loosely related is left off rather than ranked
+              alongside real matches, and the line above the board says how many
+              were left off. Clearing the check brings the whole catalog back.
+            </p>
+            <p>
+              When even the closest record is too weak to mean anything, the
+              board drops the ranking entirely and shows the plain catalog
+              rather than a page of confident-looking noise.
             </p>
           </>
         ) : (

@@ -5,8 +5,9 @@
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
-door (v4.5), and the second search box folded into it (v4.6). The mindmap is
-deliberately **not** next — see the v4.4 note.
+door (v4.5), the second search box folded into it (v4.6), and the duplicate
+result rendering removed (v4.7). The mindmap is deliberately **not** next — see
+the v4.4 note.
 
 ---
 
@@ -453,6 +454,69 @@ screenshotted end to end by fulfilling `/api/check` with a payload generated
 offline from a solution's own embedding (no key, no spend): verdict `exists`,
 three solution matches and three idea matches above, the same records
 re-ranked with match labels on the board below.
+
+---
+
+## v4.7 — the board is the only place a record is drawn
+
+Chris again, one release later: *"what the 6 tiles that shows up under the
+search and many more in the catalog section? aren't we repeating and confusing
+people?"*
+
+He was right, and this is the same mistake v4.6 was supposed to fix, caught on
+the other side. v4.6 removed the duplicate **input** and left the duplicate
+**output** standing.
+
+The verdict block rendered up to three solutions and three ideas as cards. The
+board below rendered the retrieved set ordered by score. Those were not merely
+similar sets — `assessOverlap` picks the top three of each type by score, and
+the board sorts by that same score, so **the code guaranteed the verdict cards
+were the board's own first tiles.** In the screenshot Chris sent, six of six
+verdict cards reappeared on the board.
+
+The duplicate was also the worse of the two renderings: the board card carries
+tags, the "Resolves" cross-link and the duplicate-candidate flag; the verdict
+card carried none of them.
+
+And on a `related` verdict the page said *"Nothing covers this"* and then laid
+out six records beneath it, which reads as a contradiction rather than as
+evidence.
+
+**What changed:**
+
+- The `MatchCard` grid is gone. `VerdictBlock` is now the verdict sentence, the
+  action, and the explanation. The board is the only place a record is drawn.
+- Verdict copy points at the board ("first in the Solution column below")
+  instead of at cards that no longer exist.
+- **After a check the board shows only "Strong match" and "Related".** This is
+  v3 §3.7 (no filler cards when nothing really matches) applied one tier up:
+  retrieval always returns its top N, so a description with two real neighbours
+  still trailed six weak tiles behind it, and a tile on a board headed "ranked
+  by match" reads as a match whatever its label says.
+- The line above the board says how many were left off and links to clearing
+  the check. Silent truncation would be worse than the noise it removes.
+- The match label became a pill with tier colour. It was a quiet grey caption
+  when the board was a browsable list under the real evidence; now the board
+  *is* the evidence, so the label has to survive a column scan.
+- `KanbanCard` no longer falls back to printing the raw cosine score when the
+  label is null. "0.28" reads as a percentage to anyone who has not read
+  `lib/match-label.ts`. No label now means no claim.
+
+**Known trade-off, accepted:** when a description matches one record very
+closely, the relative scale compresses everything else below the bar and the
+board can come back as `Idea 0 / In progress 0 / Solution 1`. Two empty lanes
+to show one card looks thin. It is also the honest answer — nobody asked,
+nobody is building, one thing exists — and the lane counts are what say so, so
+the lanes stay. Revisit only if it turns out to be the common case rather than
+the extreme one.
+
+### Verification
+
+`npm run check-overlap` and `scripts/phase4-check.ts` pass unchanged; `tsc` and
+`npm run build` clean. Both checked states were screenshotted end to end
+against payloads generated offline from dataset embeddings (`mkfixture.ts`, no
+key, no spend): an `exists` verdict with one strong match, and a `related`
+verdict produced by diluting a record vector toward deterministic noise.
 
 ---
 

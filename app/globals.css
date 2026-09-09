@@ -464,17 +464,33 @@ a:hover {
   flex-wrap: wrap;
 }
 
+/* Match-quality label (§3). Since v4.7 the board IS the evidence for a check
+   rather than a browsable list sitting under one, so the label has to be
+   readable while scanning a column, not just present. A pill separates it from
+   the band's descriptive text; the two remaining tiers are visually ranked. */
 .card-score {
   margin-left: auto;
-  font-size: 11.5px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
   color: var(--ink-muted);
-  font-variant-numeric: tabular-nums;
 }
 
-/* Match-quality label (§3): strong matches carry the most ink, weaker ones stay quiet. */
 .card-score.m-strong {
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-tint);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.card-score.m-related {
+  color: var(--ink-muted);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border-color: var(--border-strong);
 }
 
 .via-link-note {
@@ -2403,73 +2419,21 @@ a.dot:focus-visible {
   max-width: var(--max-line);
 }
 
-.overlap-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  margin-top: 22px;
-}
-
-.overlap-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 16px 18px;
-}
-
-.overlap-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.overlap-rel {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.overlap-card h3 {
-  font-size: 16px;
-  margin-bottom: 6px;
-}
-
-.overlap-summary {
-  margin: 0 0 10px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.overlap-meta {
-  margin: 0 0 12px;
-  font-size: 12px;
-  color: var(--ink-faint);
-}
-
-.overlap-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+/* The .overlap-* card grid lived here until v4.7. It rendered the verdict's
+   top three solutions and top three ideas, which the board already rendered as
+   its own first tiles, because both were ordered by the same score. The board
+   is the only place a record is drawn now. */
 
 /* ==========================================================================
-   Landing page order — v4.6
+   Landing page order — v4.7
 
-   One input at the top, two layers of answer under it: the verdict, then the
-   board holding the same catalog re-ranked. v4.5 kept a second, quieter search
-   bar down here; v4.6 removed it, because a reader should not have to work out
-   which of two text boxes they are supposed to use to ask one question. What
-   remains between the verdict and the board is the board's own controls.
+   One input at the top; under it the verdict in words, then the board. v4.5
+   kept a second, quieter search bar down here and v4.6 removed it, because a
+   reader should not have to work out which of two text boxes asks one
+   question. v4.7 finished the same job on the output side: the verdict's own
+   card grid was the board's first tiles drawn twice, so it went, and the board
+   became the single place a record appears. What sits between them is the
+   board's own controls.
    ========================================================================== */
 
 .board-section {

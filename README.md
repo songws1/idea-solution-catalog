@@ -29,19 +29,21 @@ data, names, or terminology. "GBS" is a generic org name.
 
 ## The three views
 
-- **`/`** — one text input, two layers of answer. Describe what you are about
-  to build and the catalog says whether it has already been built, whether
-  someone has already asked for it, or whether the way is clear — with the
-  overlapping records and a way to act on each (download the artifact, mail the
-  owner, mail whoever asked). Below that, the same answer as a board: one
-  Kanban of the whole dataset in three lanes (Idea / In progress / Solution),
-  re-ranked against the description with a match label on every card,
-  filterable by chips, and sortable when nothing has been asked.
+- **`/`** — one text input, two parts to the answer, no overlap between them.
+  Describe what you are about to build; the catalog says in words whether it
+  has already been built, whether someone has already asked for it, or whether
+  the way is clear. Below that the board carries the records themselves: one
+  Kanban in three lanes (Idea / In progress / Solution), ranked against the
+  description, cut to what actually matches, with a match label on every card.
+  With nothing asked yet it is the plain catalog, filterable and sortable.
 
-  There used to be a second search box down there. It went in v4.6: both inputs
-  took free text, embedded it and ranked the same catalog, so keeping both meant
-  two identical-looking boxes, two prompts and two ways to spend credit for one
-  question.
+  Two rounds of de-duplication got it there. v4.6 removed a second search box:
+  both inputs took free text, embedded it and ranked the same catalog, so
+  keeping both meant two identical-looking boxes and two ways to spend credit
+  for one question. v4.7 removed the verdict's own card grid, which was the
+  board's first tiles drawn a second time with less on them, and cut the board
+  to "Strong match" and "Related" so a ranked board holds only things that
+  rank. The line above the board says how many were left off.
 
   The board stays on the page rather than moving behind a click because it
   renders with no API call: if the key is missing or the spend cap is reached,
@@ -118,6 +120,8 @@ npm run enrich               # LLM pipeline (requires OPENROUTER_API_KEY)
                              # → data/dataset-post-enrichment.json
 npm run verify-duplicates    # checks detection against the planted clusters
 npm run check-overlap        # verdict logic for the check (no API key, no spend)
+npm run check-fixture a.json b.json   # real /api/check payloads, offline, for
+                                      # inspecting the checked UI with no spend
 ```
 
 `enrich` does four things, per the spec's pipeline: (1) summarizes each

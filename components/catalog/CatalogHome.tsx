@@ -9,7 +9,7 @@ import type {
   DatasetVariant,
 } from "@/lib/types";
 import type { CheckApiResponse } from "@/lib/overlap";
-import { hasAnyRealMatch, topScoreOf } from "@/lib/match-label";
+import { hasAnyRealMatch, matchLabel, topScoreOf } from "@/lib/match-label";
 import type { DetailRecord } from "@/components/record/RecordDetail";
 import RecordDetailDrawer from "@/components/record/RecordDetailDrawer";
 import FilterBar from "./FilterBar";
@@ -92,12 +92,34 @@ export default function CatalogHome({
     [catalog, solutionMeta, filters]
   );
 
-  // Search mode: the chips narrow the ranked results with the same facet
-  // logic (v3 §0/§3.1). Labels stay relative to the UNfiltered result set's
-  // top score — narrowing must not re-grade the scale.
+  /**
+   * Checked mode: the chips narrow the ranked results with the same facet
+   * logic (v3 §0/§3.1). Labels stay relative to the UNfiltered result set's
+   * top score — narrowing must not re-grade the scale.
+   *
+   * v4.7 also drops everything below "Related". Retrieval always returns its
+   * top N, so a description with two real neighbours still came back with six
+   * more tiles trailing behind it, and a tile on a board headed "ranked by
+   * match" reads as a match whatever its label says. This is v3 §3.7 (no
+   * filler cards when nothing really matches) applied one tier up: the board
+   * shows what is worth reading, and says how much it left out.
+   */
   const searchView = useMemo(() => {
     if (!results || !hasResults) return null;
-    return filterScored(scored.ideas, scored.solutions, solutionMeta, filters);
+    const top = topScoreOf([...scored.ideas, ...scored.solutions].map((r) => r.score));
+    const close = (r: ClientScoredResult) => {
+      const label = matchLabel(r.score, top);
+      return label === "Strong match" || label === "Related";
+    };
+    const narrowed = filterScored(scored.ideas, scored.solutions, solutionMeta, filters);
+    const ideas = narrowed.ideas.filter(close);
+    const solutions = narrowed.solutions.filter(close);
+    return {
+      ideas,
+      solutions,
+      hidden:
+        narrowed.ideas.length - ideas.length + (narrowed.solutions.length - solutions.length),
+    };
   }, [results, hasResults, scored, solutionMeta, filters]);
 
   // Browse mode: the full dataset (minus active filters), unscored. The
@@ -333,12 +355,7 @@ export default function CatalogHome({
       )}
 
       {results?.result && !error && !loading && (
-        <VerdictBlock
-          result={results.result}
-          explanation={results.explanation ?? null}
-          solutionMeta={solutionMeta}
-          onOpen={openDetailById}
-        />
+        <VerdictBlock result={results.result} explanation={results.explanation ?? null} />
       )}
 
       {/*
@@ -349,14 +366,27 @@ export default function CatalogHome({
       */}
       <div className="board-section">
         <h2 className="board-section-head">
-          {results && hasResults
-            ? "The whole catalog, closest first"
-            : "The catalog"}
+          {results && hasResults ? "What comes closest" : "The catalog"}
         </h2>
         <p className="board-section-sub">
-          {results && hasResults
-            ? "The records above in context, and everything else ranked behind them. Narrow it with the filters."
-            : "Ideas people asked for, and the solutions built from them. Filter or reorder to explore."}
+          {results && hasResults ? (
+            <>
+              Ranked against what you described, closest first.
+              {searchView && searchView.hidden > 0 && (
+                <>
+                  {" "}
+                  {searchView.hidden} more record{searchView.hidden === 1 ? " was" : "s were"}{" "}
+                  too loosely related to show;{" "}
+                  <button type="button" className="link-button" onClick={clearSearch}>
+                    clear the check
+                  </button>{" "}
+                  to browse everything.
+                </>
+              )}
+            </>
+          ) : (
+            "Ideas people asked for, and the solutions built from them. Filter or reorder to explore."
+          )}
         </p>
       </div>
 
