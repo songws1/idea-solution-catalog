@@ -14,14 +14,12 @@ export const dynamic = "force-dynamic";
 /**
  * "Before you build" overlap check.
  *
- * Same machinery as /api/search — embed the text, rank the catalog against it —
- * pointed at a different question. Search asks "what is relevant to my
- * question"; this asks "does the thing I am about to build already exist", and
- * returns a verdict rather than a ranked list.
- *
- * A description of intended work runs longer than a search question, so the cap
- * here is higher, but every other spend guard is the same and shares the same
- * per-client rate-limit window.
+ * This is the only retrieval route in the app (v4.6). It replaced /api/search
+ * outright: both took free text, embedded it and ranked the catalog, and the
+ * only difference was the shape of the answer. Rather than keep two text
+ * boxes, two prompts and two ways to spend credit, one call now returns both
+ * layers — the verdict, and the full ranked sets the board re-orders itself
+ * with.
  */
 const MAX_DESCRIPTION_CHARS = 1200;
 
@@ -58,7 +56,8 @@ function buildExplainContext(description: string, result: OverlapResult): string
 }
 
 export async function POST(request: Request) {
-  // Same spend guard and window as /api/search: this route costs credit too.
+  // This route costs credit on every call (one embedding, sometimes one chat),
+  // and the endpoint is open even though the key is not. Backstop, not a gate.
   const limit = checkRateLimit(clientKey(request));
   if (!limit.allowed) {
     return NextResponse.json(
@@ -139,6 +138,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const payload: CheckApiResponse = { description, result, explanation };
+  const payload: CheckApiResponse = { description, result, explanation, ideas, solutions };
   return NextResponse.json(payload);
 }

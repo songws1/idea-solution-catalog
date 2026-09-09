@@ -14,9 +14,9 @@ data, names, or terminology. "GBS" is a generic org name.
    idea record. The same query run against the two committed datasets
    (`dataset-pre-enrichment.json` vs `dataset-post-enrichment.json`) returns
    visibly better results on the post set, because vague idea records become
-   findable in solution-side language. This is the core demo: try a query like
-   *"has anything been built to handle invoice disputes?"* against each
-   dataset and compare the ideas panel.
+   findable in solution-side language. This is the core demo: describe
+   *"a way to handle invoice disputes coming into the AP inbox"* against each
+   dataset and compare what the check finds.
 2. **Cross-referencing is visible.** Ideas and the solutions that resolved
    them sit on one board. A solution card names the idea it resolves and links
    straight to it; the detail drawer names the counterpart in both directions.
@@ -24,18 +24,24 @@ data, names, or terminology. "GBS" is a generic org name.
    reuse it.
 3. **Duplication is detectable and legible.** Near-duplicate ideas and
    solutions are detected offline via cosine similarity over the search
-   embeddings and surfaced as review candidates in the search view and the
+   embeddings and surfaced as review candidates on the board and in the
    governance dashboard — never auto-merged.
 
 ## The three views
 
-- **`/`** — leads with the overlap check: describe what you are about to build
-  and the catalog answers whether it has already been built, whether someone
-  has already asked for it, or whether the way is clear. The catalog board sits
-  below on the same page — one Kanban of the whole dataset in three lanes
-  (Idea / In progress / Solution), filterable by chips and sortable. Asking a
-  question in natural language filters and ranks that same board and adds a
-  synthesized answer plus match labels; it does not swap in a different layout.
+- **`/`** — one text input, two layers of answer. Describe what you are about
+  to build and the catalog says whether it has already been built, whether
+  someone has already asked for it, or whether the way is clear — with the
+  overlapping records and a way to act on each (download the artifact, mail the
+  owner, mail whoever asked). Below that, the same answer as a board: one
+  Kanban of the whole dataset in three lanes (Idea / In progress / Solution),
+  re-ranked against the description with a match label on every card,
+  filterable by chips, and sortable when nothing has been asked.
+
+  There used to be a second search box down there. It went in v4.6: both inputs
+  took free text, embedded it and ranked the same catalog, so keeping both meant
+  two identical-looking boxes, two prompts and two ways to spend credit for one
+  question.
 
   The board stays on the page rather than moving behind a click because it
   renders with no API call: if the key is missing or the spend cap is reached,
@@ -59,10 +65,11 @@ indexed or written at request time:
 
 - An offline script (`npm run enrich`) computes embeddings for every record
   and writes them into the committed dataset JSON files.
-- At query time, `/api/search` embeds **only the user's question** (one LLM
-  API call) and does in-memory cosine similarity against the precomputed
-  vectors. At this dataset size (~90 records) that needs no vector store at
-  all.
+- At query time, `/api/check` — the only retrieval route — embeds **only the
+  user's description** (one LLM API call) and does in-memory cosine similarity
+  against the precomputed vectors. At this dataset size (~90 records) that
+  needs no vector store at all. It returns the verdict and the full ranked sets
+  in one response, so the board below re-ranks with no second call.
 - Duplicate detection reuses the same embeddings, offline; the UI reads the
   stored `duplicate_candidates` fields. No live similarity computation.
 - All LLM calls are server-side (API route + offline script). The API key
@@ -80,7 +87,7 @@ npm run dev          # http://localhost:3000
 Copy `.env.example` to `.env.local` and set:
 
 ```
-OPENROUTER_API_KEY=sk-or-...        # required for search; never commit it
+OPENROUTER_API_KEY=sk-or-...        # required for the check; never commit it
 OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small   # optional
 OPENROUTER_GENERATION_MODEL=google/gemini-2.5-flash        # optional
 DATASET_VARIANT=post                # "pre" or "post" (default post)
@@ -89,8 +96,9 @@ DATASET_VARIANT=post                # "pre" or "post" (default post)
 > **Note:** save `.env.local` as plain UTF-8. A UTF-16 file (PowerShell 5's
 > default) will not be parsed by Next.js.
 
-The governance dashboard works without an API key. Search needs one: without
-it, the app shows a clear message instead of crashing.
+The board, the governance dashboard and the CSV export all work without an API
+key. Only the check needs one: without it, the check shows a clear message
+instead of crashing, and the rest of the page still renders.
 
 ### Switching datasets
 
@@ -109,7 +117,7 @@ npm run enrich               # LLM pipeline (requires OPENROUTER_API_KEY)
                              # → data/dataset-pre-enrichment.json
                              # → data/dataset-post-enrichment.json
 npm run verify-duplicates    # checks detection against the planted clusters
-npm run check-overlap        # verdict logic for /check (no API key, no spend)
+npm run check-overlap        # verdict logic for the check (no API key, no spend)
 ```
 
 `enrich` does four things, per the spec's pipeline: (1) summarizes each
@@ -173,23 +181,30 @@ third-party font request.
 ### Keeping the API key from being spent by strangers
 
 The key itself never reaches the browser: it is read only in `lib/openrouter.ts`,
-which is imported only by the server-side `/api/search` route, and it carries no
+which is imported only by the server-side `/api/check` route, and it carries no
 `NEXT_PUBLIC_` prefix, so Next.js will not inline it into a client bundle.
 
 The real exposure on a public deployment is different — the *endpoint* is open
 even though the key is hidden, and every call to it spends OpenRouter credit
-(one embedding + one chat completion). Two guards ship in the code:
+(one embedding, plus one chat completion when there is overlap to explain).
+Two guards ship in the code:
 
-- `/api/search` rate-limits each client to 12 searches per minute
+- `/api/check` rate-limits each client to 12 calls per minute
   (`lib/rate-limit.ts`).
-- Queries longer than 300 characters are rejected before any paid call.
+- Descriptions longer than 1200 characters are rejected before any paid call.
 
 Both are per-serverless-instance and best-effort. They stop accidental loops
-and casual hammering, not a determined distributed abuser. **If the deployment
-should not be world-readable, turn on Vercel Deployment Protection**
-(Project → Settings → Deployment Protection → Vercel Authentication or
-Password Protection). That is the only real gate; the in-code limits are a
-backstop behind it.
+and casual hammering, not a determined distributed abuser.
+
+**The guard that actually bounds the loss is a spend cap on the key itself**,
+set in the OpenRouter dashboard. Set one before the first public deploy.
+
+Vercel Deployment Protection is worth knowing the shape of: on the Hobby plan
+only Standard Protection is available, and it protects preview deployments and
+generated URLs — **not** the production domain, which stays world-readable. On
+a paid plan, Password Protection or Vercel Authentication can cover production
+too. So on Hobby, the spend cap is the gate and the in-code limits are the
+backstop; Deployment Protection is neither.
 
 If a key is ever pasted somewhere public, rotate it in the OpenRouter
 dashboard — removing the text afterwards does not un-leak it.
@@ -197,7 +212,7 @@ dashboard — removing the text afterwards does not un-leak it.
 ## Project layout
 
 ```
-app/               Next.js App Router: /, /governance, /export, /api/search
+app/               Next.js App Router: /, /governance, /export, /api/check
 components/        catalog board + cards, record drawer, governance widgets, shell
 lib/               types, dataset loading, retrieval, governance math,
                    OpenRouter client, rate limiting

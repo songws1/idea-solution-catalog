@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   BoardItem,
   ClientIdea,
+  ClientScoredResult,
   ClientSolution,
   DatasetVariant,
-  SearchApiResponse,
 } from "@/lib/types";
+import type { CheckApiResponse } from "@/lib/overlap";
 import { hasAnyRealMatch, topScoreOf } from "@/lib/match-label";
 import type { DetailRecord } from "@/components/record/RecordDetail";
 import RecordDetailDrawer from "@/components/record/RecordDetailDrawer";
@@ -24,20 +25,27 @@ import {
   type SolutionMetaMap,
 } from "@/lib/catalog-filters";
 import type { ClientDataset } from "@/lib/client-records";
-import SynthesizedAnswer from "@/components/search/SynthesizedAnswer";
 import KanbanResults from "@/components/search/KanbanResults";
+import CheckPanel from "@/components/check/CheckPanel";
+import VerdictBlock from "@/components/check/VerdictBlock";
 import MatchHelp from "@/components/search/MatchHelp";
 import { DEFAULT_SORT, SORT_LABELS, sortBoardItems, type SortKey } from "@/lib/board-sort";
 
 /**
- * Client shell for the catalog page (v3 §0/§3.1). The Kanban board is the
- * ONLY layout: `/` renders it over the full dataset unfiltered, and a search
- * filters and ranks that same board, adds the synthesised answer above it and
- * a match label to each card — no component swap, no grid/board toggle.
+ * Client shell for the whole landing page (v4.6).
  *
- * The search panel is one white surface holding the input, the filter chips
- * and (after a search) the synthesised answer. Chips narrow the board in both
- * modes with the same facet logic (browse: applyFilters; search: filterScored).
+ * There is one text input and one retrieval call. Describing what you are
+ * about to build produces two layers of answer: the verdict and its action
+ * cards above, and this same Kanban board below, re-ranked against that
+ * description with a match label on every card.
+ *
+ * That replaced a separate search box. Both took free text, embedded it and
+ * ranked the same catalog; the only difference was the shape of the answer, so
+ * keeping both meant two identical-looking inputs, two prompts and two ways to
+ * spend credit for one question. The board is still the ONLY layout (v3 §0),
+ * chips still narrow it with the same facet logic in both modes (browse:
+ * applyFilters; checked: filterScored), and it renders with no API call at all
+ * when nothing has been asked yet.
  */
 
 export default function CatalogHome({
@@ -49,9 +57,9 @@ export default function CatalogHome({
   catalog: ClientDataset;
   solutionMeta: Record<string, { org: string; service: string }>;
 }) {
-  const [query, setQuery] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<SearchApiResponse | null>(null);
+  const [results, setResults] = useState<CheckApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [detail, setDetail] = useState<DetailRecord | null>(null);
@@ -59,12 +67,21 @@ export default function CatalogHome({
   const [sort, setSort] = useState<SortKey>(DEFAULT_SORT);
   void variant;
 
+  /** The ranked sets the check returned, or empty when nothing has been asked. */
+  const scored = useMemo(
+    (): { ideas: ClientScoredResult[]; solutions: ClientScoredResult[] } => ({
+      ideas: results?.ideas ?? [],
+      solutions: results?.solutions ?? [],
+    }),
+    [results]
+  );
+
   // Whole-result-set noise gate — lib/match-label.ts, reused not reimplemented.
   const hasResults = useMemo(() => {
     if (!results) return false;
-    const top = topScoreOf([...results.ideas, ...results.solutions].map((r) => r.score));
+    const top = topScoreOf([...scored.ideas, ...scored.solutions].map((r) => r.score));
     return hasAnyRealMatch(top);
-  }, [results]);
+  }, [results, scored]);
 
   const filterOptions = useMemo(
     () => deriveFilterOptions(catalog, solutionMeta),
@@ -80,8 +97,8 @@ export default function CatalogHome({
   // top score — narrowing must not re-grade the scale.
   const searchView = useMemo(() => {
     if (!results || !hasResults) return null;
-    return filterScored(results.ideas, results.solutions, solutionMeta, filters);
-  }, [results, hasResults, solutionMeta, filters]);
+    return filterScored(scored.ideas, scored.solutions, solutionMeta, filters);
+  }, [results, hasResults, scored, solutionMeta, filters]);
 
   // Browse mode: the full dataset (minus active filters), unscored. The
   // clustering pool is ALL ideas (v3 §3.2 — solved ideas feed the Resolves
@@ -104,7 +121,7 @@ export default function CatalogHome({
 
   const resultsTopScore =
     results && hasResults
-      ? topScoreOf([...results.ideas, ...results.solutions].map((r) => r.score))
+      ? topScoreOf([...scored.ideas, ...scored.solutions].map((r) => r.score))
       : undefined;
 
   // Linked-record identity for the detail view's inline info line (Phase 4.1 #2),
@@ -120,28 +137,28 @@ export default function CatalogHome({
   );
   const titleOf = (id: string) => ideasById[id]?.title ?? solutionsById[id]?.name;
 
-  async function runSearch(e?: React.FormEvent) {
+  async function runCheck(e?: React.FormEvent) {
     e?.preventDefault();
-    const q = query.trim();
-    if (!q || loading) return;
+    const text = description.trim();
+    if (!text || loading) return;
     setLoading(true);
     setError(null);
     setDetail(null);
     try {
-      const res = await fetch("/api/search", {
+      const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q }),
+        body: JSON.stringify({ description: text }),
       });
-      const json = (await res.json()) as SearchApiResponse;
+      const json = (await res.json()) as CheckApiResponse;
       if (!res.ok || json.error) {
-        setError(json.error ?? `Search failed (${res.status}).`);
+        setError(json.error ?? `The check failed (${res.status}).`);
         setResults(null);
       } else {
         setResults(json);
       }
     } catch {
-      setError("Search request failed. Check your connection and try again.");
+      setError("The check request failed. Check your connection and try again.");
       setResults(null);
     } finally {
       setLoading(false);
@@ -150,7 +167,7 @@ export default function CatalogHome({
 
   function clearSearch() {
     setResults(null);
-    setQuery("");
+    setDescription("");
     setError(null);
   }
 
@@ -194,8 +211,8 @@ export default function CatalogHome({
   /** Open a record's detail by id — scored context when it's in the current results. */
   function openDetailById(id: string) {
     if (results && hasResults) {
-      const top = topScoreOf([...results.ideas, ...results.solutions].map((r) => r.score));
-      const hit = [...results.ideas, ...results.solutions].find((r) => r.record.id === id);
+      const top = topScoreOf([...scored.ideas, ...scored.solutions].map((r) => r.score));
+      const hit = [...scored.ideas, ...scored.solutions].find((r) => r.record.id === id);
       if (hit) {
         setDetail({ record: hit.record, score: hit.score, topScore: top, viaLink: hit.via_link });
         return;
@@ -238,7 +255,7 @@ export default function CatalogHome({
     }
     setResults(null);
     setError(null);
-    setQuery("");
+    setDescription("");
     setFilters(EMPTY_FILTERS);
     setPendingJump(id);
   }
@@ -295,47 +312,55 @@ export default function CatalogHome({
 
   return (
     <div>
+      <CheckPanel
+        description={description}
+        onChange={setDescription}
+        onSubmit={runCheck}
+        loading={loading}
+        showExamples={!results && !error}
+      />
+
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <p className="check-status" aria-live="polite">
+          Comparing your description against every record in the catalog…
+        </p>
+      )}
+
+      {results?.result && !error && !loading && (
+        <VerdictBlock
+          result={results.result}
+          explanation={results.explanation ?? null}
+          solutionMeta={solutionMeta}
+          onOpen={openDetailById}
+        />
+      )}
+
       {/*
-        v4.5: the check panel above this is now the page's primary act, so the
-        search panel steps down a level. It keeps everything it did — semantic
-        search, chips, the synthesised answer — but reads as "the other way in"
-        rather than the thing you came for. Two full-weight text inputs on one
-        page would just make a reader guess which one they are supposed to use.
+        The board is the second layer of the same answer, not a separate
+        feature. When a description has been checked it holds the whole catalog
+        re-ranked against it; with nothing asked it is the catalog as it stands.
+        Either way it renders from committed data, so it survives a missing key.
       */}
       <div className="board-section">
-        <h2 className="board-section-head">Or browse what already exists</h2>
+        <h2 className="board-section-head">
+          {results && hasResults
+            ? "The whole catalog, closest first"
+            : "The catalog"}
+        </h2>
         <p className="board-section-sub">
-          Ask in your own words, or filter the board. Search ranks by meaning,
-          so describe the problem the way the team that solved it would.
+          {results && hasResults
+            ? "The records above in context, and everything else ranked behind them. Narrow it with the filters."
+            : "Ideas people asked for, and the solutions built from them. Filter or reorder to explore."}
         </p>
       </div>
 
-      <div className="search-panel search-panel-secondary">
-        <form className="search-bar" onSubmit={runSearch} role="search">
-          {/* maxLength mirrors MAX_QUERY_CHARS in app/api/search/route.ts. The
-              route is the enforcement; this is only the input-level hint. */}
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. has anything been built to handle invoice disputes?"
-            aria-label="Search the idea catalog"
-            maxLength={300}
-          />
-          <button type="submit" disabled={loading || !query.trim()}>
-            {loading ? "Searching" : "Search"}
-          </button>
-        </form>
-        <p className="search-status" aria-live="polite">
-          {loading
-            ? "Embedding the question and comparing it against the catalog..."
-            : results
-              ? hasResults
-                ? `${searchView?.ideas.length ?? 0} idea${(searchView?.ideas.length ?? 0) === 1 ? "" : "s"} and ${searchView?.solutions.length ?? 0} solution${(searchView?.solutions.length ?? 0) === 1 ? "" : "s"} shown.`
-                : "Nothing in the catalog matches closely enough to show."
-              : ""}
-        </p>
-
+      <div className="board-controls">
         <FilterBar
           options={filterOptions}
           filters={filters}
@@ -346,14 +371,14 @@ export default function CatalogHome({
         />
 
         {/*
-          Board order, stated rather than implied. In search mode the order IS
-          the answer — the board is ranked by match — so the control is replaced
-          by a line saying so instead of silently doing nothing.
+          Board order, stated rather than implied. After a check the order IS
+          part of the answer — the board is ranked by match — so the control is
+          replaced by a line saying so instead of silently doing nothing.
         */}
         <div className="board-order">
           {results && hasResults ? (
             <span className="board-order-note">
-              Ranked by how well each record matches your question.
+              Ranked by how closely each record matches your description.
             </span>
           ) : (
             <label className="board-order-control">
@@ -372,33 +397,9 @@ export default function CatalogHome({
           )}
           {results && hasResults && <MatchHelp />}
         </div>
-
-        {results && !error && results.answer && (
-          <SynthesizedAnswer answer={results.answer} />
-        )}
       </div>
 
-      {error && (
-        <div className="error-banner" role="alert">
-          {error}
-        </div>
-      )}
-
-      {results && !error && !hasResults ? (
-        // §3.7: preserved from Phase 1 — no filler cards when nothing really matches.
-        <div className="empty-state" style={{ marginTop: 28 }}>
-          <p>Nothing in the catalog matches that phrasing.</p>
-          <p>
-            Try different words — the search works on meaning, so describe
-            the problem the way the team that built a solution might
-            describe it. Or{" "}
-            <button type="button" className="link-button" onClick={clearSearch}>
-              browse the board
-            </button>{" "}
-            instead.
-          </p>
-        </div>
-      ) : filteredEmpty ? (
+      {filteredEmpty ? (
         <div className="empty-state" style={{ marginTop: 24 }}>
           <p>No records match the current filters.</p>
           {filterDescriptions.length > 0 && (
@@ -419,26 +420,27 @@ export default function CatalogHome({
           </p>
         </div>
       ) : (
-        !error && (
-          <div className="results-area">
-            <KanbanResults
-              ideas={board.ideas}
-              solutions={board.solutions}
-              clusterPool={board.clusterPool}
-              onOpen={openDetail}
-              onJumpToDuplicate={jumpToDuplicate}
-              onNavigate={navigateToRecord}
-              solutionMeta={solutionMeta}
-              onFacetClick={handleFacetClick}
-              titleOf={titleOf}
-            />
-            {results && (
-              <button type="button" className="clear-search" onClick={clearSearch}>
-                Clear this search and browse the catalog
-              </button>
-            )}
-          </div>
-        )
+        // The board renders whether or not the check succeeded — that is why it
+        // stays on this page. A failed or unconfigured check leaves the reader
+        // with the whole catalog rather than an error and nothing else.
+        <div className="results-area">
+          <KanbanResults
+            ideas={board.ideas}
+            solutions={board.solutions}
+            clusterPool={board.clusterPool}
+            onOpen={openDetail}
+            onJumpToDuplicate={jumpToDuplicate}
+            onNavigate={navigateToRecord}
+            solutionMeta={solutionMeta}
+            onFacetClick={handleFacetClick}
+            titleOf={titleOf}
+          />
+          {results && (
+            <button type="button" className="clear-search" onClick={clearSearch}>
+              Clear this check and browse the whole catalog
+            </button>
+          )}
+        </div>
       )}
 
       <RecordDetailDrawer

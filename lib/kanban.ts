@@ -1,7 +1,7 @@
 /**
  * Kanban grouping for post-search results (Addendum A §2.1-§2.3) — a pure
  * presentation regrouping of the ScoredResult[] already returned by
- * /api/search. No backend change; the cross-reference join reuses the same
+ * /api/check. No backend change; the cross-reference join reuses the same
  * linked_solution_id / resolves_idea_id fields the retrieval join uses.
  *
  * Column model (§2.2):

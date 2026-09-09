@@ -1,17 +1,22 @@
-import CheckForm from "@/components/check/CheckForm";
 import CatalogHome from "@/components/catalog/CatalogHome";
 import { getDatasetVariant, loadDataset } from "@/lib/dataset";
 import { toClientDataset } from "@/lib/client-records";
 import { buildSolutionMeta } from "@/lib/catalog-filters";
 
 /**
- * Landing page (v4.5).
+ * Landing page (v4.6).
  *
- * The page now leads with the overlap check rather than the board. The thesis
- * of this catalog is "do not build what already exists"; the catalog is the
- * means and the check is the end, and leading with the board led with the
- * means. Nobody searches a catalog they have not remembered exists, so the
- * front door asks the question instead of waiting to be asked.
+ * The page leads with the overlap check rather than the board. The thesis of
+ * this catalog is "do not build what already exists"; the catalog is the means
+ * and the check is the end, and leading with the board led with the means.
+ * Nobody searches a catalog they have not remembered exists, so the front door
+ * asks the question instead of waiting to be asked.
+ *
+ * v4.6 folded the old search box into that same input. Both took free text,
+ * embedded it and ranked the same catalog — the only difference was the shape
+ * of the answer — so the page now has ONE question and one paid round trip,
+ * producing two layers: the verdict, and the board below re-ranked against the
+ * same description.
  *
  * The board stays on the same page, below, rather than moving behind a click.
  * That is deliberate: the check needs an API key and spends credit on every
@@ -46,8 +51,6 @@ export default function Home() {
           {solutionCount} built solutions · {ideaCount} ideas
         </span>
       </div>
-
-      <CheckForm solutionMeta={solutionMeta} />
 
       <CatalogHome
         variant={variant}

@@ -1,7 +1,7 @@
 /**
  * Minimal in-memory sliding-window rate limiter.
  *
- * Why this exists: /api/search spends real OpenRouter credit on every call
+ * Why this exists: /api/check spends real OpenRouter credit on every call
  * (one embedding + one chat completion). On a public deployment the URL is the
  * only thing standing between a stranger and that spend, so the route caps how
  * often any one client can trigger it.

@@ -1,5 +1,5 @@
 /**
- * Client-facing record serialization — shared by the /api/search route and
+ * Client-facing record serialization — shared by the /api/check route and
  * the catalog landing page (Addendum A §1). Embeddings stay server-side;
  * raw user ids become display names. Extracted from route.ts so the landing
  * page's server component reuses exactly the same shape the search API

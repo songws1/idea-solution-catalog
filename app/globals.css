@@ -249,116 +249,10 @@ a:hover {
   color: var(--ink-muted);
 }
 
-/* Search view ----------------------------------------------------------- */
-
-.search-bar {
-  display: flex;
-  gap: 10px;
-  margin: 18px 0 8px;
-  max-width: 660px;
-}
-
-.search-bar input {
-  flex: 1;
-  font: inherit;
-  font-size: 15px;
-  padding: 11px 15px;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  transition: border-color 120ms var(--ease), box-shadow 120ms var(--ease);
-}
-
-.search-bar input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-tint);
-}
-
-.search-bar input::placeholder {
-  color: var(--ink-faint);
-}
-
-.search-bar button {
-  font: inherit;
-  font-size: 14.5px;
-  font-weight: 550;
-  padding: 11px 22px;
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: background 120ms var(--ease), border-color 120ms var(--ease);
-}
-
-.search-bar button:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-
-.search-bar button:disabled {
-  opacity: 0.5;
-  cursor: default;
-  box-shadow: none;
-}
-
-.search-status {
-  font-size: 13.5px;
-  color: var(--ink-muted);
-  min-height: 20px;
-  margin: 6px 0 0;
-}
-
-/* §3 one-line explainer under the search bar. */
-.search-note {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  margin: 4px 0 0;
-  max-width: var(--max-line);
-}
-
-/* v3 §3.1: one white surface holding the search input, the filter chips and
-   (after a search) the synthesised answer — what makes the search bar read as
-   the primary act without needing to be oversized. */
-.search-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 18px 22px 20px;
-  margin-top: 22px;
-}
-
-.search-panel .search-bar {
-  margin: 0;
-  max-width: none;
-}
-
-/* Tighten the panel's internal rhythm: the chip row is one step below the
-   explainer, not a separate block of space. */
-.search-panel .search-note {
-  margin-top: 8px;
-}
-
-.search-panel .search-status:empty {
-  display: none;
-}
-
-.search-panel .filter-bar {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.search-panel .answer-block {
-  border: none;
-  background: none;
-  padding: 14px 0 0;
-  margin: 0;
-}
+/* The search bar, its panel and the synthesised-answer block lived here until
+   v4.6. They went with /api/search: the page has one text input now, styled
+   under "Before you build" below, and one answer whose prose sits inside the
+   verdict rather than in a block of its own. */
 
 .error-banner {
   margin: 16px 0;
@@ -369,35 +263,6 @@ a:hover {
   background: var(--tint-duplicate);
   color: var(--ink);
   max-width: 720px;
-}
-
-.answer-block {
-  margin: 22px 0 26px;
-  padding: 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  max-width: 860px;
-}
-
-/* Inside the search panel the answer is a tinted well rather than a second
-   bordered box sitting on the panel it already lives in. */
-.search-panel .answer-block {
-  background: var(--accent-tint);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-top: 16px;
-}
-
-.answer-block p {
-  margin: 0;
-  max-width: var(--max-line);
-}
-
-.answer-label {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  margin: 0 0 6px;
 }
 
 /* Board card (v3 §3.3) — three zones: tinted header band, body, footer.
@@ -2381,7 +2246,7 @@ a.dot:focus-visible {
 }
 
 /* ==========================================================================
-   "Before you build" check — v4.4
+   "Before you build" check — v4.4, sole input since v4.6
    ========================================================================== */
 
 .check-panel {
@@ -2474,6 +2339,15 @@ a.dot:focus-visible {
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+/* One line while the round trip is in flight. The verdict replaces it, so it
+   sits where the verdict will be rather than beside the button. */
+.check-status {
+  max-width: 780px;
+  margin: 18px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-muted);
 }
 
 /* The verdict is the answer, so it gets the weight — the matching records
@@ -2588,19 +2462,14 @@ a.dot:focus-visible {
   flex-wrap: wrap;
 }
 
-.check-clear-note {
-  max-width: var(--max-line);
-  margin-top: 18px;
-  font-size: 13.5px;
-  color: var(--ink-muted);
-}
-
 /* ==========================================================================
-   Landing page order — v4.5
+   Landing page order — v4.6
 
-   The check leads and the board follows on the same page. The board's own
-   search keeps every capability it had but drops a visual level, so a reader
-   is never choosing between two identical-looking text boxes.
+   One input at the top, two layers of answer under it: the verdict, then the
+   board holding the same catalog re-ranked. v4.5 kept a second, quieter search
+   bar down here; v4.6 removed it, because a reader should not have to work out
+   which of two text boxes they are supposed to use to ask one question. What
+   remains between the verdict and the board is the board's own controls.
    ========================================================================== */
 
 .board-section {
@@ -2621,46 +2490,21 @@ a.dot:focus-visible {
   max-width: var(--max-line);
 }
 
-/* Secondary panel: no elevation, no white surface competing with the check
-   panel above it. It is a section of the page, not a card on top of it. */
-.search-panel-secondary {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
+/* Filters and order: controls for the board, so they read as part of the page
+   rather than as a card sitting on it. The one elevated surface on this page is
+   the input at the top, which is where the reader is meant to start. */
+.board-controls {
   margin-top: 16px;
 }
 
-.search-panel-secondary .search-bar {
-  max-width: 620px;
-}
-
-.search-panel-secondary .search-bar input {
-  font-size: 14px;
-  padding: 9px 13px;
-}
-
-.search-panel-secondary .search-bar button {
-  font-size: 13.5px;
-  padding: 9px 18px;
-}
-
-.search-panel-secondary .filter-bar {
+.board-controls .filter-bar {
   border-top: none;
   padding-top: 0;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
-.search-panel-secondary .board-order {
+.board-controls .board-order {
   border-top: none;
   padding-top: 0;
   margin-top: 12px;
-}
-
-/* The synthesised answer still needs to read as a distinct surface once the
-   panel around it stops being one. */
-.search-panel-secondary .answer-block {
-  background: var(--accent-tint);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
-  margin-top: 16px;
 }

@@ -4,7 +4,7 @@ import type { Dataset, DatasetVariant, IdeaRecord, SolutionRecord } from "./type
 /**
  * Read-only CSV export (Addendum A §5). Flattens the currently-loaded dataset
  * into two CSVs server-side. Same user-id → display-name resolution as the
- * ClientIdea/ClientSolution shape in app/api/search/route.ts, via userName().
+ * ClientIdea/ClientSolution shape produced by lib/client-records.ts, via userName().
  * duplicate_candidates flatten to a count plus a comma-joined ID list.
  * Embeddings are excluded — they are build-time internals, not catalog data.
  */

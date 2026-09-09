@@ -1,11 +1,12 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 8, 2026
+**Last updated:** September 9, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
-(v4.3), the "before you build" check (v4.4), and that check moved to the front
-door (v4.5). The mindmap is deliberately **not** next — see the v4.4 note.
+(v4.3), the "before you build" check (v4.4), that check moved to the front
+door (v4.5), and the second search box folded into it (v4.6). The mindmap is
+deliberately **not** next — see the v4.4 note.
 
 ---
 
@@ -342,9 +343,10 @@ possible (download the artifact, contact the owner, reach whoever asked).
   solution that resolved it, which is the record you can act on.
 - **No chat call on a `clear` verdict.** There is no overlap to explain, so
   spending credit to say so would be waste.
-- The route shares `/api/search`'s rate-limit window and key guard; the length
-  cap is higher (1200) because a description of intended work runs longer than
-  a search question.
+- The route shares the rate-limit window and key guard that `/api/search` used;
+  the length cap is higher (1200) because a description of intended work runs
+  longer than a search question. (In v4.6 this route absorbed `/api/search`
+  outright.)
 
 ### Verification
 
@@ -389,6 +391,68 @@ white surface and elevation, its input and button shrink, and it sits under an
 "Or browse what already exists" section heading. It keeps every capability it
 had — semantic search, chips, sort, the synthesised answer — and simply stops
 competing with the check for the reader's first move.
+
+---
+
+## v4.6 — one input, not two
+
+Chris's challenge: *"do we need the second search bar?"*
+
+No. And the honest answer is that v4.5 kept it for a bad reason — it existed,
+and demoting it visually felt like enough. It was not. Look at what the two
+inputs actually did:
+
+| | check panel | search bar |
+|---|---|---|
+| input | free text | free text |
+| what it did | embed it, rank the catalog | embed it, rank the catalog |
+| what came back | a verdict + the closest records | a sentence + the ranked board |
+
+Same input, same retrieval, same corpus. The only difference was the **shape of
+the answer** — and a difference in output shape is not a reason to make the
+reader choose an input. It is a reason to give one input two layers of answer.
+v4.5's fix (shrink the second box, put "Or browse what already exists" above
+it) treated a structural duplication as a styling problem.
+
+So the two merged. One textarea; one `POST /api/check`; the response now
+carries the full ranked `ideas`/`solutions` sets alongside the verdict, and the
+board consumes them exactly as it consumed the search response. Everything the
+search did still happens — semantic ranking, match labels, chip filtering of
+ranked results, the relative-label scale, the "ranked by match" note replacing
+the sort control — it just happens without being asked for separately.
+
+**What went:** `app/api/search/`, `components/search/SynthesizedAnswer.tsx`,
+`SearchApiResponse`, `SYNTHESIS_SYSTEM_PROMPT`, `scripts/phase4-live-check.ts`,
+and ~150 lines of CSS. `stripRecordIds` stayed in `lib/synthesis.ts` — the
+check writes prose about records too, so §2.1 still applies to it.
+
+**What was gained beyond the removal:**
+
+- **Half the spend per question.** One embedding call instead of two, and the
+  chat call is skipped entirely on a `clear` verdict. The old flow charged
+  twice for the same retrieval if a reader used both boxes.
+- **One explainer, not two.** `MatchHelp` sits on the board's control row,
+  beside the match labels it explains. It is deliberately *not* on the verdict:
+  the verdict states a judgement in words and carries no labels, so an
+  explainer there would point at nothing.
+- **The board renders on error now.** Previously an API error hid it. Since the
+  whole argument for keeping the board on this page is that it survives a
+  missing key or an exhausted spend cap, hiding it on failure defeated the
+  point.
+
+**What did not change:** the board is still the only layout (v3 §0), record ids
+still appear only in the drawer and the CSV (§2.1), the stored `org`/`service`
+field names are untouched (§1), and the thresholds still come from
+`lib/match-label.ts` — no second similarity scale.
+
+### Verification
+
+`npm run check-overlap` and `scripts/phase4-check.ts` both pass unchanged.
+`npx tsc --noEmit` and `npm run build` clean. The checked state was
+screenshotted end to end by fulfilling `/api/check` with a payload generated
+offline from a solution's own embedding (no key, no spend): verdict `exists`,
+three solution matches and three idea matches above, the same records
+re-ranked with match labels on the board below.
 
 ---
 

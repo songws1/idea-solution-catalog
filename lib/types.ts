@@ -137,11 +137,6 @@ export interface BoardItem {
   via_link?: boolean;
 }
 
-export interface SearchApiResponse {
-  query: string;
-  variant: DatasetVariant;
-  answer: string | null;
-  ideas: ClientScoredResult[];
-  solutions: ClientScoredResult[];
-  error?: string;
-}
+// The old SearchApiResponse was removed in v4.6 along with /api/search. The
+// one retrieval route's payload is CheckApiResponse in lib/overlap.ts, which
+// carries these same ranked sets alongside the verdict.

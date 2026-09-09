@@ -1,23 +1,13 @@
 /**
- * Prompt and post-processing for the synthesised answer (v3 §3.5).
+ * Post-processing for LLM-written prose about catalog records (v3 §2.1).
+ *
+ * The synthesis prompt that used to live here went with /api/search in v4.6.
+ * The id-stripping rule did not: /api/check writes a sentence about the closest
+ * records too, and that sentence is subject to the same rule.
  *
  * Lives outside the route because a Next.js route module may only export route
- * handlers, and because the id-stripping rule is worth testing on its own.
- *
- * Nothing here touches retrieval. By the time these run, `retrieve` has already
- * ranked the results; this only shapes the sentence rendered above the board.
+ * handlers, and because the rule is worth testing on its own.
  */
-
-export const SYNTHESIS_SYSTEM_PROMPT = [
-  "You answer questions about an internal catalog of improvement ideas and built solutions.",
-  "Use only the provided catalog records.",
-  "Be brief (3 sentences or fewer), plain, and concrete.",
-  "Refer to a record by its title or name alone, exactly as written, in double quotes.",
-  'Never prefix a title with its type: write "Dispute Email Sorter", not \'the solution "Dispute Email Sorter"\'.',
-  "Never write a record identifier of any kind.",
-  "Name every built solution that actually answers the question.",
-  "If the records contain nothing relevant, say that nothing in the catalog matches.",
-].join(" ");
 
 /**
  * Last line of defence for §2.1. The prompt and the context both withhold ids,

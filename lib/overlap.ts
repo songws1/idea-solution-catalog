@@ -158,6 +158,15 @@ export interface CheckApiResponse {
   result?: OverlapResult;
   /** Short explanation of the overlap, or null when synthesis was skipped. */
   explanation?: string | null;
+  /**
+   * The full ranked sets behind the verdict (v4.6). One question now produces
+   * two layers of answer: the verdict above, and the whole board re-ranked and
+   * match-labelled below. Retrieval already computed these, so returning them
+   * costs nothing and removes the need for a second text box and a second
+   * paid round trip.
+   */
+  ideas?: ClientScoredResult[];
+  solutions?: ClientScoredResult[];
   error?: string;
 }
 
