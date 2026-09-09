@@ -4,8 +4,8 @@
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
-(v4.3), and the "before you build" check (v4.4). The mindmap is deliberately
-**not** next — see the v4.4 note for why.
+(v4.3), the "before you build" check (v4.4), and that check moved to the front
+door (v4.5). The mindmap is deliberately **not** next — see the v4.4 note.
 
 ---
 
@@ -354,6 +354,41 @@ an existing solution's own text verdicts `exists` and names itself first, an
 unsolved idea's own text surfaces as `already-asked`, an unrelated vector
 verdicts `clear` and returns nothing, no solved idea leaks into the
 already-asked list, and no verdict lists more than three of either kind.
+
+---
+
+## v4.5 — the check is the landing page
+
+Chris's read, and the right one: the product's thesis is "do not build what
+already exists". The catalog is the means and the check is the end, and leading
+with the board led with the means. "Catalog" is a noun; "before you build" is a
+verb, and the verb is what gets used.
+
+**But not as a bare swap.** Three things argued against simply replacing the
+board with the check:
+
+- The check needs an API key and spends credit on every run. The board renders
+  from committed data with no API call at all. A check-only front door shows an
+  error as the first thing anyone sees the moment a key is missing or the spend
+  cap is reached — the worst possible failure for a page whose other job is
+  being demoed to stakeholders.
+- Not everyone arriving is about to build. Some are browsing, some are leaders
+  going to governance, some followed a link. A single-intent front door assumes
+  otherwise.
+- A `clear` verdict would dead-end. "Nothing matches, go ahead" with nowhere to
+  go next.
+
+So it is a **reorder, not a swap**: `/` leads with the check panel and keeps the
+board below it on the same page. `/check` redirects to `/`, and the nav drops
+back to three items because the check and the board are now one page.
+
+The real cost of the merge is two text inputs on one page asking different
+questions, which is genuinely confusing if both look equally important. Fixed by
+demoting the board's search rather than removing it: the search panel loses its
+white surface and elevation, its input and button shrink, and it sits under an
+"Or browse what already exists" section heading. It keeps every capability it
+had — semantic search, chips, sort, the synthesised answer — and simply stops
+competing with the check for the reader's first move.
 
 ---
 

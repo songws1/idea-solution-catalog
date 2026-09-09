@@ -29,20 +29,21 @@ data, names, or terminology. "GBS" is a generic org name.
 
 ## The three views
 
-- **`/`** — the catalog board. One Kanban of the whole dataset in three lanes
-  (Idea / In progress / Solution), filterable by chips. Asking a question in
-  natural language filters and ranks that same board and adds a synthesized
-  answer plus match labels; it does not swap in a different layout.
+- **`/`** — leads with the overlap check: describe what you are about to build
+  and the catalog answers whether it has already been built, whether someone
+  has already asked for it, or whether the way is clear. The catalog board sits
+  below on the same page — one Kanban of the whole dataset in three lanes
+  (Idea / In progress / Solution), filterable by chips and sortable. Asking a
+  question in natural language filters and ranks that same board and adds a
+  synthesized answer plus match labels; it does not swap in a different layout.
+
+  The board stays on the page rather than moving behind a click because it
+  renders with no API call: if the key is missing or the spend cap is reached,
+  the check fails but the page still has the whole catalog on it.
 - **`/governance`** — catalog health for leaders: status by service, aging,
   build throughput, share of records flagged as duplicates, a service-by-service
   dot grid (one dot per record), and duplicate cluster listings with submitter,
   manager, and solution owner.
-- **`/check`** — "before you build". Describe what you are about to build and
-  the catalog answers whether it already exists, whether someone has already
-  asked for it, or whether the way is clear. Browse and search only reach the
-  person who already thought to look; this is the same retrieval pointed at the
-  moment that actually decides whether effort gets duplicated. In production
-  this belongs inside the intake form, not on a page someone chooses to visit.
 - **`/export`** — the catalog as two flat CSV files, one per record type.
 
 Every solution card downloads a real artifact file, generated from the record

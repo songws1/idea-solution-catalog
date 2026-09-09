@@ -2594,3 +2594,73 @@ a.dot:focus-visible {
   font-size: 13.5px;
   color: var(--ink-muted);
 }
+
+/* ==========================================================================
+   Landing page order — v4.5
+
+   The check leads and the board follows on the same page. The board's own
+   search keeps every capability it had but drops a visual level, so a reader
+   is never choosing between two identical-looking text boxes.
+   ========================================================================== */
+
+.board-section {
+  margin: 44px 0 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.board-section-head {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.board-section-sub {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+/* Secondary panel: no elevation, no white surface competing with the check
+   panel above it. It is a section of the page, not a card on top of it. */
+.search-panel-secondary {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 16px;
+}
+
+.search-panel-secondary .search-bar {
+  max-width: 620px;
+}
+
+.search-panel-secondary .search-bar input {
+  font-size: 14px;
+  padding: 9px 13px;
+}
+
+.search-panel-secondary .search-bar button {
+  font-size: 13.5px;
+  padding: 9px 18px;
+}
+
+.search-panel-secondary .filter-bar {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 14px;
+}
+
+.search-panel-secondary .board-order {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 12px;
+}
+
+/* The synthesised answer still needs to read as a distinct surface once the
+   panel around it stops being one. */
+.search-panel-secondary .answer-block {
+  background: var(--accent-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  margin-top: 16px;
+}

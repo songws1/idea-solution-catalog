@@ -3,8 +3,8 @@
 import { usePathname } from "next/navigation";
 
 const LINKS = [
+  // The overlap check and the board are one page (v4.5), so one nav item.
   { href: "/", label: "Catalog" },
-  { href: "/check", label: "Before you build" },
   { href: "/governance", label: "Governance" },
   { href: "/export", label: "Export" },
 ] as const;

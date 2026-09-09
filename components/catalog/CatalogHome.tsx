@@ -295,7 +295,22 @@ export default function CatalogHome({
 
   return (
     <div>
-      <div className="search-panel">
+      {/*
+        v4.5: the check panel above this is now the page's primary act, so the
+        search panel steps down a level. It keeps everything it did — semantic
+        search, chips, the synthesised answer — but reads as "the other way in"
+        rather than the thing you came for. Two full-weight text inputs on one
+        page would just make a reader guess which one they are supposed to use.
+      */}
+      <div className="board-section">
+        <h2 className="board-section-head">Or browse what already exists</h2>
+        <p className="board-section-sub">
+          Ask in your own words, or filter the board. Search ranks by meaning,
+          so describe the problem the way the team that solved it would.
+        </p>
+      </div>
+
+      <div className="search-panel search-panel-secondary">
         <form className="search-bar" onSubmit={runSearch} role="search">
           {/* maxLength mirrors MAX_QUERY_CHARS in app/api/search/route.ts. The
               route is the enforcement; this is only the input-level hint. */}
@@ -311,10 +326,6 @@ export default function CatalogHome({
             {loading ? "Searching" : "Search"}
           </button>
         </form>
-        <p className="search-note">
-          Matches are ranked by how closely the meaning of your question matches
-          each record — not by keyword overlap. Or browse the board below.
-        </p>
         <p className="search-status" aria-live="polite">
           {loading
             ? "Embedding the question and comparing it against the catalog..."
