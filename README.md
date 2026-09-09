@@ -37,6 +37,12 @@ data, names, or terminology. "GBS" is a generic org name.
   build throughput, share of records flagged as duplicates, a service-by-service
   dot grid (one dot per record), and duplicate cluster listings with submitter,
   manager, and solution owner.
+- **`/check`** — "before you build". Describe what you are about to build and
+  the catalog answers whether it already exists, whether someone has already
+  asked for it, or whether the way is clear. Browse and search only reach the
+  person who already thought to look; this is the same retrieval pointed at the
+  moment that actually decides whether effort gets duplicated. In production
+  this belongs inside the intake form, not on a page someone chooses to visit.
 - **`/export`** — the catalog as two flat CSV files, one per record type.
 
 Every solution card downloads a real artifact file, generated from the record
@@ -102,6 +108,7 @@ npm run enrich               # LLM pipeline (requires OPENROUTER_API_KEY)
                              # → data/dataset-pre-enrichment.json
                              # → data/dataset-post-enrichment.json
 npm run verify-duplicates    # checks detection against the planted clusters
+npm run check-overlap        # verdict logic for /check (no API key, no spend)
 ```
 
 `enrich` does four things, per the spec's pipeline: (1) summarizes each

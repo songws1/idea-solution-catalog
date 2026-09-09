@@ -22,12 +22,16 @@ const LOW_SCORE_FLOOR = 0.15;
  * several near-identical low scores "Strong match" just because they sit
  * close to a topScore that is itself barely above the noise floor — a
  * confident-sounding label on a result set that is actually noise. These
- * floors are calibrated from the live retrieval tests in Addendum A §0
+ * floors are now also imported by lib/overlap.ts, so the "before you build"
+ * check grades overlap on exactly the same scale the board labels use — a
+ * second scale picked by eye would quietly disagree with the first.
+ *
+ * These floors are calibrated from the live retrieval tests in Addendum A §0
  * (real strong matches: 0.58-0.74; real secondary/related matches:
  * 0.39-0.55; cross-org noise and unrelated queries: well under 0.35).
  */
-const MIN_ABS_FOR_STRONG = 0.5;
-const MIN_ABS_FOR_RELATED = 0.3;
+export const MIN_ABS_FOR_STRONG = 0.5;
+export const MIN_ABS_FOR_RELATED = 0.3;
 
 /**
  * Label a single score relative to the top score in its result set, gated

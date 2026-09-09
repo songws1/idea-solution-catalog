@@ -2379,3 +2379,218 @@ a.dot:focus-visible {
   margin: 0 0 14px;
   display: block;
 }
+
+/* ==========================================================================
+   "Before you build" check — v4.4
+   ========================================================================== */
+
+.check-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 20px 22px;
+  max-width: 780px;
+}
+
+.check-label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.check-panel textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  resize: vertical;
+  transition: border-color 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+
+.check-panel textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+.check-panel textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.check-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.check-count {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.check-foot button {
+  margin-left: auto;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 550;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+.check-foot button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.check-foot button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+.check-examples {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* The verdict is the answer, so it gets the weight — the matching records
+   below are its evidence, not the other way round. */
+.verdict {
+  max-width: 780px;
+  margin-top: 22px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--verdict-color, var(--ink-faint));
+  border-radius: var(--radius);
+  background: var(--verdict-tint, var(--surface));
+}
+
+.verdict.v-exists {
+  --verdict-color: var(--status-solved);
+  --verdict-tint: var(--tint-solved);
+}
+
+.verdict.v-already-asked {
+  --verdict-color: var(--status-review);
+  --verdict-tint: var(--tint-review);
+}
+
+.verdict.v-related {
+  --verdict-color: var(--accent);
+  --verdict-tint: var(--accent-tint);
+}
+
+.verdict.v-clear {
+  --verdict-color: var(--border-strong);
+  --verdict-tint: var(--surface);
+}
+
+.verdict h2 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.verdict-action {
+  margin: 0;
+  color: var(--ink);
+  max-width: var(--max-line);
+}
+
+.verdict-explain {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--verdict-color) 25%, transparent);
+  font-size: 14px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+.overlap-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.overlap-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+}
+
+.overlap-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.overlap-rel {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.overlap-card h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.overlap-summary {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.overlap-meta {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.overlap-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.check-clear-note {
+  max-width: var(--max-line);
+  margin-top: 18px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+}

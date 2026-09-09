@@ -2,10 +2,10 @@
 
 **Last updated:** September 8, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
-**finished** — all six steps done. On top of it: a v4 visual pass, deployment
-hardening, a board-density pass, the employee directory (v4.2) and real
-solution artifacts (v4.3). Next: the mindmap/graph view — the last item from
-the original roadmap.
+**finished**. On top of it: a v4 visual pass, deployment hardening, a
+board-density pass, the employee directory (v4.2), real solution artifacts
+(v4.3), and the "before you build" check (v4.4). The mindmap is deliberately
+**not** next — see the v4.4 note for why.
 
 ---
 
@@ -288,6 +288,72 @@ a browser and arrived as `access-grant-script.md`.
 
 Out of scope, unchanged: a real SharePoint integration, auth, and any
 folder-browsing UI.
+
+---
+
+## v4.4 — "before you build" overlap check
+
+### Why this and not the mindmap
+
+The mindmap was the last item on the original roadmap and was skipped on
+purpose. Two reasons.
+
+First, what the research says actually kills internal catalogs. The failure
+mode is not weak search or missing visualisation, it is staleness: a catalog
+describes the world as of the last time someone updated it, people start asking
+whether it is accurate, and it loses authority and gets abandoned. Most teams
+quit when the maintenance cost exceeds the value of a catalog that is accurate
+to within a week. A graph view does nothing about that.
+
+Second, the deployment reality. The production shape of this catalog is a
+browse/search screen on the existing Power Apps intake tool, backed by a
+SharePoint list. A force-directed graph transfers to that build not at all,
+while an overlap check at intake transfers directly — it is a step in a form.
+
+### What the check is
+
+Browse and search only ever reach the person who already thought to look, and
+nobody searches a catalog they have not remembered exists. The moment that
+actually decides whether effort gets duplicated is when someone is about to
+start. So `/check` takes a description of intended work and returns a verdict.
+
+The distinction that makes it more than search is between two kinds of overlap
+that a ranked list flattens into one:
+
+- a built **solution** overlaps → the thing exists, go and get it;
+- an unsolved **idea** overlaps → someone already asked, so join their request
+  rather than filing a second one that competes for the same build slot.
+
+Four verdicts — `exists`, `already-asked`, `related`, `clear` — each with a
+stated next step, and every matching record carries the action it makes
+possible (download the artifact, contact the owner, reach whoever asked).
+
+### Decisions worth keeping
+
+- **No second similarity scale.** `lib/overlap.ts` imports
+  `MIN_ABS_FOR_STRONG`, `MIN_ABS_FOR_RELATED` and `NO_MATCH_TOPSCORE_FLOOR`
+  from `lib/match-label.ts`. A scale re-picked by eye here would quietly
+  disagree with the labels on the board and one of the two would be wrong.
+- **`exists` requires a DIRECT solution hit.** A solution pulled in by the
+  cross-reference join is present because its paired idea matched, not because
+  it matched. Saying "this already exists" on that basis is the one failure
+  this feature cannot afford.
+- **A solved idea never shows as "already asked".** It is represented by the
+  solution that resolved it, which is the record you can act on.
+- **No chat call on a `clear` verdict.** There is no overlap to explain, so
+  spending credit to say so would be waste.
+- The route shares `/api/search`'s rate-limit window and key guard; the length
+  cap is higher (1200) because a description of intended work runs longer than
+  a search question.
+
+### Verification
+
+`npm run check-overlap` drives `retrieve` + `assessOverlap` with the dataset's
+own embeddings, so the verdict logic is verified with no API key and no spend:
+an existing solution's own text verdicts `exists` and names itself first, an
+unsolved idea's own text surfaces as `already-asked`, an unrelated vector
+verdicts `clear` and returns nothing, no solved idea leaks into the
+already-asked list, and no verdict lists more than three of either kind.
 
 ---
 
