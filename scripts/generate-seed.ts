@@ -15,8 +15,11 @@ import { HR_OTHER_IDEAS } from "./seed/ideas-hr-other";
 import { PROCUREMENT_IDEAS } from "./seed/ideas-procurement";
 import { FACILITIES_IDEAS } from "./seed/ideas-facilities";
 import { IT_IDEAS } from "./seed/ideas-it";
+import { GENERAL_IDEAS } from "./seed/ideas-general";
+import { EXPANSION_IDEAS } from "./seed/ideas-expansion";
 import { SOLUTIONS_A } from "./seed/solutions-a";
 import { SOLUTIONS_B } from "./seed/solutions-b";
+import { SOLUTIONS_C } from "./seed/solutions-c";
 
 const IDEAS: IdeaSeed[] = [
   ...FINANCE_AP_IDEAS,
@@ -26,8 +29,10 @@ const IDEAS: IdeaSeed[] = [
   ...PROCUREMENT_IDEAS,
   ...FACILITIES_IDEAS,
   ...IT_IDEAS,
+  ...GENERAL_IDEAS,
+  ...EXPANSION_IDEAS,
 ];
-const SOLUTIONS: SolutionSeed[] = [...SOLUTIONS_A, ...SOLUTIONS_B];
+const SOLUTIONS: SolutionSeed[] = [...SOLUTIONS_A, ...SOLUTIONS_B, ...SOLUTIONS_C];
 
 // Deterministic RNG (mulberry32). Same seed => same dataset every run.
 function mulberry32(seed: number): () => number {
@@ -54,7 +59,8 @@ function randomDateBetween(fromIso: string, toIso: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Users — 5 orgs x (director, 2 leads, 4 staff) = 35, coherent manager chain.
+// Users — 6 orgs x (director, 2 leads, 4 staff) = 42, coherent manager chain.
+// Grew from 35 with the General Business Process service (v4.9).
 // ---------------------------------------------------------------------------
 
 const NAMES = [
@@ -65,6 +71,8 @@ const NAMES = [
   "Taylor Brooks", "Skyler Warren", "Cameron Vale", "Peyton Shin", "Addison Moss",
   "Logan Mercer", "Marlow Grant", "Tatum Reyes", "Bailey Chen", "Hayden Locke",
   "Wren Calloway", "Grayson Pike", "Sloane Vincent", "Emerson Vaughn", "Micah Torres",
+  "Arden Beck", "Noor Haddad", "Teagan Ruiz", "Indigo Park", "Sutton Bailey",
+  "Marin Okafor", "Ellis Nakamura",
 ];
 
 interface SeedUser {

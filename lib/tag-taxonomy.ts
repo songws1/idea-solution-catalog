@@ -27,6 +27,26 @@ export const TAG_TAXONOMY = [
   "meeting-notes",
   "task-tracking",
   "approvals",
+  /**
+   * Added with the General Business Process service (v4.9). The original
+   * twenty were fifteen domain tags and five cross-cutting ones, which was the
+   * right shape for a catalog of function-specific process automation and the
+   * wrong one once the catalog held generic tooling: a PDF splitter or a
+   * plain-language rewriter had no honest tag and would have been forced into
+   * a domain it has nothing to do with, which would have made retrieval worse
+   * rather than better.
+   *
+   * These are subject-matter tags, deliberately. The SHAPE of a solution
+   * (extract, triage, summarise, draft, check) is a different axis and belongs
+   * in its own attribute if it is ever added — encoding it here would mean
+   * maintaining the same idea in two places.
+   */
+  "document-conversion",
+  "drafting",
+  "quality-review",
+  "reporting",
+  "scheduling",
+  "knowledge-search",
 ] as const;
 
 export type TagTaxonomyValue = (typeof TAG_TAXONOMY)[number];

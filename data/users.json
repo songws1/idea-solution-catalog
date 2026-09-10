@@ -278,5 +278,61 @@
     "service": "Asset Management",
     "manager_id": "synthetic-user-031",
     "email": "micah.torres@gbs.example"
+  },
+  {
+    "id": "synthetic-user-036",
+    "name": "Arden Beck",
+    "org": "General Business Process",
+    "service": "Document Handling",
+    "manager_id": null,
+    "email": "arden.beck@gbs.example"
+  },
+  {
+    "id": "synthetic-user-037",
+    "name": "Noor Haddad",
+    "org": "General Business Process",
+    "service": "Document Handling",
+    "manager_id": "synthetic-user-036",
+    "email": "noor.haddad@gbs.example"
+  },
+  {
+    "id": "synthetic-user-038",
+    "name": "Teagan Ruiz",
+    "org": "General Business Process",
+    "service": "Meetings & Coordination",
+    "manager_id": "synthetic-user-036",
+    "email": "teagan.ruiz@gbs.example"
+  },
+  {
+    "id": "synthetic-user-039",
+    "name": "Indigo Park",
+    "org": "General Business Process",
+    "service": "Document Handling",
+    "manager_id": "synthetic-user-037",
+    "email": "indigo.park@gbs.example"
+  },
+  {
+    "id": "synthetic-user-040",
+    "name": "Sutton Bailey",
+    "org": "General Business Process",
+    "service": "Meetings & Coordination",
+    "manager_id": "synthetic-user-038",
+    "email": "sutton.bailey@gbs.example"
+  },
+  {
+    "id": "synthetic-user-041",
+    "name": "Marin Okafor",
+    "org": "General Business Process",
+    "service": "Reporting & Analysis",
+    "manager_id": "synthetic-user-037",
+    "email": "marin.okafor@gbs.example"
+  },
+  {
+    "id": "synthetic-user-042",
+    "name": "Ellis Nakamura",
+    "org": "General Business Process",
+    "service": "Drafting & Review",
+    "manager_id": "synthetic-user-038",
+    "email": "ellis.nakamura@gbs.example"
   }
 ]

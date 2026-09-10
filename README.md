@@ -125,6 +125,8 @@ npm run seed                 # deterministic synthetic generator (no LLM, no cos
 npm run enrich               # LLM pipeline (requires OPENROUTER_API_KEY)
                              # → data/dataset-pre-enrichment.json
                              # → data/dataset-post-enrichment.json
+npm run tune-duplicates      # computes the duplicate thresholds from the data
+                             # (add -- --write to set them in enrich.ts)
 npm run verify-duplicates    # checks detection against the planted clusters
 npm run check-overlap        # verdict logic for the check (no API key, no spend)
 npm run check-freshness      # staleness scale + board/dashboard agreement
@@ -148,10 +150,31 @@ afterwards** — the committed datasets already contain embeddings and
 summaries generated with the previous model; the env var alone does not
 retroactively update them.
 
+### After changing the seed data
+
+Editing anything under `scripts/seed/` changes the embeddings, which moves the
+similarity distribution, which invalidates the duplicate thresholds. The full
+loop is four commands:
+
+```bash
+npm run seed
+npm run enrich                      # writes embeddings with the OLD threshold
+npm run tune-duplicates -- --write  # derives the right ones, sets them
+npm run enrich                      # re-flags duplicates with the new threshold
+npm run verify-duplicates           # confirms
+```
+
+The second `enrich` is cheap: LLM summaries are cached in `.enrich-cache/`, so
+it re-embeds and re-clusters without re-billing the summarization.
+
 ### Duplicate thresholds
 
 Detection uses cosine-similarity clustering over the same embeddings used for
-search. The pre- and post-enrichment corpora are embedded from different
+search. **The thresholds are derived, not chosen** — `npm run tune-duplicates`
+computes them from the planted ground truth: below what every planted cluster
+needs to stay connected, above the strongest similarity between records that
+were not planted together. Run it after any regeneration rather than assuming a
+committed value still holds. The pre- and post-enrichment corpora are embedded from different
 text, so their similarity distributions differ, and each dataset records its
 own tuned threshold in its metadata:
 

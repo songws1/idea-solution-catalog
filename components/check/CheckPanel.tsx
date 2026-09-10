@@ -15,10 +15,18 @@
 
 export const MAX_CHECK_CHARS = 1200;
 
+/**
+ * Deliberately spread across the catalog's range (v4.9), not three variations
+ * on one theme. Light UAT showed testers taking their cue from these: with
+ * three finance-flavoured examples they either typed a fourth finance one or
+ * typed something wildly outside the catalog, and had no way to tell an honest
+ * "nothing matches" from a broken search. One generic document task, one
+ * cross-functional coordination task, one function-specific process.
+ */
 const EXAMPLES = [
+  "Something that splits a big scanned PDF into one file per document and names each one from what is printed on it.",
+  "A way to turn a recorded meeting into a short write-up and a list of who owes what by when.",
   "A tool that reads the AP shared inbox every morning and sorts the mail so the team can clear the day from one list.",
-  "Something that reminds us to re-check vendor risk assessments before they expire.",
-  "A way to turn meeting notes into a list of who owes what by when.",
 ];
 
 export default function CheckPanel({

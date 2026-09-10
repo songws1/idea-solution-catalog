@@ -80,6 +80,20 @@ export const ORGS: Record<string, string[]> = {
     "Software Provisioning",
     "Asset Management",
   ],
+  /**
+   * Cross-functional service (v4.9). Not a department — the capabilities every
+   * function reaches for, which is where a shared-services org duplicates work
+   * most and where the catalog previously held nothing at all. Added after UAT
+   * testers typed ordinary requests ("a PDF editor", "track a small project")
+   * and got an accurate empty answer they could not distinguish from a broken
+   * search.
+   */
+  "General Business Process": [
+    "Document Handling",
+    "Meetings & Coordination",
+    "Reporting & Analysis",
+    "Drafting & Review",
+  ],
 };
 
 /** Extra service for one-off ideas that don't sit in the main service list. */
@@ -89,4 +103,5 @@ export const EXTRA_SERVICES: Record<string, string> = {
   "IT Service Delivery": "Self-Service",
   "HR Shared Services": "Employee Lifecycle",
   "Procurement Operations": "Spend Analysis",
+  "General Business Process": "Knowledge & Search",
 };

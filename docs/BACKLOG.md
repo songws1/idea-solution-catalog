@@ -6,7 +6,8 @@
 board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
 door (v4.5), the second search box folded into it (v4.6), and the duplicate
-result rendering removed (v4.7), and staleness signals (v4.8). The mindmap is
+result rendering removed (v4.7), staleness signals (v4.8), and the dataset
+roughly doubled with a cross-functional service (v4.9). The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -599,10 +600,123 @@ here and still contradict each other in front of a reviewer.
 
 ---
 
+## v4.9 — the dataset doubles, and gains a general service
+
+From Chris's light UAT: testers typed plausible things and got nothing back,
+and asked what they were supposed to put in the box. Telling them "anything"
+did not work, because a lot of what they typed returned nothing.
+
+### The diagnosis, which is not only "more data"
+
+A `clear` verdict is the product working. "Nothing in the catalog is close, go
+ahead" is a correct and useful answer. The failure was that **a tester cannot
+distinguish an accurate empty answer from a broken search**, so every honest
+"no" read as a defect and the interface never got evaluated.
+
+Two causes, and the data one is the bigger:
+
+- **No breadth.** Every record was function-specific process automation. A PDF
+  splitter, a small project tracker, a review-checklist prompt — all outside
+  the catalog entirely, though all are things a shared-services employee
+  plainly builds.
+- **No depth.** Eight to thirteen records per service meant a tester could type
+  an ordinary request *inside* a covered function and still miss, because that
+  service's dozen records happened not to include it.
+
+### What changed
+
+**63 → 127 ideas, 25 → 55 solutions, 5 → 6 services, 35 → 42 users.**
+
+`General Business Process` is the new service, and it is not a department. It
+is the cross-functional layer: Document Handling, Meetings & Coordination,
+Reporting & Analysis, Drafting & Review, Knowledge & Search. This is also the
+honest shape of a real catalog — a GBS org's most-duplicated builds are exactly
+these, because five teams each write their own meeting-notes prompt without
+knowing about the other four.
+
+A planted near-duplicate pair now demonstrates that directly: `gen-mtg-01`
+(General Business Process) and `exp-hr-08` (HR Shared Services) ask for the same
+meeting write-up, and two solutions were built independently. The old dataset
+could not show this, because every record sat inside one function.
+
+The tag taxonomy grew 20 → 26. The original fifteen domain tags and five
+cross-cutting ones were right for function-specific automation and wrong for
+generic tooling: a PDF splitter had no honest tag and would have been forced
+into a domain it has nothing to do with, making retrieval worse. The six
+additions are subject-matter tags. **The SHAPE of a solution — extract, triage,
+summarise, draft, check — is a different axis and was deliberately kept out**,
+because that is what Chris's proposed "design pattern" attribute would be, and
+encoding it as tags now would mean maintaining the same idea twice.
+
+The three example chips were also spread across the range. Testers took their
+cue from them: three finance-flavoured examples produced either a fourth
+finance one or something wildly outside the catalog.
+
+### The threshold problem, fixed properly
+
+Regenerating the dataset invalidates the duplicate thresholds — flagged twice
+before as a known fragility, with the post value running on ~0.0004 of margin.
+The old fix was a human trying values until `verify-duplicates` went green,
+which is a bad loop and an unusable one across a chat boundary: whoever holds
+the API key runs enrich, reports a failure, waits for a new number.
+
+That number was never a judgement call. `npm run tune-duplicates` derives it:
+below what every planted cluster needs to stay connected, above the strongest
+similarity between records not planted together, midpoint of the gap. `--write`
+sets it in `enrich.ts`.
+
+One subtlety worth recording, because the first version got it wrong.
+Constraining on the weakest *pair* inside a planted cluster is the obvious
+reading and is too strict: detection joins records transitively, so a
+three-member cluster is caught whenever a connected path clears the threshold,
+even if its far pair does not. That version reported the pre-enrichment dataset
+as having no valid threshold at all, when 0.65 has worked for months. The
+correct bound is the cluster's **bottleneck** — the weakest edge in its maximum
+spanning tree.
+
+Sanity check on the method: run against the committed datasets it returns
+**0.7118** for post, which is exactly the hand-tuned value already in
+`enrich.ts`.
+
+### Status: needs an enrich run
+
+**The seed is written; the datasets are not regenerated.** This session's
+container has no `OPENROUTER_API_KEY`, so `npm run enrich` cannot run here and
+the committed `dataset-*.json` files still hold the old 88 records. The app
+therefore still shows the old data until someone with the key runs:
+
+```bash
+npm run seed
+npm run enrich
+npm run tune-duplicates -- --write
+npm run enrich
+npm run verify-duplicates
+```
+
+Estimated cost well under $0.20 — embeddings for ~180 records plus summaries
+for ~30 new solutions; the existing 25 are served from `.enrich-cache/`.
+
+The new data was smoke-tested offline instead, by generating a dataset-shaped
+file from the seed with pseudo-random embeddings: the board, the filters and
+the governance dashboard all render correctly at 182 records across 6 services,
+and `General Business Process` appears in the Service filter and the aging
+table. Retrieval quality is the one thing that could not be checked without the
+real embeddings.
+
+---
+
 ## Open/parked items (not urgent)
 
-- The threshold-fragility comment in `scripts/enrich.ts` (see above) —
-  small documentation addition, do whenever convenient.
+- **Design pattern attribute** — Chris's next question: whether classifying a
+  record by the SHAPE of what it does (extract, triage, summarise, draft,
+  check, route) is worth adding to search and to the AI scan. Deliberately kept
+  out of the v4.9 tag expansion so the two do not overlap. Not yet decided.
+- **Orientation on a `clear` verdict** — when nothing matches, the page could
+  say what the catalog *does* cover instead of only "go ahead". Identified
+  during the v4.9 UAT discussion as the other half of the problem that more
+  data alone does not solve. Not built.
+- The threshold-fragility comment in `scripts/enrich.ts` — now moot;
+  `tune-duplicates` replaced the hand-tuning it warned about.
 - No other open decisions remain from the addendum — all three items that
   were originally flagged for sign-off (chip set, taxonomy fix, panels
   vs. mindmap) were resolved before Phase 1 started.

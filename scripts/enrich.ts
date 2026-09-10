@@ -62,21 +62,32 @@ loadEnvLocal();
 
 
 // Duplicate detection thresholds (cosine similarity), tuned against the
-// planted clusters — see scripts/verify-duplicates.ts. The pre- and
-// post-enrichment corpora are embedded from different text, so their
-// similarity distributions differ; each dataset records its own threshold.
-// Re-tuned 2026-09-02 after regenerating summaries/tags against the fixed
-// taxonomy (Addendum A §1.3): pre 0.65 unchanged, post moved 0.70 → 0.7118
-// (the regenerated post text compressed the gap between the planted
-// sol-0011~sol-0020 pair at 0.7120 and the highest non-planted pair,
-// idea-0005~idea-0006, at 0.7116). Override with DUP_THRESHOLD (both) or
-// DUP_THRESHOLD_PRE / DUP_THRESHOLD_POST.
-// KNOWN FRAGILITY (docs/BACKLOG.md): the post-enrichment margin between the
-// planted sol-0011~sol-0020 pair and the nearest non-planted pair is only
-// ~0.0002-0.0004. Re-run npm run verify-duplicates after ANY re-enrichment —
-// never assume this threshold still holds once summaries/embeddings regenerate.
-const DUP_THRESHOLD_PRE = Number(process.env.DUP_THRESHOLD_PRE ?? process.env.DUP_THRESHOLD ?? 0.65);
-const DUP_THRESHOLD_POST = Number(process.env.DUP_THRESHOLD_POST ?? process.env.DUP_THRESHOLD ?? 0.7118);
+// planted clusters. The pre- and post-enrichment corpora are embedded from
+// different text, so their similarity distributions differ; each dataset
+// records its own threshold.
+//
+// These numbers are DERIVED, not chosen. `npm run tune-duplicates` computes
+// them from the data — below the weakest planted pair, above the strongest
+// unplanted one — and `--write` sets them here. They were hand-picked until
+// v4.9, which meant every regeneration broke them and someone had to guess a
+// new value until verify-duplicates went green. The post threshold in
+// particular has run on a margin of ~0.0002.
+//
+// The loop after any dataset change is therefore:
+//   npm run enrich  →  npm run tune-duplicates -- --write  →  npm run enrich
+//   →  npm run verify-duplicates
+//
+// The second enrich is what applies the new threshold; the first only produces
+// the embeddings the tuner needs to read. Override for experiments with
+// DUP_THRESHOLD (both) or DUP_THRESHOLD_PRE / DUP_THRESHOLD_POST.
+const DEFAULT_THRESHOLD_PRE = 0.65;
+const DEFAULT_THRESHOLD_POST = 0.7118;
+const DUP_THRESHOLD_PRE = Number(
+  process.env.DUP_THRESHOLD_PRE ?? process.env.DUP_THRESHOLD ?? DEFAULT_THRESHOLD_PRE
+);
+const DUP_THRESHOLD_POST = Number(
+  process.env.DUP_THRESHOLD_POST ?? process.env.DUP_THRESHOLD ?? DEFAULT_THRESHOLD_POST
+);
 const TOP_CANDIDATES = 3;
 const EMBED_ROUND = 5; // decimal places kept for stored embeddings
 
