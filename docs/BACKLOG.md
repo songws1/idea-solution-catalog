@@ -7,8 +7,8 @@ board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
 door (v4.5), the second search box folded into it (v4.6), and the duplicate
 result rendering removed (v4.7), staleness signals (v4.8), and the dataset
-roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1).
-The mindmap is
+roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1),
+and the "nothing found" answer rebuilt (v4.10). The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -822,6 +822,58 @@ No new computation and no extra call — `duplicate_candidates` was already in
 the response, written offline by detection. The finding existed; nothing read
 it. Worth remembering as a class of bug: data computed and shipped to the
 client, then never surfaced where the decision is made.
+
+---
+
+## v4.10 — the "nothing found" answer
+
+The other half of the UAT problem. v4.9 doubled the data on the theory that
+testers hit empty results because coverage was thin. Coverage was thin, and
+fixing it did not fix the complaint, because **a reader has no way to judge an
+empty answer.** "Nothing matched" and "nothing matched, and here is what this
+catalog is about" are the same fact and completely different messages.
+
+Three questions are in someone's head at that moment. The page now answers all
+three.
+
+**Did it understand me?** A `clear` verdict returned no matches and named
+nothing, so the reader could not tell an accurate "no" from a broken search.
+`OverlapResult.nearest` now carries the closest record whether or not it
+qualified, and the verdict says so in prose: *"The nearest record is 'Dispute
+Email Sorter', and it is not a match."* Prose, not a tile — v4.7 established
+that a tile on a ranked board reads as a match whatever its label says.
+
+**Is this catalog even about my kind of thing?** `CoveragePanel` shows what the
+catalog holds: every service with a real count, clickable to filter the board.
+It renders only on `clear`, because on any other verdict the reader has records
+in front of them and a map would be filler. Costs no API call, on the one
+screen where the API just said it had nothing.
+
+**What now?** `clear` split in two on `LOW_SCORE_FLOOR`, the constant already
+defined as the point below which a score is noise rather than a weak match.
+Below it: *"Nothing in the catalog is anywhere near this"* and no proof line,
+because naming a record at 0.04 similarity would be worse than saying nothing.
+Above it: *"Nothing here is close enough to act on"* plus the nearest record.
+A description of a Christmas party and one that lands just under the bar are
+different situations and used to share one sentence.
+
+The board section also gained a third state. After a `clear` verdict it
+reverted to plain browse under the heading "The catalog", which reads as the
+check having been forgotten rather than answered. It now says so: *"Nothing was
+close enough to rank, so this is everything, in the order it always sits in."*
+
+### A check that passed against stale data
+
+`scripts/phase4-check.ts` had two assertions hard-coding counts: 20 tags, 5
+orgs. Both went stale in v4.9 when the taxonomy grew to 26 and General Business
+Process was added. **Neither failed at the time.** The check was reading the
+committed datasets, which had not been regenerated yet, so it validated the old
+88-record files and reported ALL PASS.
+
+That is worse than having no check: it reported healthy while the thing it
+guarded had already changed. Both now assert the invariant rather than a
+number — the filter offers exactly the fixed taxonomy in order, and exactly the
+orgs the data contains — so they cannot go stale the same way again.
 
 ---
 

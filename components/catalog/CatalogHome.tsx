@@ -28,6 +28,7 @@ import type { ClientDataset } from "@/lib/client-records";
 import KanbanResults from "@/components/search/KanbanResults";
 import CheckPanel from "@/components/check/CheckPanel";
 import VerdictBlock from "@/components/check/VerdictBlock";
+import CoveragePanel from "@/components/check/CoveragePanel";
 import MatchHelp from "@/components/search/MatchHelp";
 import { DEFAULT_SORT, SORT_LABELS, sortBoardItems, type SortKey } from "@/lib/board-sort";
 
@@ -359,6 +360,22 @@ export default function CatalogHome({
       )}
 
       {/*
+        Only on a clear verdict (v4.10). On any other the reader has records in
+        front of them and does not need the map; showing coverage there would be
+        filler on a screen that already answered the question.
+      */}
+      {results?.result?.verdict === "clear" && !error && !loading && (
+        <CoveragePanel
+          catalog={catalog}
+          solutionMeta={solutionMeta}
+          onPick={(org) => {
+            setFilters({ ...EMPTY_FILTERS, orgs: [org] });
+            clearSearch();
+          }}
+        />
+      )}
+
+      {/*
         The board is the second layer of the same answer, not a separate
         feature. When a description has been checked it holds the whole catalog
         re-ranked against it; with nothing asked it is the catalog as it stands.
@@ -366,10 +383,22 @@ export default function CatalogHome({
       */}
       <div className="board-section">
         <h2 className="board-section-head">
-          {results && hasResults ? "What comes closest" : "The catalog"}
+          {results && hasResults
+            ? "What comes closest"
+            : results?.result?.verdict === "clear"
+              ? "The catalog, unfiltered"
+              : "The catalog"}
         </h2>
         <p className="board-section-sub">
-          {results && hasResults ? (
+          {!hasResults && results?.result?.verdict === "clear" ? (
+            // v4.10: without this the board reverts to plain browse under a
+            // heading that pretends nothing was asked, which reads as the check
+            // having been forgotten rather than answered.
+            <>
+              Nothing was close enough to rank, so this is everything, in the
+              order it always sits in.
+            </>
+          ) : results && hasResults ? (
             <>
               Ranked against what you described, closest first.
               {searchView && searchView.hidden > 0 && (

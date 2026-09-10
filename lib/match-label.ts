@@ -13,7 +13,7 @@
 export type MatchLabel = "Strong match" | "Related" | "Loosely related";
 
 /** Below this absolute cosine similarity a result is noise, not a weak match. */
-const LOW_SCORE_FLOOR = 0.15;
+export const LOW_SCORE_FLOOR = 0.15;
 
 /**
  * Absolute floors per tier, on top of the relative (score vs. topScore)

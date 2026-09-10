@@ -1,4 +1,4 @@
-import { VERDICT_COPY, type OverlapResult } from "@/lib/overlap";
+import { VERDICT_COPY, clearCopy, type OverlapResult } from "@/lib/overlap";
 import type { ClientSolution } from "@/lib/types";
 import { isNoteworthy, monthsSince, solutionFreshness } from "@/lib/freshness";
 
@@ -28,7 +28,15 @@ export default function VerdictBlock({
   result: OverlapResult;
   explanation: string | null;
 }) {
-  const copy = VERDICT_COPY[result.verdict];
+  /**
+   * `clear` splits in two (v4.10): "nothing anywhere near this" and "nothing
+   * close enough to act on" are different situations that used to share one
+   * sentence, and the second one carries proof that the question was actually
+   * read and compared. See clearCopy in lib/overlap.ts.
+   */
+  const isClear = result.verdict === "clear";
+  const cleared = isClear ? clearCopy(result) : null;
+  const copy = cleared ?? VERDICT_COPY[result.verdict];
 
   /**
    * The caution that matters most (v4.8).
@@ -95,6 +103,7 @@ export default function VerdictBlock({
     <section className={`verdict v-${result.verdict}`} aria-live="polite">
       <h2>{copy.headline}</h2>
       <p className="verdict-action">{copy.action}</p>
+      {cleared?.proof && <p className="verdict-proof">{cleared.proof}</p>}
       {alreadyTwice && <p className="verdict-twice">{alreadyTwice}</p>}
       {explanation && <p className="verdict-explain">{explanation}</p>}
       {caution && <p className="verdict-caution">{caution}</p>}

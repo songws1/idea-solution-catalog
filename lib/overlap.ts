@@ -1,4 +1,5 @@
 import {
+  LOW_SCORE_FLOOR,
   MIN_ABS_FOR_RELATED,
   MIN_ABS_FOR_STRONG,
   NO_MATCH_TOPSCORE_FLOOR,
@@ -52,6 +53,19 @@ export interface OverlapResult {
   ideas: OverlapMatch[];
   /** Highest similarity seen anywhere, for the explainer. */
   topScore: number;
+  /**
+   * The closest record even when nothing qualified (v4.10).
+   *
+   * A `clear` verdict returns no matches, which is correct, and used to leave
+   * the reader unable to tell an accurate "no" from a broken search. Naming the
+   * nearest thing is the cheapest possible proof that the question was read and
+   * compared: "the closest record is X, and it is not close" says both halves.
+   *
+   * Deliberately not a match and never rendered as a tile. v4.7 established
+   * that a tile on a ranked board reads as a match whatever its label says, so
+   * this stays prose.
+   */
+  nearest: { name: string; org: string; score: number } | null;
 }
 
 /** Ideas that are still open questions — a solved idea is represented by its solution. */
@@ -78,9 +92,26 @@ export function assessOverlap(
     ...solutions.map((r) => r.score)
   );
 
+  /**
+   * The closest record of any kind, whether or not it qualifies as a match.
+   * Only rendered on a `clear` verdict; the others have real matches to show.
+   */
+  const all = [...ideas, ...solutions].sort((a, b) => b.score - a.score);
+  const best = all[0];
+  const nearest = best
+    ? {
+        name:
+          best.record.doc_type === "idea"
+            ? (best.record as ClientIdea).title
+            : (best.record as ClientSolution).name,
+        org: best.record.doc_type === "idea" ? (best.record as ClientIdea).org : "",
+        score: best.score,
+      }
+    : null;
+
   // Below the whole-set noise floor nothing here means anything (§3).
   if (topScore < NO_MATCH_TOPSCORE_FLOOR) {
-    return { verdict: "clear", solutions: [], ideas: [], topScore };
+    return { verdict: "clear", solutions: [], ideas: [], topScore, nearest };
   }
 
   const directSolutions = solutions
@@ -113,6 +144,7 @@ export function assessOverlap(
   return {
     verdict,
     topScore,
+    nearest,
     solutions: directSolutions.map((r) => ({
       record: r.record,
       score: r.score,
@@ -152,6 +184,45 @@ export const VERDICT_COPY: Record<
       "Go ahead. Record it when you build it, so the next person asking this question finds you.",
   },
 };
+
+/**
+ * A `clear` verdict, split by how far away the nearest record actually was
+ * (v4.10).
+ *
+ * Light UAT showed the real failure was not that the catalog said "no", it was
+ * that a reader could not tell an accurate "no" from a broken search. One
+ * sentence covered both a description of a Christmas party and one that landed
+ * just under the bar, which are completely different situations and want
+ * completely different next moves.
+ *
+ * The boundary is LOW_SCORE_FLOOR, already defined in lib/match-label.ts as the
+ * point below which a score is noise rather than a weak match. Reused rather
+ * than re-picked: a second number chosen by eye here would eventually disagree
+ * with the labels on the board.
+ */
+export function clearCopy(result: OverlapResult): {
+  headline: string;
+  action: string;
+  proof: string | null;
+} {
+  const nearMiss = result.topScore >= LOW_SCORE_FLOOR;
+  if (!nearMiss) {
+    return {
+      headline: "Nothing in the catalog is anywhere near this.",
+      action:
+        "Go ahead. Record it when you build it, so the next person asking this question finds you.",
+      proof: null,
+    };
+  }
+  return {
+    headline: "Nothing here is close enough to act on.",
+    action:
+      "Close enough to be worth a second look before you start, but nothing that covers it. Go ahead, and record it when you build it.",
+    proof: result.nearest
+      ? `The nearest record is “${result.nearest.name}”, and it is not a match — it is in the same territory at most.`
+      : null,
+  };
+}
 
 export interface CheckApiResponse {
   description?: string;

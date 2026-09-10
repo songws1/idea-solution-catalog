@@ -76,5 +76,26 @@ const related = payload(
 );
 writeFileSync(process.argv[3], JSON.stringify(related));
 
+/**
+ * A `clear` verdict, and specifically the near-miss flavour: diluted far enough
+ * that nothing qualifies, but not so far that the nearest record is noise. That
+ * is the case v4.10's split copy exists for, and the harder of the two to
+ * produce by hand.
+ */
+const nearMiss = payload(
+  dilute(dataset.solutions[3].embedding, 0.22, 11),
+  "A way of keeping the office plants alive when people are away over the summer.",
+  ""
+);
+writeFileSync(process.argv[4] ?? "clear.json", JSON.stringify(nearMiss));
+
 console.log("exists:", exists.result.verdict, "top", exists.result.topScore.toFixed(3));
 console.log("related:", related.result.verdict, "top", related.result.topScore.toFixed(3));
+console.log(
+  "clear:",
+  nearMiss.result.verdict,
+  "top",
+  nearMiss.result.topScore.toFixed(3),
+  "nearest:",
+  nearMiss.result.nearest?.name ?? "none"
+);

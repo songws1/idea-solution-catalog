@@ -5,6 +5,7 @@ import { buildSolutionMeta, deriveFilterOptions, applyFilters, EMPTY_FILTERS } f
 import { buildKanbanColumns } from "../lib/kanban";
 import { toClientDataset } from "../lib/client-records";
 import type { ClientScoredResult, IdeaRecord, SolutionRecord } from "../lib/types";
+import { TAG_TAXONOMY } from "../lib/tag-taxonomy";
 
 const variant = getDatasetVariant();
 const dataset = loadDataset(variant);
@@ -34,8 +35,29 @@ const catalog = toClientDataset(dataset);
 
 /* ---- deriveFilterOptions ----------------------------------------------- */
 const options = deriveFilterOptions(catalog, meta);
-check("taxonomy options = fixed 20-tag list", options.tags.length === 20);
-check("org options = 5 orgs", options.orgs.length === 5, options.orgs.join(", "));
+// Both of these hard-coded a count until v4.10 (20 tags, 5 orgs) and both went
+// stale in v4.9 when the taxonomy grew to 26 and General Business Process was
+// added. Neither failed at the time, because the datasets had not been
+// regenerated yet and the check was reading the old 88-record files — a check
+// that passes against stale data is worse than no check. They now assert the
+// invariant that actually matters: the filter offers exactly the fixed
+// taxonomy, and exactly the orgs the data contains.
+check(
+  "taxonomy options = the whole fixed taxonomy, in order",
+  options.tags.length === TAG_TAXONOMY.length &&
+    options.tags.every((t, i) => t === TAG_TAXONOMY[i]),
+  `${options.tags.length} of ${TAG_TAXONOMY.length}`
+);
+const orgsInData = new Set<string>([
+  ...catalog.ideas.map((i) => i.org),
+  ...Object.values(meta).map((m) => m.org),
+]);
+check(
+  "org options = every org present in the data",
+  options.orgs.length === orgsInData.size &&
+    options.orgs.every((o) => orgsInData.has(o)),
+  options.orgs.join(", ")
+);
 const canon = ["ChatGPT", "Claude", "AI + RPA", "AI + local automation", "Local automation", "RPA", "Process improvement", "Other"];
 check(
   "technology options in canonical order",

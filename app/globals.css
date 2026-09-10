@@ -2472,6 +2472,65 @@ a.dot:focus-visible {
   max-width: var(--max-line);
 }
 
+/* Proof the question was read (v4.10). Quiet on purpose: it is context for a
+   "no", not a finding, and it must not read as a near-match. */
+.verdict-proof {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+/* What the catalog covers, shown only when it covers nothing you asked for.
+   A map, so the dead end becomes somewhere to walk. */
+.coverage {
+  max-width: 780px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.coverage-lede {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+.coverage-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coverage-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 120ms var(--ease), background 120ms var(--ease);
+}
+
+.coverage-row:hover {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.coverage-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
 /* The duplicate finding, said inside the verdict rather than left on the
    governance page. It sits above the explanation because it changes what the
    whole answer means: not "reuse this" but "do not become the third team". */
