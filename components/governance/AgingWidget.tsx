@@ -16,7 +16,7 @@ function Count({ n, urgent = false }: { n: number; urgent?: boolean }) {
 
 function Table({ rows, kind }: { rows: AgingRow[]; kind: "idea" | "solution" }) {
   const total = (r: AgingRow): number =>
-    r.under30 + r.d30to90 + r.over90 + (kind === "solution" ? r.neverReviewed : 0);
+    r.recent + r.mid + r.old + (kind === "solution" ? r.neverReviewed : 0);
 
   return (
     <table>
@@ -24,9 +24,9 @@ function Table({ rows, kind }: { rows: AgingRow[]; kind: "idea" | "solution" }) 
         {/* stored `org` renders as "Service" (v3 §1); rows are stored org values. */}
         <tr>
           <th scope="col">Service</th>
-          <th scope="col">Under 30 days</th>
-          <th scope="col">30 to 90</th>
-          <th scope="col">Over 90</th>
+          <th scope="col">Under 6 months</th>
+          <th scope="col">6 to 12</th>
+          <th scope="col">Over 12</th>
           {kind === "solution" && <th scope="col">Never reviewed</th>}
           <th scope="col">Total</th>
         </tr>
@@ -36,14 +36,14 @@ function Table({ rows, kind }: { rows: AgingRow[]; kind: "idea" | "solution" }) 
           <tr key={r.org}>
             <td>{r.org}</td>
             <td>
-              <Count n={r.under30} />
+              <Count n={r.recent} />
             </td>
             <td>
-              <Count n={r.d30to90} />
+              <Count n={r.mid} />
             </td>
             {/* The only urgent number on the widget carries the review color. */}
             <td>
-              <Count n={r.over90} urgent />
+              <Count n={r.old} urgent />
             </td>
             {kind === "solution" && (
               <td>
@@ -66,7 +66,9 @@ export default function AgingWidget({ data }: Props) {
       <h2>Aging</h2>
       <p className="widget-sub">
         Stalled ideas (time since submission, unsolved only) and unmaintained
-        solutions (time since last review).
+        solutions (time since last review). The boundaries are the same ones
+        that put a trust mark on a card, so a count here and the marked cards on
+        the board are the same records.
       </p>
       <h3 className="widget-subhead">Ideas awaiting resolution</h3>
       <Table rows={data.ideas} kind="idea" />

@@ -3,8 +3,16 @@
 import { matchLabel } from "@/lib/match-label";
 import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import type { ClientIdea, ClientRecord, ClientSolution } from "@/lib/types";
-import { mailtoFor } from "@/lib/contact";
+import { confirmStillWorksMailto, mailtoFor } from "@/lib/contact";
 import { artifactHref } from "@/lib/artifact-file";
+import {
+  freshnessClass,
+  freshnessSentence,
+  ideaFreshness,
+  isNoteworthy,
+  monthsSince,
+  solutionFreshness,
+} from "@/lib/freshness";
 
 /**
  * The ONE shared card-detail treatment (Addendum A §2.4), used by the Kanban
@@ -22,7 +30,12 @@ import { artifactHref } from "@/lib/artifact-file";
  *    clearing search/filters to reach the full browse board when needed — and
  *    only open the candidate's detail when no tile can exist anywhere.
  *  - NO "flag as reviewed" / "Not a duplicate" action — explicitly out of
- *    scope (§2.4; no write-back store exists).
+ *    scope (§2.4; no write-back store exists). v4.8 added "Ask the owner if it
+ *    still works", which is not a write-back: it opens a pre-written mail to
+ *    the owner. The rule it respects is that no control may look like it saves
+ *    when nothing is saved; asking a human is the real-world version of the
+ *    action anyway, and it is what the Power Apps build would put behind its
+ *    own confirm button.
  *
  * Match-quality label comes from the shared matchLabel() scale (§3) and is
  * shown only when the record was opened from a scored search-results context.
@@ -170,6 +183,22 @@ export default function RecordDetail({
   const sol = record.doc_type === "solution" ? (record as ClientSolution) : null;
   const meta = sol && solutionMeta ? solutionMeta[sol.id] : undefined;
   const tags = idea ? idea.solution_tags : (sol as ClientSolution).category_tags;
+
+  /** Same grading as the card's mark (lib/freshness.ts), one scale, said in full. */
+  const freshNote = (() => {
+    if (sol) {
+      const state = solutionFreshness(sol);
+      if (!isNoteworthy(state)) return null;
+      return {
+        state,
+        sentence: freshnessSentence(state, monthsSince(sol.date_last_reviewed)),
+      };
+    }
+    if (!idea || idea.status !== "open") return null;
+    const state = ideaFreshness(idea);
+    if (!isNoteworthy(state)) return null;
+    return { state, sentence: freshnessSentence(state, monthsSince(idea.submitted_date)) };
+  })();
 
   // Inline identity of the linked counterpart (Phase 4.1 #2): problem phrasing
   // on one side, artifact-style name on the other — name/title + org is the
@@ -327,10 +356,32 @@ export default function RecordDetail({
 
       {linkedInfo && <p className="linked-record-info">{linkedInfo}</p>}
 
+      {/*
+        Trust note (v4.8). The card can only carry a two-word mark; this is
+        where it gets a consequence attached, because a state with no
+        consequence is just a colour. Silent when there is nothing to flag.
+      */}
+      {freshNote && (
+        <p className={`fresh-note ${freshnessClass(freshNote.state)}`}>{freshNote.sentence}</p>
+      )}
+
       <div className="detail-actions">
         {sol && (
           <a className="btn-primary" href={artifactHref(sol.id)} download>
             Download the artifact
+          </a>
+        )}
+        {/*
+          Offered only when the record is actually in doubt. On a solution
+          reviewed last month this would be a prompt to send the owner a
+          pointless email, which is how a catalog teaches people to ignore it.
+        */}
+        {sol?.solution_owner_email && freshNote && (
+          <a
+            className="btn-secondary"
+            href={confirmStillWorksMailto(sol.solution_owner_email, sol.name)}
+          >
+            Ask the owner if it still works
           </a>
         )}
         {linkedId && (

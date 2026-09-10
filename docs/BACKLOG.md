@@ -1,13 +1,13 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 9, 2026
+**Last updated:** September 10, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
 door (v4.5), the second search box folded into it (v4.6), and the duplicate
-result rendering removed (v4.7). The mindmap is deliberately **not** next — see
-the v4.4 note.
+result rendering removed (v4.7), and staleness signals (v4.8). The mindmap is
+deliberately **not** next — see the v4.4 note.
 
 ---
 
@@ -517,6 +517,85 @@ the extreme one.
 against payloads generated offline from dataset embeddings (`mkfixture.ts`, no
 key, no spend): an `exists` verdict with one strong match, and a `related`
 verdict produced by diluting a record vector toward deterministic noise.
+
+---
+
+## v4.8 — staleness signals
+
+The failure mode named back in v4.4 as the thing that actually kills internal
+catalogs, finally addressed. Research says a catalog dies of staleness rather
+than of weak search: it describes the world as of the last time anyone updated
+it, people start finding entries that are no longer true, and it loses
+authority. For this app the exposure is sharper than for a plain catalog,
+because the whole page rests on one sentence — *"this already exists, go and
+get it"*. If the record behind that sentence has not been confirmed in two
+years, the app has not merely failed to help; it has sent someone down a path
+that costs more than building would have.
+
+### What was built
+
+**`lib/freshness.ts`** — one scale, pure functions of a date and `now`, used by
+the board, the drawer, the verdict and the governance math so none of them can
+disagree.
+
+Graded against `date_last_reviewed`, not `date_built`. A solution built fifteen
+months ago and reviewed last month is in better shape than one built six months
+ago that nobody has looked at since; grading on build date would have flagged
+the wrong records.
+
+Two vocabularies, deliberately. A solution goes **stale** (it may no longer
+work); an unsolved idea goes **dormant** (still a real want, nobody picked it
+up). One word for both would lose the difference that decides what to do next.
+
+**Where it surfaces:**
+
+| | shows |
+|---|---|
+| board card | a pill, only for `stale` / `unreviewed` / `dormant` |
+| detail drawer | the full sentence with its consequence, for every non-current state |
+| `exists` verdict | a red caution line when the answer rests on an unvouched-for build |
+| governance | recalibrated aging tables + a "Not confirmed working" headline tile |
+
+**"Ask the owner if it still works"** — a pre-written mail to the solution
+owner, offered only on a record actually in doubt. The obvious design was a
+button that stamps a new review date, but this prototype must not write back to
+any real system and a control that looks like it saves when nothing is saved is
+worse than none. Asking a human is the real-world version of the action anyway,
+and it is what the Power Apps build would put behind its own confirm button.
+
+### Two things caught in review, worth recording
+
+**The mark landed on 40 of 65 cards.** At that density a pill is part of the
+card template, not a flag, and it undoes two rounds of density work. Fixed by
+splitting `isCardWorthy` from `isNoteworthy`: the middle tiers (`aging`,
+`waiting`) never reach a card, because a mark whose own sentence reads
+"probably fine" is noise by definition. They still appear in the drawer and are
+still counted on the dashboard — a card is a scanning surface, a drawer is a
+reading surface, and they earn different bars. Now 18 of 56.
+
+**The governance aging widget was already broken and nobody had noticed.** Its
+30/90-day buckets put 37 of 40 unsolved ideas and 20 of 25 solutions in a
+single column, so it drew one full bar and two empty ones. The boundaries now
+come from `lib/freshness.ts` — the same thresholds that mark a card — and the
+solution columns read 6 / 12 / 7. The point is less the numbers than the shared
+source: a reviewer who sees "3 over 12 months" and then opens the board must
+find exactly those three marked, or both views quietly lose credibility.
+`AgingRow`'s fields were renamed `recent`/`mid`/`old` at the same time, because
+`under30`/`d30to90`/`over90` hard-coded the old boundaries into identifiers
+that nobody would notice had become lies.
+
+### Verification
+
+`npm run check-freshness` (no API key, no spend) asserts the things that would
+break quietly: fresh records stay silent, every tier actually occurs in the
+committed dataset, a null review date never reads as current, the reassuring
+tiers never reach a card, card marks stay under half the board, the aging
+buckets account for every record and no column holds more than 70%, and — the
+one that matters most — **the governance counts equal the set of cards the
+board marks.** Two independently-tuned scales would pass every other assertion
+here and still contradict each other in front of a reviewer.
+
+`check-overlap` and `phase4-check` pass unchanged; `tsc` and `build` clean.
 
 ---
 

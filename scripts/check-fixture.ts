@@ -53,10 +53,17 @@ function dilute(a: number[], w: number, seed: number): number[] {
   return out.map((v) => v / norm);
 }
 
+/**
+ * Deliberately a solution nobody has ever reviewed, so the fixture exercises
+ * the v4.8 caution as well as the verdict. An "it already exists" answer
+ * resting on an unvouched-for build is the case worth being able to look at.
+ */
+const neverReviewed =
+  dataset.solutions.find((s) => !s.date_last_reviewed) ?? dataset.solutions[0];
 const exists = payload(
-  dataset.solutions[0].embedding,
-  "A script that grants standard-role access automatically when a new starter is approved, so the service desk stops doing it by hand.",
-  'Access Grant Script already provisions standard-role access on approval, which is the whole of what you described. It does not cover non-standard or elevated roles, so if that is the part you care about there is real work left.'
+  neverReviewed.embedding,
+  "Something that reads the AP shared mailbox every morning, sorts what came in, and tells the team what to do with each message.",
+  `"${neverReviewed.name}" already triages that mailbox and suggests a next action per message, which is what you described. It does not do anything downstream of the sorting, so if the handling itself is the part you care about there is work left.`
 );
 writeFileSync(process.argv[2], JSON.stringify(exists));
 

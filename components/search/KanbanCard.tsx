@@ -7,6 +7,14 @@ import type { SolutionMetaMap } from "@/lib/catalog-filters";
 import DuplicateBadge from "./DuplicateBadge";
 import { mailtoFor } from "@/lib/contact";
 import { artifactHref } from "@/lib/artifact-file";
+import {
+  freshnessClass,
+  freshnessMark,
+  ideaFreshness,
+  isCardWorthy,
+  monthsSince,
+  solutionFreshness,
+} from "@/lib/freshness";
 
 /**
  * One card on the Kanban board (v3 §3.3) — three zones in one bordered
@@ -159,6 +167,39 @@ export default function KanbanCard({
       date: fmtDate(record.date_built),
       org: meta?.org ?? "Unassigned",
       service: meta?.service ?? "Unassigned",
+    };
+  })();
+
+  /**
+   * Trust mark (v4.8) — only for the states that change what the reader should
+   * do (see isCardWorthy). A card is a scanning surface: a pill on most of them
+   * would read as part of the template rather than as a flag.
+   *
+   * An in-progress idea is deliberately excluded: the waiting clock is running
+   * on it too, but "waiting 10mo" next to a card in the In progress lane reads
+   * as a contradiction of the lane it sits in. The Idea lane is where a long
+   * wait actually changes what the reader should do.
+   */
+  const fresh = (() => {
+    if (record.doc_type === "solution") {
+      const state = solutionFreshness(record);
+      if (!isCardWorthy(state)) return null;
+      return {
+        state,
+        text: freshnessMark(state, monthsSince(record.date_last_reviewed)),
+        title:
+          state === "unreviewed"
+            ? "Nobody has confirmed this still works since it was built"
+            : "Time since anyone last confirmed this still works",
+      };
+    }
+    if (record.status !== "open") return null;
+    const state = ideaFreshness(record);
+    if (!isCardWorthy(state)) return null;
+    return {
+      state,
+      text: freshnessMark(state, monthsSince(record.submitted_date)),
+      title: "Time this request has been open with nothing built",
     };
   })();
 
@@ -334,7 +375,14 @@ export default function KanbanCard({
           ) : (
             <span>{foot.who}</span>
           )}
-          <span className="foot-date">{foot.date}</span>
+          <span className="foot-right">
+            {fresh && (
+              <span className={`fresh-mark ${freshnessClass(fresh.state)}`} title={fresh.title}>
+                {fresh.text}
+              </span>
+            )}
+            <span className="foot-date">{foot.date}</span>
+          </span>
         </div>
         <div className="foot-line foot-facets">
           {/*

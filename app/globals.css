@@ -450,6 +450,68 @@ a:hover {
   color: var(--ink-muted);
 }
 
+/* Trust marks (v4.8). Rendered only when a record is worth flagging, so these
+   rules describe the exception on the board, never the norm. Kept to a tinted
+   pill rather than an icon: the words are the signal and they have to survive
+   being read at 11px in a column of a dozen cards. */
+.foot-right {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.fresh-mark {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid color-mix(in srgb, currentColor 26%, transparent);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+/* Never reviewed, or not confirmed in over a year: the reader may be about to
+   rely on something nobody has vouched for. Same colour the app already uses
+   for "needs a human to look at this". */
+.fresh-mark.f-stale {
+  color: var(--status-duplicate);
+}
+
+/* Asked for over a year ago and still not built. */
+.fresh-mark.f-dormant {
+  color: var(--status-review);
+}
+
+/* Getting on, not yet a problem. */
+.fresh-mark.f-aging {
+  color: var(--ink-muted);
+}
+
+/* The same states said in full, in the drawer, where a consequence fits. */
+.fresh-note {
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  font-size: 13px;
+  max-width: var(--max-line);
+}
+
+.fresh-note.f-stale {
+  color: var(--status-duplicate);
+}
+
+.fresh-note.f-dormant {
+  color: var(--status-review);
+}
+
+.fresh-note.f-aging {
+  color: var(--ink-muted);
+}
+
 .foot-facets {
   display: block;
   margin-top: 5px;
@@ -2407,6 +2469,18 @@ a.dot:focus-visible {
 .verdict-action {
   margin: 0;
   color: var(--ink);
+  max-width: var(--max-line);
+}
+
+/* Said in the same breath as an "it already exists" verdict, because that is
+   the sentence someone acts on without reading further. */
+.verdict-caution {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--verdict-color) 25%, transparent);
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--status-duplicate);
   max-width: var(--max-line);
 }
 

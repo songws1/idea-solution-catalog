@@ -1,3 +1,4 @@
+import { solutionFreshness } from "./freshness";
 import { agingBucket, ideaAgeDays, solutionReviewAgeDays } from "./aging";
 import { userEmail, userName, userById } from "./dataset";
 import type {
@@ -66,11 +67,17 @@ export function statusByOrg(dataset: Dataset): StatusByOrgRow[] {
 // Widget 2 — aging
 // ---------------------------------------------------------------------------
 
+/**
+ * Field names carry no numbers (v4.8). They used to be under30/d30to90/over90,
+ * which meant the boundaries lived in three places: lib/aging.ts, these keys,
+ * and the widget's column headers. Moving the scale then required finding all
+ * three, and the identifier was the one nobody would notice was now a lie.
+ */
 export interface AgingRow {
   org: string;
-  under30: number;
-  d30to90: number;
-  over90: number;
+  recent: number;
+  mid: number;
+  old: number;
   neverReviewed: number;
 }
 
@@ -83,7 +90,7 @@ export function agingData(
     const rowFor = (org: string): AgingRow => {
       let row = rows.get(org);
       if (!row) {
-        row = { org, under30: 0, d30to90: 0, over90: 0, neverReviewed: 0 };
+        row = { org, recent: 0, mid: 0, old: 0, neverReviewed: 0 };
         rows.set(org, row);
       }
       return row;
@@ -91,20 +98,20 @@ export function agingData(
     if (kind === "idea") {
       for (const idea of dataset.ideas) {
         if (idea.status === "solved") continue; // stalled-item widget: only unsolved ideas age
-        const b = agingBucket(ideaAgeDays(idea.submitted_date, now));
+        const b = agingBucket(ideaAgeDays(idea.submitted_date, now), "idea");
         const row = rowFor(idea.org);
-        if (b === "under 30 days") row.under30 += 1;
-        else if (b === "30 to 90 days") row.d30to90 += 1;
-        else row.over90 += 1;
+        if (b === "under 6 months") row.recent += 1;
+        else if (b === "6 to 12 months") row.mid += 1;
+        else row.old += 1;
       }
     } else {
       for (const sol of dataset.solutions) {
         const age = solutionReviewAgeDays(sol.date_last_reviewed, now);
         const row = rowFor(orgOfSolution(dataset, sol));
         if (age === null) row.neverReviewed += 1;
-        else if (agingBucket(age) === "under 30 days") row.under30 += 1;
-        else if (agingBucket(age) === "30 to 90 days") row.d30to90 += 1;
-        else row.over90 += 1;
+        else if (agingBucket(age, "solution") === "under 6 months") row.recent += 1;
+        else if (agingBucket(age, "solution") === "6 to 12 months") row.mid += 1;
+        else row.old += 1;
       }
     }
     return [...rows.values()].sort((a, b) => a.org.localeCompare(b.org));
@@ -351,10 +358,24 @@ export function summaryTiles(
   for (const sol of dataset.solutions) services.add(orgOfSolution(dataset, sol));
 
   const unresolved = dataset.ideas.filter((i) => i.status !== "solved");
-  const unresolvedOver90 = unresolved.filter(
-    (i) => agingBucket(ideaAgeDays(i.submitted_date, now)) === "over 90 days"
+  const unresolvedOld = unresolved.filter(
+    (i) => agingBucket(ideaAgeDays(i.submitted_date, now), "idea") === "over 12 months"
   ).length;
 
+  /**
+   * The staleness headline (v4.8).
+   *
+   * This tile used to count only solutions that had never been reviewed, which
+   * flattered the catalog: a solution reviewed once, fourteen months ago, is no
+   * more dependable than one never reviewed at all, and it was counted as fine.
+   * The number a reviewer actually needs is how much of the catalog nobody has
+   * vouched for lately, because that is the share of "this already exists"
+   * answers that could send someone to a dead artifact.
+   */
+  const unconfirmed = dataset.solutions.filter((s) => {
+    const state = solutionFreshness(s, now);
+    return state === "stale" || state === "unreviewed";
+  }).length;
   const neverReviewed = dataset.solutions.filter(
     (s) => solutionReviewAgeDays(s.date_last_reviewed, now) === null
   ).length;
@@ -376,13 +397,13 @@ export function summaryTiles(
       anchor: "aging",
       label: "Awaiting resolution",
       value: unresolved.length,
-      subLabel: `${unresolvedOver90} over 90 days`,
+      subLabel: `${unresolvedOld} for over a year`,
     },
     {
       anchor: "aging",
-      label: "Solutions never reviewed",
-      value: neverReviewed,
-      subLabel: `of ${plural(dataset.solutions.length, "solution")} built`,
+      label: "Not confirmed working",
+      value: unconfirmed,
+      subLabel: `of ${plural(dataset.solutions.length, "solution")} — ${neverReviewed} never reviewed`,
     },
     {
       anchor: "duplicate-clusters",

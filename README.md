@@ -26,6 +26,12 @@ data, names, or terminology. "GBS" is a generic org name.
    solutions are detected offline via cosine similarity over the search
    embeddings and surfaced as review candidates on the board and in the
    governance dashboard — never auto-merged.
+4. **Staleness is visible before it costs anything.** Internal catalogs die of
+   stale entries, not of weak search, and this one stakes its credibility on
+   "this already exists, go and get it". So records nobody has confirmed
+   recently carry a mark on the board, a sentence in the drawer, and a caution
+   inside the verdict itself; the governance dashboard counts them. One scale
+   (`lib/freshness.ts`) grades all four, so they cannot contradict each other.
 
 ## The three views
 
@@ -48,10 +54,11 @@ data, names, or terminology. "GBS" is a generic org name.
   The board stays on the page rather than moving behind a click because it
   renders with no API call: if the key is missing or the spend cap is reached,
   the check fails but the page still has the whole catalog on it.
-- **`/governance`** — catalog health for leaders: status by service, aging,
-  build throughput, share of records flagged as duplicates, a service-by-service
-  dot grid (one dot per record), and duplicate cluster listings with submitter,
-  manager, and solution owner.
+- **`/governance`** — catalog health for leaders: status by service, aging
+  against the same thresholds that mark a card, how many solutions nobody has
+  confirmed working, build throughput, share of records flagged as duplicates,
+  a service-by-service dot grid (one dot per record), and duplicate cluster
+  listings with submitter, manager, and solution owner.
 - **`/export`** — the catalog as two flat CSV files, one per record type.
 
 Every solution card downloads a real artifact file, generated from the record
@@ -120,6 +127,7 @@ npm run enrich               # LLM pipeline (requires OPENROUTER_API_KEY)
                              # → data/dataset-post-enrichment.json
 npm run verify-duplicates    # checks detection against the planted clusters
 npm run check-overlap        # verdict logic for the check (no API key, no spend)
+npm run check-freshness      # staleness scale + board/dashboard agreement
 npm run check-fixture a.json b.json   # real /api/check payloads, offline, for
                                       # inspecting the checked UI with no spend
 ```
