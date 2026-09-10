@@ -15,6 +15,11 @@ import type { SolutionSeed } from "./types";
  * other. That is the single most common form of duplication in a shared
  * services org and the old dataset had no example of it, because every record
  * sat inside one function.
+ *
+ * v4.9.1: three solutions here were rewritten because they restated a solution
+ * that already existed — a training chaser, a spend-category classifier and a
+ * disposal-certificate generator were all second copies. The first enrich run's
+ * duplicate report named them. Their ideas were rewritten with them.
  */
 export const SOLUTIONS_C: SolutionSeed[] = [
   // --- General Business Process: documents ---------------------------------
@@ -218,11 +223,11 @@ export const SOLUTIONS_C: SolutionSeed[] = [
   },
   {
     key: "sol-exp-hr-05",
-    name: "Training Completion Chaser",
+    name: "Dormant Course Report",
     artifactType: "automation",
-    technologyType: "RPA",
+    technologyType: "Local automation",
     rawDescription:
-      "Pulls the completion report, works out who is outstanding, and sends each person only their own list. Managers get one summary for their team. Runs every Monday. Completion went from chasing at quarter end to not really needing to chase.",
+      "Runs over the course catalogue every quarter and reports enrolments and completions per course for the last eighteen months. Anything with none goes on a withdraw list, and anything whose description mentions a system we have retired goes on a rewrite list. We took forty courses out of the catalogue in the first pass.",
     resolvesKey: "exp-hr-05",
     neverReviewed: true,
   },
@@ -248,11 +253,11 @@ export const SOLUTIONS_C: SolutionSeed[] = [
   },
   {
     key: "sol-exp-pro-07",
-    name: "Spend Category Classifier",
+    name: "Price Spread Finder",
     artifactType: "automation",
-    technologyType: "AI + local automation",
+    technologyType: "Local automation",
     rawDescription:
-      "Assigns a spend category from the free-text description and the supplier. Where it is confident it just assigns; where it is not it puts the line in a review list with its two best guesses. Category reporting became worth reading once the review list existed.",
+      "Lines up the same item across every supplier and site that bought it and shows the price spread, biggest gap first. You need the item matching to be honest about what it is not sure of, so anything it cannot line up confidently is listed separately rather than averaged in. First run found one item bought at three prices across two sites.",
     resolvesKey: "exp-pro-07",
   },
 
@@ -288,11 +293,11 @@ export const SOLUTIONS_C: SolutionSeed[] = [
   },
   {
     key: "sol-exp-it-04",
-    name: "Disposal Certificate Generator",
+    name: "Silent Device Report",
     artifactType: "automation",
-    technologyType: "RPA",
+    technologyType: "Local automation",
     rawDescription:
-      "Generates the disposal certificate for each retired device from the asset record and the wipe log, and flags any device where the wipe evidence is missing rather than issuing a certificate anyway. Audit stopped being a fire drill.",
+      "Lists every managed device with no check-in for ninety days, with the last known holder and the last known location. Sorted by value. Turned out about a fifth of what we thought was in service had not spoken to us in half a year.",
     resolvesKey: "exp-it-04",
   },
 

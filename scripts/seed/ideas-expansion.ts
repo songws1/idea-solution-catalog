@@ -15,6 +15,15 @@ import type { IdeaSeed } from "./types";
  * than new territory: a catalog where every record is unmistakably distinct is
  * not a catalog anyone needs, and the near-misses are what make a "related, but
  * not the same thing" verdict worth reading.
+ *
+ * v4.9.1: eight of these were not near-neighbours, they were the same record
+ * written twice. They were authored without checking the existing 63, and the
+ * first enrich run's false-positive list named every one. Four of the collisions
+ * were kept and declared as planted clusters, because a want expressed twice by
+ * different teams is realistic and is exactly what the flag is for. The other
+ * eight were rewritten onto subjects the catalog genuinely lacked, because an
+ * accidental restatement adds a duplicate without adding coverage — the
+ * opposite of the point of this file.
  */
 export const EXPANSION_IDEAS: IdeaSeed[] = [
   // --- Finance Operations ---------------------------------------------------
@@ -37,6 +46,8 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
       "Close is run from a spreadsheet that nobody updates until it is over, so during the week nobody can say what is done. A live checklist with an owner and a state per task, visible to the whole team.",
     notes: "",
     status: "open",
+    // Planted with fin-fr-01 (v4.9.1) — same want, one already solved.
+    cluster: "dup-close-checklist",
   },
   {
     key: "exp-fin-03",
@@ -99,6 +110,10 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
       "Exit interviews are written up individually and then nobody reads them together, so the pattern across a year is invisible. Group them by theme and produce a quarterly summary with the wording kept anonymous.",
     notes: "Individual responses must not be identifiable.",
     status: "solved",
+    // Planted with hr-x-01 (v4.9.1). Written without noticing hr-x-01 already
+    // asked for it; kept rather than rewritten, because a request made twice
+    // inside one service is realistic and is what the flag is for.
+    cluster: "dup-exit-themes",
   },
   {
     key: "exp-hr-02",
@@ -134,9 +149,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-hr-05",
     org: "HR Shared Services",
     service: "Learning & Development",
-    title: "Chase outstanding mandatory training",
+    title: "Retire training courses nobody takes any more",
     description:
-      "Completion chasing is done by exporting a report and sending manual reminders. Work out who is outstanding, send each person their own list, and send managers a summary for their team.",
+      "The course catalogue only ever grows. Some courses still reference systems we retired years ago and some have had no enrolments in eighteen months, but nobody has the list. Report enrolment and completion per course over a rolling period and flag the ones that look dead so they can be withdrawn or rewritten.",
     notes: "",
     status: "solved",
   },
@@ -149,13 +164,11 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
       "Before an employee relations case is closed, the file is checked for the required forms, approvals and notes. It is done from memory and different people check different things. Report what is present, what is missing and what is out of sequence.",
     notes: "Says what is absent; the decision stays with the case owner.",
     status: "open",
+    cluster: "dup-case-file",
   },
   {
-    // Planted near-duplicate of gen-mtg-01, in a different service (v4.9).
-    // This is the duplication the product exists to catch and the one the old
-    // dataset could not demonstrate: two teams independently asking for the
-    // same generic capability, neither aware of the other, because neither
-    // thought to look outside their own function.
+    // Fourth member of the meeting-write-up cluster (v4.9.1): hr-ld-03,
+    // it-sd-04, gen-mtg-01 and this one. Four teams, four requests, one want.
     key: "exp-hr-08",
     org: "HR Shared Services",
     service: "Learning & Development",
@@ -164,7 +177,7 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
       "Nobody wants to be the person taking minutes, so meetings go unrecorded and the actions are remembered differently a week later. From the recording, produce a short write-up with the decisions and a list of who agreed to do what by when.",
     notes: "",
     status: "solved",
-    cluster: "gen-notes",
+    cluster: "dup-meeting-actions",
   },
   {
     key: "exp-hr-07",
@@ -232,19 +245,19 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-pro-06",
     org: "Procurement Operations",
     service: "Vendor Management",
-    title: "Assemble the supplier onboarding pack",
+    title: "Find the same supplier recorded under several names",
     description:
-      "Onboarding a supplier means collecting the same documents in the same order and chasing whatever is missing. Track what has been received, chase what has not, and hand over a complete pack when it is done.",
-    notes: "",
+      "The same company sits in the system three times with different spellings, a trading name and a legacy account, which splits our spend with them and weakens every negotiation. Group the records that are plainly the same company and put them forward for a human to confirm before anything is merged.",
+    notes: "Nothing merges automatically.",
     status: "open",
   },
   {
     key: "exp-pro-07",
     org: "Procurement Operations",
     service: "Spend Analysis",
-    title: "Map free-text spend descriptions to categories",
+    title: "Show where we pay different prices for the same thing",
     description:
-      "Spend arrives described in whatever words the requester used, so category reporting is unreliable. Assign a category from the description and the supplier, and show the low-confidence ones for review rather than guessing quietly.",
+      "The same item is bought by several sites at prices nobody compares, so we negotiate without knowing our own position. Line up the same item across suppliers and sites, show the spread, and put the largest gaps at the top.",
     notes: "",
     status: "solved",
   },
@@ -264,9 +277,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-fac-02",
     org: "Facilities Support",
     service: "Space Planning",
-    title: "Report on rooms booked and never used",
+    title: "Plan a floor move without a fortnight of spreadsheets",
     description:
-      "Rooms are booked and not used while people say they cannot find one. Compare bookings against occupancy and produce a weekly list of the rooms held and left empty.",
+      "Moving a team between floors currently means a spreadsheet of who sits where, redrawn by hand every time someone objects. Take the current seating, the constraints that actually matter — team adjacency, accessibility needs, fixed equipment — and produce a proposed layout that can be adjusted and re-run.",
     notes: "",
     status: "open",
   },
@@ -274,9 +287,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-fac-03",
     org: "Facilities Support",
     service: "Reception Services",
-    title: "Route badge and access requests to the right approver",
+    title: "Know who is actually in the building for a roll call",
     description:
-      "Access requests arrive at reception and are forwarded by hand, often to the wrong approver first. Work out the area, find its owner, and send it there with what the approver needs to decide.",
+      "In an evacuation the roll call is assembled from three separate lists that never agree, and contractors are usually on none of them. Maintain one live count of who is on site — staff, visitors, contractors — that the fire marshals can read from a phone.",
     notes: "",
     status: "open",
   },
@@ -304,9 +317,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-fac-06",
     org: "Facilities Support",
     service: "Parking & Commute",
-    title: "Fair way to allocate the parking waitlist",
+    title: "Tell people how to get in when their usual route is disrupted",
     description:
-      "Parking spaces are allocated by whoever asks loudest. Apply the stated rules consistently, produce the allocation, and be able to show why each person is where they are on the list.",
+      "When a line is down or a road is closed, people find out at the station. Watch the transport feeds for the routes our sites actually depend on and send an early-morning note to the affected sites with the alternatives that work.",
     notes: "",
     status: "open",
   },
@@ -346,9 +359,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-it-04",
     org: "IT Service Delivery",
     service: "Asset Management",
-    title: "Produce disposal certificates for retired hardware",
+    title: "Find the devices that have gone quiet",
     description:
-      "Every retired device needs a certificate with the asset details and the wipe evidence, produced by hand. Generate them from the asset record and the wipe log, and flag any device where the evidence is missing.",
+      "Machines that have not checked in for months are still counted as in service, so the numbers are wrong and nobody chases the ones that walked out of the building. List the devices with no contact for a set period alongside who last held them.",
     notes: "",
     status: "solved",
   },
@@ -356,9 +369,9 @@ export const EXPANSION_IDEAS: IdeaSeed[] = [
     key: "exp-it-05",
     org: "IT Service Delivery",
     service: "Software Provisioning",
-    title: "Check software requests against policy before approval",
+    title: "Say when a requested tool overlaps one we already pay for",
     description:
-      "Requests for software reach an approver who has to remember what is permitted. Check the request against the approved list and the licence terms, and put forward only the ones that need judgement.",
+      "People request a product without knowing we already licence something that does the same job, so we end up paying twice for overlapping capability. When a request arrives, say what we already hold that covers it and who to talk to about getting a seat.",
     notes: "",
     status: "in_progress",
   },

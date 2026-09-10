@@ -80,8 +80,8 @@ loadEnvLocal();
 // The second enrich is what applies the new threshold; the first only produces
 // the embeddings the tuner needs to read. Override for experiments with
 // DUP_THRESHOLD (both) or DUP_THRESHOLD_PRE / DUP_THRESHOLD_POST.
-const DEFAULT_THRESHOLD_PRE = 0.65;
-const DEFAULT_THRESHOLD_POST = 0.7118;
+const DEFAULT_THRESHOLD_PRE = 0.6509;
+const DEFAULT_THRESHOLD_POST = 0.7119;
 const DUP_THRESHOLD_PRE = Number(
   process.env.DUP_THRESHOLD_PRE ?? process.env.DUP_THRESHOLD ?? DEFAULT_THRESHOLD_PRE
 );

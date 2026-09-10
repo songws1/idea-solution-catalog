@@ -61,6 +61,9 @@ export const FINANCE_OTHER_IDEAS: IdeaSeed[] = [
       "The close checklist lives in a spreadsheet that only one person can update safely. Move it into a shared tracker where each task has an owner and a due time, and give the controller a view of only the blocked or late items.",
     notes: "",
     status: "solved",
+    // Planted with exp-fin-02 (v4.9.1), which asked for the same thing a year
+    // later without anyone noticing this one was already built.
+    cluster: "dup-close-checklist",
   },
   {
     key: "fin-fr-02",

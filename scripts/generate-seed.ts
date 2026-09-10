@@ -20,6 +20,7 @@ import { EXPANSION_IDEAS } from "./seed/ideas-expansion";
 import { SOLUTIONS_A } from "./seed/solutions-a";
 import { SOLUTIONS_B } from "./seed/solutions-b";
 import { SOLUTIONS_C } from "./seed/solutions-c";
+import { reportCollisions } from "./seed/collisions";
 
 const IDEAS: IdeaSeed[] = [
   ...FINANCE_AP_IDEAS,
@@ -262,6 +263,34 @@ console.log(
 console.log(
   `Confirmed duplicate_of links: ideas ${seedIdeas.filter((i) => i.duplicate_of).length}, solutions ${seedSolutions.filter((s) => s.duplicate_of).length}.`
 );
+
+// Lexical pre-flight (v4.9.1). Warns only. Catches a record restated in
+// near-enough the same words before enrich spends anything on it — see
+// scripts/seed/collisions.ts for why this is not the real detector.
+const collisions =
+  reportCollisions(
+    "ideas",
+    IDEAS.map((i) => ({
+      key: i.key,
+      title: i.title,
+      body: i.description,
+      cluster: i.cluster ?? null,
+    }))
+  ) +
+  reportCollisions(
+    "solutions",
+    SOLUTIONS.map((s) => ({
+      key: s.key,
+      title: s.name,
+      body: s.rawDescription,
+      cluster: s.cluster ?? null,
+    }))
+  );
+if (collisions > 0) {
+  console.log(
+    `Seed written anyway — these are warnings, not errors. Resolve them before running npm run enrich.`
+  );
+}
 
 
 

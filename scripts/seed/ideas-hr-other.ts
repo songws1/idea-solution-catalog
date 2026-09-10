@@ -92,5 +92,8 @@ export const HR_OTHER_IDEAS: IdeaSeed[] = [
       "Read the quarter's exit interviews and produce a short themes digest — top reasons for leaving, any manager or team patterns, suggested actions — for the HR leadership meeting.",
     notes: "Sensitive: keep the digest at theme level, never quote individuals.",
     status: "open",
+    // Planted with exp-hr-01 (v4.9.1) — the same ask, made twice inside one
+    // service, which is the commonest and least visible kind of duplication.
+    cluster: "dup-exit-themes",
   },
 ];

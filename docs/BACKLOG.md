@@ -7,7 +7,8 @@ board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
 door (v4.5), the second search box folded into it (v4.6), and the duplicate
 result rendering removed (v4.7), staleness signals (v4.8), and the dataset
-roughly doubled with a cross-functional service (v4.9). The mindmap is
+roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1).
+The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -702,6 +703,89 @@ the governance dashboard all render correctly at 182 records across 6 services,
 and `General Business Process` appears in the Service filter and the aging
 table. Retrieval quality is the one thing that could not be checked without the
 real embeddings.
+
+---
+
+## v4.9.1 — the collisions the first run found
+
+The v4.9 enrich run failed `verify-duplicates`. Reading the output properly
+matters more than the fix:
+
+```
+Planted clusters: 8. Missed: 0.
+```
+
+**Detection was perfect.** Every planted cluster was caught, including the new
+cross-function meeting pair. The failures were all FALSE-POSITIVE lines — and
+every one of them named a pair that genuinely is the same record written twice:
+
+| | |
+|---|---|
+| `fin-fr-01` / `exp-fin-02` | two month-end close checklists |
+| `hr-x-01` / `exp-hr-01` | two exit-interview theme digests |
+| `hr-ld-01` / `exp-hr-05` | two mandatory-training chasers |
+| `it-as-02` / `exp-it-04` | two disposal-certificate tools |
+| `fa-x-01` / `exp-fac-06` | two parking waitlists |
+| …and six more | |
+
+So the detector was right and the seed annotations were wrong. Sixty-four new
+records were authored against an existing sixty-three without checking them
+against each other, and eleven were restatements. That is the honest account.
+
+### Resolution: plant four, rewrite eight
+
+A flagged pair has exactly two valid resolutions and only the author knows
+which applies.
+
+**Planted** where the duplication is real and worth showing:
+`dup-meeting-actions` grew to four ideas across HR, IT and two general records —
+the strongest example in the dataset of the thing this product exists to catch.
+Plus `dup-close-checklist`, `dup-exit-themes`, `dup-case-file`.
+
+**Rewritten** where it was an accident that added a duplicate without adding
+coverage — the opposite of the point of the expansion. Eight ideas and three
+solutions moved onto subjects the catalog genuinely lacked: retiring dead
+training courses, finding one supplier recorded under several names, planning a
+floor move, transport disruption, fire roll call, flagging a requested tool that
+overlaps one already licensed, finding devices that have gone quiet, and price
+spread across suppliers.
+
+One constraint drove which got which: a planted cluster must be detected in
+**both** variants, or `verify-duplicates` reports it as missed in the other.
+Only four pairs cleared both thresholds.
+
+### The durable fix: a collision pre-flight
+
+The real failure was not the eleven duplicates, it was that nothing caught them
+until `npm run enrich` had spent credit. `npm run seed` now ends with a free,
+offline, rarity-weighted word-overlap check over every record pair.
+
+It warns rather than gates, because the resolution is a judgement call.
+
+**What it is not, measured rather than assumed.** Run against the seven declared
+clusters with the guard off, the scores spread 0.00 to 0.79 — so it does *not*
+separate real duplicates from unrelated records. `dup-a-1`~`dup-a-2` ("Handle
+invoice disputes better" / "Sort dispute emails by reason code") scores 0.00
+and is unmistakable to an embedding. The threshold flags roughly the top 1% of
+pairs and catches exactly one failure mode: a record restated in near-enough
+the same words. That happens to be the mistake that produced v4.9's eleven.
+
+The first version of this check was worse and worth recording: plain word
+overlap with the title weighted triple, which flagged "Meeting Write-Up
+Assistant" against "Procedure Q&A Assistant" and "First Response Drafter"
+against "Job Description Drafter". A catalog of automation records is full of
+words like drafter, assistant, report and script; their overlap says nothing.
+Weighting each word by how rare it is across the corpus fixed it.
+
+It found one more real problem on its first clean run — `gen-mtg-02` against
+`gen-mtg-03`, both about weekly meeting preparation, scoring higher than a
+declared duplicate pair. `gen-mtg-02` was rewritten.
+
+The one warning left is `sol-dup-a-1` against `sol-dup-a-2`: lexically close
+because both are about invoice disputes, semantically apart because one drafts
+replies and one sorts an inbox. The embeddings separate them in both variants.
+Reviewed, left alone, and noted in the seed file so the next reader does not
+re-investigate it.
 
 ---
 

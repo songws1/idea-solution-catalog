@@ -114,16 +114,20 @@ export const GENERAL_IDEAS: IdeaSeed[] = [
       "Meetings are recorded but nobody writes them up, so decisions are lost and actions are remembered differently by different people. Produce a short summary, the decisions taken, and a list of who owes what by when.",
     notes: "",
     status: "solved",
-    // Planted near-duplicate with exp-hr-08 — see the note there.
-    cluster: "gen-notes",
+    // Four-way planted cluster with hr-ld-03, it-sd-04 and exp-hr-08 (v4.9.1).
+    // Detection found these four before the seed annotations declared them, and
+    // detection was right: HR, IT and two general records all ask for the same
+    // meeting write-up. Exactly the duplication this product exists to catch,
+    // and the strongest example in the dataset.
+    cluster: "dup-meeting-actions",
   },
   {
     key: "gen-mtg-02",
     org: "General Business Process",
     service: "Meetings & Coordination",
-    title: "Build the agenda from last time's open items",
+    title: "Work out which recurring meetings are no longer worth holding",
     description:
-      "Every weekly meeting starts by working out what is still outstanding. Carry forward the items that were not closed, group them by owner, and produce a draft agenda the chair can edit before sending.",
+      "The calendar fills with standing meetings that nobody set up and nobody can cancel. Look at how many invitees actually attend each recurring series, how long it has run and whether it produces anything, and put forward the candidates to shorten, merge or drop.",
     notes: "",
     status: "open",
   },
@@ -280,6 +284,9 @@ export const GENERAL_IDEAS: IdeaSeed[] = [
       "Before a case is closed, someone confirms the file contains what policy requires — the right forms, the right approvals, notes at each step. Read the file against the policy and flag what is missing or out of order, without making any judgement about the outcome.",
     notes: "A person decides; this only says what is absent.",
     status: "open",
+    // Planted with exp-hr-06 (v4.9.1) — the same check, asked once generically
+    // and once inside Employee Relations.
+    cluster: "dup-case-file",
   },
   {
     key: "gen-drf-06",

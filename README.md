@@ -157,12 +157,24 @@ similarity distribution, which invalidates the duplicate thresholds. The full
 loop is four commands:
 
 ```bash
-npm run seed
+npm run seed                        # also runs the collision pre-flight
 npm run enrich                      # writes embeddings with the OLD threshold
 npm run tune-duplicates -- --write  # derives the right ones, sets them
 npm run enrich                      # re-flags duplicates with the new threshold
 npm run verify-duplicates           # confirms
 ```
+
+`npm run seed` ends with a **collision pre-flight**: a free, offline check for
+records restated in near-enough the same words as an existing one. It warns and
+does not fail, because a flagged pair has two valid resolutions and only the
+author knows which — either they really are the same want (give both the same
+`cluster`, and the flag becomes ground truth) or they are meant to differ
+(rewrite one). It is not a substitute for the embeddings; it catches only
+lexical restatement. Resolve its warnings before spending an enrich run.
+
+If `verify-duplicates` still reports FALSE-POSITIVE pairs afterwards, read them
+as a finding rather than a defect: the detector has found real near-duplicates
+the seed annotations do not declare. Same two resolutions, same decision.
 
 The second `enrich` is cheap: LLM summaries are cached in `.enrich-cache/`, so
 it re-embeds and re-clusters without re-billing the summarization.

@@ -22,6 +22,12 @@ export const SOLUTIONS_A: SolutionSeed[] = [
     neverReviewed: true,
   },
   {
+    // The collision pre-flight flags this against sol-dup-a-2 and that is a
+    // known false alarm, reviewed and left alone (v4.9.1): both are about
+    // invoice disputes so they share rare words, but one drafts replies and the
+    // other sorts the inbox. The embeddings separate them in both variants,
+    // which is the check that decides. Declaring them a cluster would make
+    // verify-duplicates report a planted cluster the detector correctly misses.
     key: "sol-dup-a-1",
     name: "Dispute Response Starter Prompts",
     artifactType: "prompt",
