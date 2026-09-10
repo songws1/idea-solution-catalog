@@ -2472,6 +2472,21 @@ a.dot:focus-visible {
   max-width: var(--max-line);
 }
 
+/* The duplicate finding, said inside the verdict rather than left on the
+   governance page. It sits above the explanation because it changes what the
+   whole answer means: not "reuse this" but "do not become the third team". */
+.verdict-twice {
+  margin: 12px 0 0;
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--status-review) 26%, transparent);
+  background: color-mix(in srgb, var(--status-review) 7%, transparent);
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ink);
+  max-width: var(--max-line);
+}
+
 /* Said in the same breath as an "it already exists" verdict, because that is
    the sentence someone acts on without reading further. */
 .verdict-caution {

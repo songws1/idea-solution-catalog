@@ -53,15 +53,49 @@ export default function VerdictBlock({
     const months = monthsSince(sol.date_last_reviewed);
     return state === "unreviewed"
       ? "Worth knowing: nobody has confirmed that build still works since it was written. Ask its owner before you drop your own plan."
-      : `Worth knowing: nobody has confirmed that build still works in ${Math.round(
+      : `Worth knowing: nobody has confirmed that build still works for ${Math.round(
           months ?? 0
         )} months. Ask its owner before you drop your own plan.`;
+  })();
+
+  /**
+   * "This has already been built twice" (v4.9.2).
+   *
+   * The strongest sentence this catalog can produce, and until now it was only
+   * visible on the governance page. When the records the verdict rests on are
+   * flagged as near-duplicates OF EACH OTHER, the answer is not "someone built
+   * this" — it is "two teams built this separately and neither knew", which
+   * changes what the reader should do. They are not choosing whether to reuse
+   * one build; they are about to become the third team, and the person to talk
+   * to is whoever owns the overlap rather than either owner alone.
+   *
+   * Surfaced from `duplicate_candidates`, which detection already wrote offline.
+   * No new computation, no extra call — the finding was sitting in the payload
+   * unread.
+   */
+  const alreadyTwice = (() => {
+    if (result.verdict !== "exists" && result.verdict !== "already-asked") return null;
+    const matches = [...result.solutions, ...result.ideas].map((m) => m.record);
+    for (let i = 0; i < matches.length; i++) {
+      for (let j = i + 1; j < matches.length; j++) {
+        const a = matches[i];
+        const b = matches[j];
+        if (!a.duplicate_candidates.some((c) => c.id === b.id)) continue;
+        const nameOf = (r: typeof a): string =>
+          r.doc_type === "idea" ? r.title : (r as ClientSolution).name;
+        return result.verdict === "exists"
+          ? `This has been built twice already: “${nameOf(a)}” and “${nameOf(b)}” are flagged as near-duplicates of each other. Yours would be the third — worth getting both owners in one conversation rather than picking one.`
+          : `Two separate requests already ask for this: “${nameOf(a)}” and “${nameOf(b)}”. Joining one of them splits the case further; the useful move is to get them merged.`;
+      }
+    }
+    return null;
   })();
 
   return (
     <section className={`verdict v-${result.verdict}`} aria-live="polite">
       <h2>{copy.headline}</h2>
       <p className="verdict-action">{copy.action}</p>
+      {alreadyTwice && <p className="verdict-twice">{alreadyTwice}</p>}
       {explanation && <p className="verdict-explain">{explanation}</p>}
       {caution && <p className="verdict-caution">{caution}</p>}
     </section>

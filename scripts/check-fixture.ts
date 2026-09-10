@@ -59,7 +59,9 @@ function dilute(a: number[], w: number, seed: number): number[] {
  * resting on an unvouched-for build is the case worth being able to look at.
  */
 const neverReviewed =
-  dataset.solutions.find((s) => !s.date_last_reviewed) ?? dataset.solutions[0];
+  dataset.solutions.find((s) => s.duplicate_candidates.length > 0 && !s.date_last_reviewed) ??
+  dataset.solutions.find((s) => s.duplicate_candidates.length > 0) ??
+  dataset.solutions[0];
 const exists = payload(
   neverReviewed.embedding,
   "Something that reads the AP shared mailbox every morning, sorts what came in, and tells the team what to do with each message.",

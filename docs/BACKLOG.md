@@ -789,8 +789,47 @@ re-investigate it.
 
 ---
 
+## v4.9.2 — two things the live UAT run showed
+
+Chris ran the test sentences against the real deployed data. All three "already
+built" cases returned the right record. Two things came out of watching it.
+
+**A copy bug.** The staleness caution read "nobody has confirmed that build
+still works **in** 8 months", which parses as a promise about the future rather
+than a statement about the past. Now "for 8 months".
+
+**A finding that was sitting unread in the payload.** The meeting-write-up
+query returned two solutions, and the explanation named both — but the page
+never said the thing that actually matters about them: they are flagged as
+near-duplicates of each other. Two teams built the same tool separately.
+
+That is the strongest sentence this catalog can produce and it was only visible
+on the governance page, which the person about to build something never opens.
+So the verdict now says it:
+
+> This has been built twice already: "X" and "Y" are flagged as near-duplicates
+> of each other. Yours would be the third — worth getting both owners in one
+> conversation rather than picking one.
+
+It changes the reader's next move. Without it the answer is "reuse one of
+these", which quietly accepts the existing duplication and adds a third party
+to it. With it, the answer is "the overlap itself is the thing to resolve".
+
+The `already-asked` variant says the equivalent for two competing requests:
+joining one splits the case further, so the useful move is to get them merged.
+
+No new computation and no extra call — `duplicate_candidates` was already in
+the response, written offline by detection. The finding existed; nothing read
+it. Worth remembering as a class of bug: data computed and shipped to the
+client, then never surfaced where the decision is made.
+
+---
+
 ## Open/parked items (not urgent)
 
+- **Dead filter chip.** The `scheduling` tag is in the taxonomy but no solution
+  carries it (its idea is unsolved), so the chip returns zero. Either drop the
+  tag, dim zero-count options, or leave it as "nobody has built this yet".
 - **Design pattern attribute** — Chris's next question: whether classifying a
   record by the SHAPE of what it does (extract, triage, summarise, draft,
   check, route) is worth adding to search and to the AI scan. Deliberately kept
