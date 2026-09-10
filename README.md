@@ -9,14 +9,29 @@ data, names, or terminology. "GBS" is a generic org name.
 
 ## What this demonstrates
 
-1. **Enrichment improves retrieval.** Built solutions are scanned with an LLM
-   and the resulting summary + tags are written back onto the originating
-   idea record. The same query run against the two committed datasets
-   (`dataset-pre-enrichment.json` vs `dataset-post-enrichment.json`) returns
-   visibly better results on the post set, because vague idea records become
-   findable in solution-side language. This is the core demo: describe
-   *"a way to handle invoice disputes coming into the AP inbox"* against each
-   dataset and compare what the check finds.
+1. **Enrichment improves retrieval — for vague records, and by less than this
+   README used to claim.** Built solutions are scanned with an LLM and the
+   resulting summary + tags are written back onto the originating idea record.
+   That claim sat here unmeasured for months. `npm run measure-enrichment` now
+   measures it offline against the committed embeddings, and the honest result
+   is narrower than "visibly better":
+
+   | what | pre | post |
+   |---|---|---|
+   | problem wording finds its solution (LLM summary on solutions) | 94% | 94% |
+   | solution wording finds its idea (write-back on ideas) | 94% | 98% |
+   | …restricted to the deliberately vague one-line ideas | 71% | **100%** |
+
+   So the **write-back earns its keep on thin records** — "Make invoice
+   handling faster" moves from rank 11 to rank 1 — and the **LLM summary on
+   solutions buys nothing measurable**, though it is the expensive half of the
+   pipeline.
+
+   Two caveats, both load-bearing. The 94% base rate means the general test is
+   saturated and cannot separate much; real queries are harder than this
+   synthetic set, so the gain may be understated. And the write-back's gain
+   shows up on solved ideas, which the overlap check deliberately filters out
+   of its verdict — its live contribution is the narrower `via_link` path.
 2. **Cross-referencing is visible.** Ideas and the solutions that resolved
    them sit on one board. A solution card names the idea it resolves and links
    straight to it; the detail drawer names the counterpart in both directions.
