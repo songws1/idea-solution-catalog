@@ -1,19 +1,17 @@
 import { getDatasetVariant, loadDataset } from "@/lib/dataset";
 import {
   agingData,
+  demandSupply,
   duplicateClusters,
-  duplicateRateByOrg,
-  orgDotGrid,
-  statusByOrg,
+  programFunnel,
   summaryTiles,
   throughput,
 } from "@/lib/governance";
 import SummaryTiles from "@/components/governance/SummaryTiles";
-import StatusByOrgWidget from "@/components/governance/StatusByOrg";
+import ProgramFunnelWidget from "@/components/governance/ProgramFunnel";
+import DemandSupplyWidget from "@/components/governance/DemandSupply";
 import AgingWidget from "@/components/governance/AgingWidget";
 import ThroughputWidget from "@/components/governance/ThroughputWidget";
-import DuplicateRate from "@/components/governance/DuplicateRate";
-import OrgDotGrid from "@/components/governance/OrgDotGrid";
 import DuplicateClusters from "@/components/governance/DuplicateClusters";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +21,10 @@ export default function GovernancePage() {
   const dataset = loadDataset(variant);
 
   const tiles = summaryTiles(dataset);
-  const status = statusByOrg(dataset);
+  const supply = demandSupply(dataset);
+  const funnel = programFunnel(dataset);
   const aging = agingData(dataset);
   const tp = throughput(dataset);
-  const dupRate = duplicateRateByOrg(dataset);
-  const dots = orgDotGrid(dataset);
   const clusters = duplicateClusters(dataset);
 
   const totalRecords = dataset.ideas.length + dataset.solutions.length;
@@ -38,7 +35,7 @@ export default function GovernancePage() {
         <h1>Catalog governance</h1>
         <p className="lede">
           Catalog health at a glance across {totalRecords} records in{" "}
-          {status.length} services. Every figure is counted from the
+          {supply.length} services. Every figure is counted from the
           dataset&rsquo;s static fields; duplicate flags are review candidates
           produced offline, never auto-merges.
         </p>
@@ -51,17 +48,26 @@ export default function GovernancePage() {
       <SummaryTiles tiles={tiles} />
 
       {/*
-        §4.2 widget order: lead with what is actionable. Clusters and aging are
-        the two things a reviewer can do something about today; status, rate and
-        throughput are context; the dot grid is a closing overview.
+        Widget order (v4.13). Seven widgets became five, and the two that
+        arrived replaced three that left, so the page states each fact once.
+        Order is diagnosis, then work, then context:
+
+          funnel        where the program loses ideas — the first question
+          demand/supply which service is furthest behind (was a six-column table)
+          clusters      the queue, banded by what to do, cheapest action first
+          aging         what has gone quiet
+          throughput    the trend behind all of it
+
+        Out: "Duplicate rate by service" said the cluster finding a second time
+        as a percentage nobody could act on, and the org dot grid drew 182 dots
+        the reader had to count to recover numbers printed elsewhere.
       */}
       <div className="gov-grid">
+        <ProgramFunnelWidget funnel={funnel} />
+        <DemandSupplyWidget rows={supply} />
         <DuplicateClusters clusters={clusters} dataset={dataset} />
         <AgingWidget data={aging} />
-        <StatusByOrgWidget rows={status} />
-        <DuplicateRate rows={dupRate} />
         <ThroughputWidget points={tp.points} conversionPct={tp.conversionPct} />
-        <OrgDotGrid rows={dots} />
       </div>
     </div>
   );

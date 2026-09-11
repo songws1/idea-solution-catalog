@@ -25,42 +25,106 @@ function isFlagged(record: IdeaRecord | SolutionRecord): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Widget 1 — status breakdown by org
+// Widget 1 — where ideas stop (v4.13)
+//
+// Replaces "Status by service", a six-column table of raw counts that asked the
+// reader to do the subtraction themselves. The question a governance page has
+// to answer first is not "how many are open" but "where does this program lose
+// things", and that is a funnel: every stage is a strict subset of the one
+// above it, so each gap is a real loss rather than two unrelated numbers side
+// by side.
+//
+// Deliberately built from idea status alone. Adding solutions as a fourth stage
+// would break the subset property, since a solution can exist with no idea
+// behind it — that case is reported separately as `unrequested`, which is its
+// own finding: work that never went through the front door at all.
 // ---------------------------------------------------------------------------
 
-export interface StatusByOrgRow {
-  org: string;
-  ideasOpen: number;
-  ideasInProgress: number;
-  ideasSolved: number;
-  /** Solutions linked to an idea (their de facto status comes from the idea). */
-  solutionsLinked: number;
-  /** Solutions with no linked idea (the historical/unlinked gap case). */
-  solutionsOrphan: number;
+export interface FunnelStage {
+  key: "raised" | "started" | "built";
+  label: string;
+  value: number;
+  /** Records that stopped here rather than reaching the next stage. */
+  lost: { count: number; label: string } | null;
 }
 
-export function statusByOrg(dataset: Dataset): StatusByOrgRow[] {
-  const rows = new Map<string, StatusByOrgRow>();
-  const rowFor = (org: string): StatusByOrgRow => {
+export interface ProgramFunnel {
+  stages: FunnelStage[];
+  /** Solutions with no idea behind them — built outside the funnel entirely. */
+  unrequested: number;
+  totalSolutions: number;
+}
+
+export function programFunnel(dataset: Dataset): ProgramFunnel {
+  const raised = dataset.ideas.length;
+  const started = dataset.ideas.filter((i) => i.status !== "open").length;
+  const built = dataset.ideas.filter((i) => i.status === "solved").length;
+  const unrequested = dataset.solutions.filter((s) => !s.resolves_idea_id).length;
+
+  return {
+    stages: [
+      {
+        key: "raised",
+        label: "Ideas raised",
+        value: raised,
+        lost: {
+          count: raised - started,
+          label: "never picked up",
+        },
+      },
+      {
+        key: "started",
+        label: "Picked up",
+        value: started,
+        lost: {
+          count: started - built,
+          label: "in progress, not built yet",
+        },
+      },
+      { key: "built", label: "Built", value: built, lost: null },
+    ],
+    unrequested,
+    totalSolutions: dataset.solutions.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Widget 1b — demand against supply, per service (v4.13)
+//
+// The other half of what the old status table held, in the shape that makes it
+// answerable: unmet demand on one side of a centre line and built supply on the
+// other, so the asymmetry is the picture rather than an arithmetic exercise.
+// Ordered by the gap, largest first, because "which service is furthest behind"
+// is the only reason to look.
+// ---------------------------------------------------------------------------
+
+export interface DemandSupplyRow {
+  org: string;
+  /** Ideas still open or in progress — asked for, not yet delivered. */
+  unmet: number;
+  /** Solutions attributed to this service, however they arrived. */
+  built: number;
+}
+
+export function demandSupply(dataset: Dataset): DemandSupplyRow[] {
+  const rows = new Map<string, DemandSupplyRow>();
+  const rowFor = (org: string): DemandSupplyRow => {
     let row = rows.get(org);
     if (!row) {
-      row = { org, ideasOpen: 0, ideasInProgress: 0, ideasSolved: 0, solutionsLinked: 0, solutionsOrphan: 0 };
+      row = { org, unmet: 0, built: 0 };
       rows.set(org, row);
     }
     return row;
   };
   for (const idea of dataset.ideas) {
     const row = rowFor(idea.org);
-    if (idea.status === "open") row.ideasOpen += 1;
-    else if (idea.status === "in_progress") row.ideasInProgress += 1;
-    else row.ideasSolved += 1;
+    if (idea.status !== "solved") row.unmet += 1;
   }
-  for (const sol of dataset.solutions) {
-    const row = rowFor(orgOfSolution(dataset, sol));
-    if (sol.resolves_idea_id) row.solutionsLinked += 1;
-    else row.solutionsOrphan += 1;
-  }
-  return [...rows.values()].sort((a, b) => a.org.localeCompare(b.org));
+  for (const sol of dataset.solutions) rowFor(orgOfSolution(dataset, sol)).built += 1;
+
+  return [...rows.values()].sort(
+    (a, b) => b.unmet - b.built - (a.unmet - a.built) || a.org.localeCompare(b.org)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -147,96 +211,19 @@ export function throughput(dataset: Dataset): { points: ThroughputPoint[]; conve
   return { points, conversionPct };
 }
 
-// ---------------------------------------------------------------------------
-// Widget 4 — % flagged duplicate per org
-// ---------------------------------------------------------------------------
-
-export interface DuplicateRateRow {
-  org: string;
-  records: number;
-  flagged: number;
-  pct: number;
-}
-
-export function duplicateRateByOrg(dataset: Dataset): DuplicateRateRow[] {
-  const rows = new Map<string, { records: number; flagged: number }>();
-  const rowFor = (org: string) => {
-    let row = rows.get(org);
-    if (!row) {
-      row = { records: 0, flagged: 0 };
-      rows.set(org, row);
-    }
-    return row;
-  };
-  for (const idea of dataset.ideas) {
-    const row = rowFor(idea.org);
-    row.records += 1;
-    if (isFlagged(idea)) row.flagged += 1;
-  }
-  for (const sol of dataset.solutions) {
-    const row = rowFor(orgOfSolution(dataset, sol));
-    row.records += 1;
-    if (isFlagged(sol)) row.flagged += 1;
-  }
-  return [...rows.entries()]
-    .map(([org, r]) => ({ org, ...r, pct: r.records ? Math.round((r.flagged / r.records) * 100) : 0 }))
-    .sort((a, b) => b.pct - a.pct);
-}
-
-// ---------------------------------------------------------------------------
-// Org dot grid — one dot per record, color-coded by state
-// ---------------------------------------------------------------------------
-
-export type DotState =
-  | "duplicate"
-  | "open"
-  | "in_progress"
-  | "solved"
-  | "solution_linked"
-  | "solution_orphan";
-
-export interface OrgDotGridRow {
-  org: string;
-  dots: Array<{ recordId: string; docType: "idea" | "solution"; state: DotState; title: string }>;
-}
-
-export function orgDotGrid(dataset: Dataset): OrgDotGridRow[] {
-  const rows = new Map<string, OrgDotGridRow>();
-  const rowFor = (org: string): OrgDotGridRow => {
-    let row = rows.get(org);
-    if (!row) {
-      row = { org, dots: [] };
-      rows.set(org, row);
-    }
-    return row;
-  };
-  for (const idea of dataset.ideas) {
-    const state: DotState = isFlagged(idea)
-      ? "duplicate"
-      : idea.status === "open"
-        ? "open"
-        : idea.status === "in_progress"
-          ? "in_progress"
-          : "solved";
-    rowFor(idea.org).dots.push({ recordId: idea.id, docType: "idea", state, title: idea.title });
-  }
-  for (const sol of dataset.solutions) {
-    const state: DotState = isFlagged(sol)
-      ? "duplicate"
-      : sol.resolves_idea_id
-        ? "solution_linked"
-        : "solution_orphan";
-    rowFor(orgOfSolution(dataset, sol)).dots.push({
-      recordId: sol.id,
-      docType: "solution",
-      state,
-      title: sol.name,
-    });
-  }
-  return [...rows.values()]
-    .map((row) => ({ ...row, dots: row.dots.sort((a, b) => a.recordId.localeCompare(b.recordId)) }))
-    .sort((a, b) => a.org.localeCompare(b.org));
-}
+/*
+ * "Duplicate rate by service" and the org dot grid lived here until v4.13.
+ *
+ * The rate widget stated the same finding the cluster list states, aggregated
+ * to a percentage — the page said it twice, and the percentage was the version
+ * nobody could act on. Once the clusters are banded by what to do about them,
+ * the rate adds an ordering the bands already give, in a worse unit.
+ *
+ * The dot grid drew one dot per record, 182 of them, colour-coded by state. It
+ * asked the reader to count coloured dots to recover numbers that the other
+ * widgets print. Removing it is the reason the funnel and the demand/supply
+ * bars fit without the page growing.
+ */
 
 // ---------------------------------------------------------------------------
 // Duplicate clusters — connected components over duplicate_candidates,
@@ -255,11 +242,55 @@ export interface ClusterMember {
   managerEmail?: string | null;
 }
 
+/**
+ * What to do about a cluster, which is not the same question as what kind of
+ * records are in it (v4.13).
+ *
+ * Ten clusters used to render identically, so the cheapest action on the page
+ * looked exactly like the most expensive one. They are not the same work at
+ * all, and the data separates them cleanly:
+ *
+ *   ask-answered — someone is still asking for a thing this catalog has already
+ *     built. Close the request and point at the build. Costs nothing, today.
+ *   none-built   — every member is still a request. Merge them before either
+ *     gets funded. The cheapest saving available, because the waste has not
+ *     been incurred yet.
+ *   built-twice  — the money is already spent, either as two solutions flagged
+ *     against each other or as several duplicate requests each closed with its
+ *     own build. Consolidating or retiring one is real work.
+ *
+ * Ordered cheapest-first when rendered, which is the opposite of ordering by
+ * severity and the right way round for a queue somebody has to work.
+ */
+export type ClusterBand = "ask-answered" | "none-built" | "built-twice";
+
+export const CLUSTER_BAND_ORDER: ClusterBand[] = ["ask-answered", "none-built", "built-twice"];
+
 export interface DuplicateCluster {
   docType: "idea" | "solution";
   members: ClusterMember[];
   /** Contains at least one human-validated duplicate_of link. */
   confirmed: boolean;
+  band: ClusterBand;
+}
+
+/**
+ * A solution cluster is always money already spent. An idea cluster depends on
+ * whether anything in it has been delivered: a mix means the open members are
+ * asking for what the solved one already has; all-solved means each duplicate
+ * request got its own build, which is the same outcome as two flagged
+ * solutions and belongs in the same band.
+ */
+function bandOf(
+  docType: "idea" | "solution",
+  group: Array<IdeaRecord | SolutionRecord>
+): ClusterBand {
+  if (docType === "solution") return "built-twice";
+  const ideas = group as IdeaRecord[];
+  const delivered = ideas.filter((i) => i.status === "solved").length;
+  if (delivered === 0) return "none-built";
+  if (delivered === ideas.length) return "built-twice";
+  return "ask-answered";
 }
 
 export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
@@ -319,14 +350,23 @@ export function duplicateClusters(dataset: Dataset): DuplicateCluster[] {
         };
       });
       const confirmed = group.some((r) => r.duplicate_of && byId.has(r.duplicate_of));
-      clusters.push({ docType, members, confirmed });
+      clusters.push({ docType, members, confirmed, band: bandOf(docType, group) });
     }
   };
 
   buildFor("idea");
   buildFor("solution");
+  /**
+   * Cheapest action first (v4.13), then the biggest cluster within a band —
+   * a four-record overlap is worse than a pair and should lead its section.
+   * The old sort was by docType, which ordered the queue by a fact about the
+   * records rather than by anything the reader could act on.
+   */
   return clusters.sort(
-    (a, b) => a.docType.localeCompare(b.docType) || b.members.length - a.members.length
+    (a, b) =>
+      CLUSTER_BAND_ORDER.indexOf(a.band) - CLUSTER_BAND_ORDER.indexOf(b.band) ||
+      b.members.length - a.members.length ||
+      a.docType.localeCompare(b.docType)
   );
 }
 

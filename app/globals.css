@@ -756,82 +756,18 @@ a:hover {
   margin-left: 6px;
 }
 
-/* Dot grid --------------------------------------------------------------- */
+/* Dot grid ----------------------------------------------------------------
+   The org dot grid was removed in v4.13: it drew 182 dots and asked the reader
+   to count them to recover numbers the other widgets print. Its per-state
+   classes (.dot.d-*), .dot-org and .dot-row went with it. The bare .dot below
+   stays because the throughput legend uses it as a swatch. */
 
-/* A service's label must sit closer to its own dots than to the row above it,
-   or the grouping reads one row out of step. */
-.dot-org {
-  margin-bottom: 20px;
-}
-
-.dot-org:last-child {
-  margin-bottom: 0;
-}
-
-.dot-org-label {
-  font-size: 12.5px;
-  color: var(--ink);
-  font-weight: 500;
-  margin: 0 0 7px;
-}
-
-.dot-org-count {
-  color: var(--ink-faint);
-  font-weight: 400;
-  margin-left: 6px;
-}
-
-.dot-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-/* §4.4: 10px dots on a 4px gap. The old 11px/5px was no denser and read worse;
-   more importantly every dot is now an anchor, so keyboard focus and touch both
-   reach the record the way a mouse hover used to. */
 .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   display: inline-block;
   box-sizing: border-box;
-  transition: transform 100ms var(--ease);
-}
-
-a.dot:hover {
-  transform: scale(1.35);
-}
-
-a.dot:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* State is double-encoded (§4.4): color AND fill/ring, so color is never the
-   only channel. Solid = settled, ring = open or unlinked, ringed-solid = needs
-   attention. */
-.dot.d-open {
-  background: transparent;
-  border: 2px solid var(--status-open);
-}
-.dot.d-in_progress {
-  background: var(--status-review);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 45%, transparent);
-}
-.dot.d-solved {
-  background: var(--status-solved);
-}
-.dot.d-duplicate {
-  background: var(--status-duplicate);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 45%, transparent);
-}
-.dot.d-solution_linked {
-  background: var(--accent);
-}
-.dot.d-solution_orphan {
-  background: transparent;
-  border: 2px dashed var(--accent);
 }
 
 .legend {
@@ -1008,29 +944,201 @@ a.dot:focus-visible {
   border-color: var(--accent);
 }
 
-/* Bars (duplicate rate) -------------------------------------------------- */
+/* Program funnel (v4.13) --------------------------------------------------
+   Replaced the duplicate-rate bars, which drew a percentage that restated the
+   cluster list. Each stage is a full-width track: the filled part is what
+   reached the stage, the muted part is what stopped there. One track, two
+   quantities, because they are two views of the same whole. */
 
-.bar-row {
+.funnel-stage {
+  margin-bottom: 16px;
+}
+
+.funnel-stage:last-child {
+  margin-bottom: 0;
+}
+
+.funnel-labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.funnel-name {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 550;
+}
+
+.funnel-value {
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.funnel-track {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.funnel-fill {
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+/* Hatched, not just paler. The loss is the same kind of quantity as the fill
+   and sits on the same track, so it needs a channel other than lightness or it
+   reads as a dimmer version of "reached this stage". */
+.funnel-lost {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--status-open) 26%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+  border-left: 1px solid var(--border-strong);
+}
+
+.funnel-drop {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.funnel-drop strong {
+  color: var(--status-review);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Built with no idea behind it. Outside the funnel because it never entered
+   it, and said in words because it is one number, not a series. */
+.funnel-aside {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+/* Demand against supply (v4.13) -------------------------------------------
+   A centre line does the subtraction the old status table asked the reader to
+   do six times. Both halves share one scale, set from the widest single value
+   on the widget, so rows compare with each other and not only with themselves. */
+
+.ds-head,
+.ds-row {
   display: grid;
-  grid-template-columns: 170px 1fr 52px;
+  grid-template-columns: 170px 34px 1fr 1fr 34px 52px;
+  gap: 8px;
+}
+
+.ds-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+/* Each label sits against the centre line on its own side and takes its bar's
+   colour. Placed together and both grey they read as one phrase, "waiting
+   built", rather than as two labels pointing in opposite directions. */
+.ds-head-left {
+  grid-column: 3;
+  text-align: right;
+  padding-right: 4px;
+  color: var(--status-review);
+}
+
+.ds-head-right {
+  grid-column: 4;
+  padding-left: 4px;
+  color: var(--status-solved);
+}
+
+.ds-head-gap {
+  grid-column: 6;
+  text-align: right;
+}
+
+.ds-row {
   align-items: center;
-  gap: 10px;
-  padding: 4px 0;
+  padding: 5px 0;
   font-size: 13px;
 }
 
-.bar-track {
-  height: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
+/* The ordering metric, printed because it cannot be read off the bars. */
+.ds-gap {
+  text-align: right;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
 }
 
-.bar-fill {
-  height: 100%;
-  background: var(--status-duplicate);
-  opacity: 0.75;
+.ds-gap.is-behind {
+  color: var(--status-review);
+  font-weight: 600;
+}
+
+.ds-org {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-n {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.ds-n-left {
+  text-align: right;
+}
+
+.ds-bar {
+  height: 12px;
+  display: flex;
+}
+
+/* The two halves meet at the centre, so the left one fills from its right
+   edge. The hairline is the axis. */
+.ds-bar-left {
+  justify-content: flex-end;
+  border-right: 1px solid var(--border-strong);
+  padding-right: 1px;
+}
+
+.ds-bar-right {
+  justify-content: flex-start;
+  padding-left: 1px;
+}
+
+.ds-fill {
+  border-radius: 2px;
+  /* A service with nothing built is a finding, not a rendering failure, so a
+     zero-width bar still shows. */
+  min-width: 2px;
+}
+
+.ds-fill-unmet {
+  background: var(--status-review);
+  opacity: 0.8;
+}
+
+.ds-fill-built {
+  background: var(--status-solved);
+  opacity: 0.8;
 }
 
 /* Throughput columns — §4.1: y-axis reference, paired month groups,
@@ -1960,11 +2068,88 @@ a.dot:focus-visible {
 
 /* §4.3 duplicate clusters as bordered cards ------------------------------- */
 
+/* Bands (v4.13) -----------------------------------------------------------
+   Ten clusters used to render identically, so a request that could be closed
+   in a minute looked exactly like two finished builds needing consolidation.
+   The band head carries the action and its cost; the left rule is the only
+   colour, and it runs the height of the section so the grouping survives
+   scrolling past the heading. */
+
+.cluster-band {
+  margin-top: 22px;
+  padding-left: 14px;
+  border-left: 3px solid var(--band-color, var(--border-strong));
+}
+
+.cluster-band:first-of-type {
+  margin-top: 10px;
+}
+
+.band-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Cheapest first, and the colour says so: green for free, amber for do-it-now,
+   red for money already gone. Set once on the section so the rule, the count
+   pill and the cost label all inherit one value. */
+.cluster-band.b-ask-answered {
+  --band-color: var(--status-solved);
+}
+
+.cluster-band.b-none-built {
+  --band-color: var(--status-review);
+}
+
+.cluster-band.b-built-twice {
+  --band-color: var(--status-duplicate);
+}
+
+.band-title {
+  font-size: 14px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.band-count {
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  color: var(--band-color);
+  background: color-mix(in srgb, var(--band-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--band-color) 28%, transparent);
+}
+
+.band-cost {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--band-color);
+}
+
+.band-action {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
 .cluster-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-top: 4px;
+  margin-top: 12px;
 }
 
 .cluster {
@@ -2042,6 +2227,39 @@ a.dot:focus-visible {
 .member-org {
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+/* One overlap surfacing as more than one cluster (v4.13). Detection runs
+   separately over ideas and solutions, so duplicate requests each closed with
+   their own build appear twice: as the requests and as the builds. The band
+   would otherwise read as four problems where there are two. */
+.cluster-xref {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  font-size: 12px;
+  color: var(--ink-muted);
+  max-width: var(--max-line);
+}
+
+/* The record to close, in the one band where closing it is the action (v4.13).
+   Amber rather than green: it marks work outstanding, not work finished, and
+   the "Solved …" line on its siblings is already the green half of the pair. */
+.member-pending {
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: var(--status-review);
+  background: color-mix(in srgb, var(--status-review) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-review) 28%, transparent);
+  white-space: nowrap;
 }
 
 .member-relation {

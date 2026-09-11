@@ -1,7 +1,12 @@
-import type { ClusterMember, DuplicateCluster } from "@/lib/governance";
+import {
+  CLUSTER_BAND_ORDER,
+  type ClusterBand,
+  type ClusterMember,
+  type DuplicateCluster,
+} from "@/lib/governance";
 import { findIdea, findSolution } from "@/lib/dataset";
 import { matchLabel } from "@/lib/match-label";
-import type { Dataset } from "@/lib/types";
+import type { Dataset, SolutionRecord } from "@/lib/types";
 import ClusterMembers, { type ClusterMemberView, type ClusterView } from "./ClusterMembers";
 import MatchHelp from "@/components/search/MatchHelp";
 import { artifactHref } from "@/lib/artifact-file";
@@ -80,6 +85,7 @@ function memberView(
       statusLabel: idea.status === "in_progress" ? "in progress" : idea.status,
       statusChipClass: `status-chip s-${idea.status}`,
       description: oneLine(idea.description),
+      pending: idea.status !== "solved",
       artifactLink: null,
       // §4.3 line 3: the counterpart is named by title and linked. The raw id
       // that used to sit here was a §2.1 violation on a governance surface.
@@ -97,6 +103,8 @@ function memberView(
     statusLabel: sol.artifact_type,
     statusChipClass: "chip",
     description: oneLine(sol.ai_generated_summary ?? sol.raw_description),
+    // A solution is the delivery; it is never the thing still being waited on.
+    pending: false,
     artifactLink: artifactHref(sol.id),
     relationLabel: resolves ? "Resolves" : null,
     relationTitle: resolves ? resolves.title : null,
@@ -104,7 +112,54 @@ function memberView(
   };
 }
 
-function buildClusterView(cluster: DuplicateCluster, dataset: Dataset): ClusterView {
+/**
+ * The same overlap, told twice (v4.13).
+ *
+ * Detection runs separately over ideas and over solutions, which is right —
+ * they are different texts and a request can read nothing like the thing
+ * eventually built. But it means one real overlap can surface as several
+ * clusters: in this dataset four duplicate meeting-notes requests appear as an
+ * idea cluster of four AND as two solution pairs, because each request got its
+ * own build and those builds are flagged against each other.
+ *
+ * Merging them would be wrong: the solution pairs are a finding on their own,
+ * and a reader retiring a build needs to see it beside the other build, not
+ * buried in a list of requests. Saying nothing would be worse, because the
+ * band then reads as four separate problems when it is two.
+ *
+ * So they are cross-referenced. This finds, for a solution cluster, the idea
+ * cluster its members' requests came from, when two or more of them share one.
+ */
+function crossReference(cluster: DuplicateCluster, all: DuplicateCluster[]): string | null {
+  if (cluster.docType !== "solution") return null;
+
+  const ideaClusterOf = new Map<string, DuplicateCluster>();
+  for (const c of all) {
+    if (c.docType !== "idea") continue;
+    for (const m of c.members) ideaClusterOf.set(m.record.id, c);
+  }
+
+  const hits = new Map<DuplicateCluster, number>();
+  for (const m of cluster.members) {
+    if (m.record.doc_type !== "solution") continue;
+    const sol = m.record as SolutionRecord;
+    if (!sol.resolves_idea_id) continue;
+    const ideaCluster = ideaClusterOf.get(sol.resolves_idea_id);
+    if (ideaCluster) hits.set(ideaCluster, (hits.get(ideaCluster) ?? 0) + 1);
+  }
+
+  for (const [ideaCluster, n] of hits) {
+    if (n < 2) continue;
+    return `The requests behind these are flagged together too — they are ${ideaCluster.members.length} of the same ask, each closed with its own build.`;
+  }
+  return null;
+}
+
+function buildClusterView(
+  cluster: DuplicateCluster,
+  dataset: Dataset,
+  all: DuplicateCluster[]
+): ClusterView {
   // Similarity range shown in the cluster header (§4.3): only scores between
   // members of THIS cluster count, so a member's link to an outside candidate
   // cannot widen the range misleadingly.
@@ -122,25 +177,73 @@ function buildClusterView(cluster: DuplicateCluster, dataset: Dataset): ClusterV
       : null;
 
   const members = cluster.members.map((m) => memberView(m, cluster, dataset, clusterTop));
-  return { docType: cluster.docType, confirmed: cluster.confirmed, members, range };
+  return {
+    docType: cluster.docType,
+    confirmed: cluster.confirmed,
+    members,
+    range,
+    band: cluster.band,
+    crossRef: crossReference(cluster, all),
+  };
 }
+
+/**
+ * What each band means and what to do about it (v4.13).
+ *
+ * The cost line is the point. Until now every cluster rendered identically, so
+ * a request that could be closed in a minute looked exactly like two finished
+ * builds that need consolidating — and the cheapest work on the page was
+ * invisible inside a list of ten identical-looking cards.
+ */
+const BAND_COPY: Record<
+  ClusterBand,
+  { title: string; action: string; cost: string }
+> = {
+  "ask-answered": {
+    title: "Already built, still being asked for",
+    action:
+      "Someone is waiting for something this catalog has. Close the request and point them at the build.",
+    cost: "Costs nothing",
+  },
+  "none-built": {
+    title: "Nothing built yet",
+    action:
+      "Every record here is still a request. Merging them now settles it before anyone funds two of them.",
+    cost: "Cheapest to fix",
+  },
+  "built-twice": {
+    title: "Built more than once",
+    action:
+      "The work has already been done twice. Consolidating or retiring one is real effort, and the saving is ongoing.",
+    cost: "Money already spent",
+  },
+};
 
 export default function DuplicateClusters({ clusters, dataset }: Props) {
   // Views are built server-side so no embeddings or raw user ids cross into
   // the client component; it only receives the flattened display fields.
-  const views = clusters.map((c) => buildClusterView(c, dataset));
+  const views = clusters.map((c) => buildClusterView(c, dataset, clusters));
+  const bands = CLUSTER_BAND_ORDER.map((band) => ({
+    band,
+    copy: BAND_COPY[band],
+    items: views.filter((v) => v.band === band),
+  })).filter((b) => b.items.length > 0);
+
+  const records = views.reduce((n, v) => n + v.members.length, 0);
+
   return (
     <section className="widget wide" id="duplicate-clusters">
-      <h2>Duplicate clusters</h2>
+      <h2>Overlaps to review</h2>
       <p className="widget-sub">
-        Records flagged as similar to each other, detected offline and awaiting
-        review — nothing is merged automatically. Open a record for its summary,
-        or jump to its card on the catalog board.
+        {views.length} groups holding {records} records, detected offline and
+        awaiting review — nothing is merged automatically. Grouped by what to do
+        about them, cheapest first. Open a record for its summary, or jump to
+        its card on the catalog board.
       </p>
       <MatchHelp variant="cluster" />
       {views.length === 0 ? (
         <div className="empty-state" style={{ boxShadow: "none" }}>
-          <p>No duplicate clusters in this dataset.</p>
+          <p>No overlaps found in this dataset.</p>
           <p>
             That means nothing was flagged as similar to anything else — either
             the catalog is genuinely distinct or the detection threshold needs
@@ -148,11 +251,23 @@ export default function DuplicateClusters({ clusters, dataset }: Props) {
           </p>
         </div>
       ) : (
-        <div className="cluster-list">
-          {views.map((view, idx) => (
-            <ClusterMembers key={`${view.docType}-${idx}`} cluster={view} />
-          ))}
-        </div>
+        bands.map(({ band, copy, items }) => (
+          <div className={`cluster-band b-${band}`} key={band}>
+            <div className="band-head">
+              <h3 className="band-title">
+                {copy.title}
+                <span className="band-count">{items.length}</span>
+              </h3>
+              <span className="band-cost">{copy.cost}</span>
+            </div>
+            <p className="band-action">{copy.action}</p>
+            <div className="cluster-list">
+              {items.map((view, idx) => (
+                <ClusterMembers key={`${band}-${idx}`} cluster={view} />
+              ))}
+            </div>
+          </div>
+        ))
       )}
     </section>
   );

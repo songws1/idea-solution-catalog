@@ -28,6 +28,8 @@ export interface ClusterMemberView {
   relationId: string | null;
   /** This member's similarity to the cluster's closest other member. */
   matchLabel: string | null;
+  /** An idea still open or in progress — nothing has been delivered for it. */
+  pending: boolean;
   links: Record<string, ClusterLink>;
 }
 
@@ -36,6 +38,10 @@ export interface ClusterView {
   confirmed: boolean;
   members: ClusterMemberView[];
   range: { low: number; high: number } | null;
+  /** Which band the cluster was filed under — see ClusterBand in lib/governance. */
+  band: string;
+  /** This cluster is another view of an overlap already listed. */
+  crossRef: string | null;
 }
 
 /**
@@ -57,6 +63,23 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
   const toggle = (id: string) => setExpandedId((cur) => (cur === id ? null : id));
   const others = (selfId: string) => cluster.members.filter((m) => m.id !== selfId);
 
+  /**
+   * Pairs say less than groups (v4.13).
+   *
+   * Every member used to carry an "also flagged with" row and a match label.
+   * In a two-record cluster both are restatement: "also flagged with X" names
+   * the only other row on the screen, and a label graded against the cluster's
+   * own top score reads "Strong match" on both members by construction. The
+   * header already gives the similarity range.
+   *
+   * In a cluster of three or more they carry real information — which pair is
+   * the close one, and which member is the outlier holding the group together
+   * — so they stay there. Eight of the ten clusters in this dataset are pairs,
+   * which is most of the height of this widget removed without removing a
+   * single fact.
+   */
+  const isPair = cluster.members.length === 2;
+
   return (
     <div className="cluster">
       <div className="cluster-head">
@@ -74,6 +97,8 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
         )}
       </div>
 
+      {cluster.crossRef && <p className="cluster-xref">{cluster.crossRef}</p>}
+
       {cluster.members.map((m) => (
         <div className="cluster-member" key={m.id}>
           <div className="member-row">
@@ -88,6 +113,18 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
                   {m.title}
                 </button>{" "}
                 <span className="member-org">{m.org}</span>
+                {/*
+                  Only in the band where it IS the action (v4.13). "Close the
+                  request and point them at the build" is useless unless the
+                  reader can see which of these records is the request; the
+                  built ones already announce themselves with a "Solved" line
+                  and the open one had nothing at all. Elsewhere the chip would
+                  be decoration: in `none-built` every member is pending, and
+                  in `built-twice` none is.
+                */}
+                {cluster.band === "ask-answered" && m.pending && (
+                  <span className="member-pending">still waiting</span>
+                )}
               </p>
 
               <p className="member-meta">
@@ -132,7 +169,7 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
             </div>
 
             <div className="member-side">
-              {m.matchLabel && <span className="member-match">{m.matchLabel}</span>}
+              {!isPair && m.matchLabel && <span className="member-match">{m.matchLabel}</span>}
               <a className="member-jump" href={`/?record=${encodeURIComponent(m.id)}`}>
                 Jump to card
               </a>
@@ -154,7 +191,7 @@ export default function ClusterMembers({ cluster }: { cluster: ClusterView }) {
             </div>
           )}
 
-          {others(m.id).length > 0 && (
+          {!isPair && others(m.id).length > 0 && (
             <p className="member-xlinks">
               also flagged with{" "}
               {others(m.id).map((o, i) => {
