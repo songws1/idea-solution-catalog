@@ -18,6 +18,7 @@ import {
   applyFilters,
   describeFilters,
   deriveFilterOptions,
+  facetCounts,
   filterScored,
   isFilterActive,
   toggleValue,
@@ -92,6 +93,31 @@ export default function CatalogHome({
     () => applyFilters(catalog, solutionMeta, filters),
     [catalog, solutionMeta, filters]
   );
+
+  /**
+   * Facet counts (v4.12), against the pool the board is actually drawn from.
+   *
+   * Browse mode: the board's own population — solutions, plus ideas with no
+   * built solution, which is the same exclusion applyFilters makes. Counting
+   * solved ideas here would print a number the board never shows.
+   *
+   * Checked mode: the ranked result set, not the catalog. After a check the
+   * board holds eight or twelve records; "HR Shared Services 31" would then be
+   * a count of somewhere the reader cannot get to from here, which is the
+   * exact dead end these counts exist to prevent.
+   */
+  const counts = useMemo(() => {
+    const usingResults = Boolean(results && hasResults);
+    const ideaPool = usingResults
+      ? scored.ideas.map((r) => r.record).filter((r): r is ClientIdea => r.doc_type === "idea")
+      : catalog.ideas.filter((i) => i.status !== "solved" && !i.linked_solution_id);
+    const solutionPool = usingResults
+      ? scored.solutions
+          .map((r) => r.record)
+          .filter((r): r is ClientSolution => r.doc_type === "solution")
+      : catalog.solutions;
+    return facetCounts(ideaPool, solutionPool, solutionMeta, filters);
+  }, [results, hasResults, scored, catalog, solutionMeta, filters]);
 
   /**
    * Checked mode: the chips narrow the ranked results with the same facet
@@ -426,6 +452,7 @@ export default function CatalogHome({
         <FilterBar
           options={filterOptions}
           filters={filters}
+          counts={counts}
           onToggle={(facet, value) =>
             setFilters((f) => ({ ...f, [facet]: toggleValue(f[facet], value) }))
           }

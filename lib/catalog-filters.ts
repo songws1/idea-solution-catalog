@@ -248,6 +248,133 @@ export function deriveFilterOptions(
   };
 }
 
+/**
+ * How many records each filter value would give you (v4.12).
+ *
+ * Light UAT's loudest complaint was that testers did not know what to type,
+ * and its quieter one was that filtering led to an empty board with no hint of
+ * why. v4.10 answered the first for a `clear` verdict only, with CoveragePanel.
+ * This answers both, always, for free: a facet menu that carries counts IS the
+ * map of the catalog, and a value showing 0 is a dead end the reader can see
+ * before they walk into it.
+ *
+ * Counts are faceted, not static. Each facet is counted with EVERY OTHER active
+ * filter applied but its own selection removed, which is what makes them read
+ * as "what would happen if I picked this" rather than "what exists somewhere in
+ * the catalog". With Service = HR already chosen, the Solution-type menu shows
+ * HR's counts; the Service menu still shows every service, so the reader can
+ * switch without first clearing.
+ *
+ * The pool is supplied by the caller rather than taken from the whole dataset,
+ * because on a checked board the board is not the catalog — it is the ranked
+ * subset. Counting the catalog there would print numbers the reader cannot
+ * reach, which is the exact failure this is meant to remove.
+ */
+export type FacetCounts = Record<keyof FilterState, Record<string, number>>;
+
+/**
+ * Facets that describe a built solution and therefore do not filter ideas at
+ * all — see ideaMatches, which ignores both. Their counts are counts of
+ * SOLUTIONS, not of the board: "Solution type ▸ automation 30" means thirty
+ * built automations, while the board after that click still holds every idea.
+ *
+ * Exported because the menu has to say so. This was invisible behaviour until
+ * counts made it visible: a count of 106 there (thirty solutions plus every
+ * idea, which the choice does not touch) would be true of the board and
+ * useless as a number, since every artifact type would show about a hundred.
+ */
+export const SOLUTION_ONLY_FACETS = new Set<keyof FilterState>([
+  "artifactTypes",
+  "technologyTypes",
+]);
+
+const FACET_KEYS: (keyof FilterState)[] = [
+  "services",
+  "artifactTypes",
+  "technologyTypes",
+  "orgs",
+  "years",
+  "months",
+  "tags",
+];
+
+function bump(into: Record<string, number>, value: string | undefined): void {
+  if (!value) return;
+  into[value] = (into[value] ?? 0) + 1;
+}
+
+export function facetCounts(
+  ideas: ClientIdea[],
+  solutions: ClientSolution[],
+  meta: SolutionMetaMap,
+  f: FilterState
+): FacetCounts {
+  const out = {} as FacetCounts;
+
+  for (const key of FACET_KEYS) {
+    // Its own selection removed; everything else still applies.
+    const others: FilterState = { ...f, [key]: [] };
+    const tally: Record<string, number> = {};
+
+    for (const idea of ideas) {
+      if (!ideaMatches(idea, others)) continue;
+      switch (key) {
+        case "services":
+          bump(tally, idea.service);
+          break;
+        case "orgs":
+          bump(tally, idea.org);
+          break;
+        case "years":
+          bump(tally, yearOf(idea.submitted_date));
+          break;
+        case "months":
+          bump(tally, monthNameOf(idea.submitted_date));
+          break;
+        case "tags":
+          for (const t of idea.solution_tags) bump(tally, t);
+          break;
+        // artifact/technology type describe solutions only; ideas add nothing.
+        default:
+          break;
+      }
+    }
+
+    for (const sol of solutions) {
+      if (!solutionMatches(sol, meta[sol.id], others)) continue;
+      switch (key) {
+        case "services":
+          bump(tally, meta[sol.id]?.service ?? "Unassigned");
+          break;
+        case "orgs":
+          bump(tally, meta[sol.id]?.org ?? "Unassigned");
+          break;
+        case "artifactTypes":
+          bump(tally, sol.artifact_type);
+          break;
+        case "technologyTypes":
+          bump(tally, sol.technology_type);
+          break;
+        case "years":
+          bump(tally, yearOf(sol.date_built));
+          break;
+        case "months":
+          bump(tally, monthNameOf(sol.date_built));
+          break;
+        case "tags":
+          for (const t of sol.category_tags) bump(tally, t);
+          break;
+        default:
+          break;
+      }
+    }
+
+    out[key] = tally;
+  }
+
+  return out;
+}
+
 /** Plain-language description of active filters for the empty state (§1.2). */
 export function describeFilters(f: FilterState): string[] {
   // v3 §1 mapping: stored `service` renders as "Sub-service"; stored `org` as "Service".

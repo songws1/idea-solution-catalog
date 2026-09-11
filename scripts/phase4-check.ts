@@ -1,7 +1,15 @@
 /* Phase 4 verification harness (temporary): exercises lib/catalog-filters.ts
  * and lib/kanban.ts against the real dataset — offline, no API calls. */
 import { getDatasetVariant, loadDataset } from "../lib/dataset";
-import { buildSolutionMeta, deriveFilterOptions, applyFilters, EMPTY_FILTERS } from "../lib/catalog-filters";
+import {
+  buildSolutionMeta,
+  deriveFilterOptions,
+  applyFilters,
+  facetCounts,
+  EMPTY_FILTERS,
+  SOLUTION_ONLY_FACETS,
+  type FilterState,
+} from "../lib/catalog-filters";
 import { buildKanbanColumns } from "../lib/kanban";
 import { toClientDataset } from "../lib/client-records";
 import type { ClientScoredResult, IdeaRecord, SolutionRecord } from "../lib/types";
@@ -102,6 +110,71 @@ check(
     yearApplied.solutions.every((s) => s.date_built.startsWith("2026")),
   `${yearApplied.solutions.length} solutions`
 );
+/* ---- facetCounts (v4.12) ------------------------------------------------
+ * A count that does not equal what selecting the value actually produces is
+ * worse than no count: it promises records and delivers a different number, in
+ * the one place added specifically to stop people hitting dead ends. So the
+ * check is not "counts exist" but "every count, for every value, equals the
+ * size of the board you get by selecting it" — verified by really applying
+ * each filter. It runs under a non-empty filter state too, because the faceted
+ * "own selection removed" rule is where this can go wrong silently.
+ */
+const boardPool = {
+  ideas: catalog.ideas.filter((i) => i.status !== "solved" && !i.linked_solution_id),
+  solutions: catalog.solutions,
+};
+
+function countsAgree(base: FilterState, label: string): void {
+  const counts = facetCounts(boardPool.ideas, boardPool.solutions, meta, base);
+  let mismatches = 0;
+  let firstBad = "";
+  let checked = 0;
+  for (const key of Object.keys(counts) as (keyof FilterState)[]) {
+    for (const [value, n] of Object.entries(counts[key])) {
+      // Selecting one value REPLACES that facet's selection — which is exactly
+      // the pool facetCounts counted against.
+      const applied = applyFilters(catalog, meta, { ...base, [key]: [value] });
+      // A solution-only facet does not filter ideas, so its count is a count
+      // of solutions and is checked as one. The menu says so in words.
+      const actual = SOLUTION_ONLY_FACETS.has(key)
+        ? applied.solutions.length
+        : applied.ideas.length + applied.solutions.length;
+      checked += 1;
+      if (actual !== n) {
+        mismatches += 1;
+        if (!firstBad) firstBad = `${key}/${value}: said ${n}, got ${actual}`;
+      }
+    }
+  }
+  check(
+    `facet counts equal the board they produce (${label})`,
+    mismatches === 0,
+    mismatches === 0 ? `${checked} values verified` : firstBad
+  );
+}
+
+countsAgree(EMPTY_FILTERS, "no filters");
+countsAgree({ ...EMPTY_FILTERS, orgs: ["Finance Operations"] }, "one facet already active");
+countsAgree(
+  { ...EMPTY_FILTERS, orgs: ["Finance Operations"], artifactTypes: ["automation"] },
+  "two facets already active"
+);
+
+/* A value at zero has to be genuinely unreachable, or greying it out lies. */
+const zeroCounts = facetCounts(boardPool.ideas, boardPool.solutions, meta, EMPTY_FILTERS);
+let zeroWrong = 0;
+for (const key of Object.keys(zeroCounts) as (keyof FilterState)[]) {
+  for (const value of options[key as keyof typeof options] ?? []) {
+    if ((zeroCounts[key][value] ?? 0) !== 0) continue;
+    const applied = applyFilters(catalog, meta, { ...EMPTY_FILTERS, [key]: [value] });
+    const actual = SOLUTION_ONLY_FACETS.has(key)
+      ? applied.solutions.length
+      : applied.ideas.length + applied.solutions.length;
+    if (actual > 0) zeroWrong += 1;
+  }
+}
+check("values shown as empty really are empty", zeroWrong === 0, `${zeroWrong} wrongly greyed`);
+
 console.log(`(offline checks through applyFilters done)`);
 
 /* ---- buildKanbanColumns (synthetic result set from real records) -------- */

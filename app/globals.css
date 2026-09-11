@@ -1325,7 +1325,9 @@ a.dot:focus-visible {
   top: calc(100% + 6px);
   left: 0;
   z-index: 20;
-  min-width: 236px;
+  /* 272, not 236: service names plus a right-aligned count no longer fit
+     (v4.12). */
+  min-width: 272px;
   max-height: 300px;
   overflow: auto;
   background: var(--surface);
@@ -1354,6 +1356,46 @@ a.dot:focus-visible {
   width: 15px;
   height: 15px;
   flex-shrink: 0;
+}
+
+/* ---- Facet counts (v4.12) -----------------------------------------------
+   The count is what turns a filter menu into a map of the catalog, so it is
+   pushed to the far edge and given tabular numerals: the column of figures is
+   the thing being read, and it has to line up to be read as a column. */
+.filter-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.filter-option-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  padding-left: 12px;
+}
+
+/* A value with nothing behind it. Kept in place and greyed rather than hidden:
+   a menu whose contents change as other filters move reads as the app losing
+   options, and the whole point of the count is to show a dead end before the
+   reader walks into it. */
+.filter-option.is-empty {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.filter-option.is-empty:hover {
+  background: transparent;
+}
+
+/* Why a Solution-type count is smaller than the board it produces (v4.12). */
+.filter-menu-note {
+  margin: 0 0 4px;
+  padding: 6px 9px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-muted);
 }
 
 .filter-menu-empty {

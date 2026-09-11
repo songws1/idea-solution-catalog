@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FilterOptions, FilterState } from "@/lib/catalog-filters";
+import {
+  SOLUTION_ONLY_FACETS,
+  type FacetCounts,
+  type FilterOptions,
+  type FilterState,
+} from "@/lib/catalog-filters";
 
 /**
  * Unified two-tier browse-by filter bar (Addendum A §1.1.2) — NOT a separate
@@ -23,6 +28,12 @@ interface FacetDef {
 interface Props {
   options: FilterOptions;
   filters: FilterState;
+  /**
+   * How many records each value would give you, counted against the board's
+   * current pool with this facet's own selection removed (v4.12). See
+   * facetCounts in lib/catalog-filters.ts.
+   */
+  counts: FacetCounts;
   onToggle: (facet: keyof FilterState, value: string) => void;
   onClearAll: () => void;
 }
@@ -30,14 +41,26 @@ interface Props {
 interface ChipProps {
   def: FacetDef;
   selected: string[];
+  counts: Record<string, number>;
   onToggle: Props["onToggle"];
   openId: string | null;
   setOpenId: (id: string | null) => void;
 }
 
-function FacetChip({ def, selected, onToggle, openId, setOpenId }: ChipProps) {
+function FacetChip({ def, selected, counts, onToggle, openId, setOpenId }: ChipProps) {
   const isOpen = openId === def.id;
   const count = selected.length;
+
+  /**
+   * Values are ordered by how much they hold, not alphabetically (v4.12).
+   * A facet menu is the one place the catalog's own shape can be read, and
+   * "HR Shared Services 31 / Finance Operations 24 / …" says it in the order
+   * the eye already wants. Empty values sink to the bottom on their own.
+   */
+  const ordered = [...def.options].sort(
+    (a, b) => (counts[b] ?? 0) - (counts[a] ?? 0) || a.localeCompare(b)
+  );
+
   return (
     <div className="filter-chip">
       <button
@@ -52,16 +75,44 @@ function FacetChip({ def, selected, onToggle, openId, setOpenId }: ChipProps) {
       </button>
       {isOpen && (
         <div className="filter-menu" role="group" aria-label={`Filter by ${def.label}`}>
-          {def.options.map((opt) => (
-            <label key={opt} className="filter-option">
-              <input
-                type="checkbox"
-                checked={selected.includes(opt)}
-                onChange={() => onToggle(def.key, opt)}
-              />
-              <span>{opt}</span>
-            </label>
-          ))}
+          {SOLUTION_ONLY_FACETS.has(def.key) && (
+            /* Behaviour that existed all along and only became visible once
+               there were numbers to explain: these two facets describe a built
+               solution, so they narrow the Solution column and leave every
+               idea on the board. Saying it here is cheaper than a reader
+               discovering it by clicking and counting. */
+            <p className="filter-menu-note">
+              Counts are built solutions. Ideas are not filtered by this.
+            </p>
+          )}
+          {ordered.map((opt) => {
+            const n = counts[opt] ?? 0;
+            const checked = selected.includes(opt);
+            /**
+             * A zero value is a dead end, so it is shown greyed and inert
+             * rather than hidden: hiding it makes the menu's contents change
+             * as other filters move, which reads as the app losing options.
+             * An already-checked value stays clickable whatever its count,
+             * because the reader has to be able to undo it.
+             */
+            const dead = n === 0 && !checked;
+            return (
+              <label
+                key={opt}
+                className={"filter-option" + (dead ? " is-empty" : "")}
+                title={dead ? "No records in the current view" : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={dead}
+                  onChange={() => onToggle(def.key, opt)}
+                />
+                <span className="filter-option-label">{opt}</span>
+                <span className="filter-option-count">{n}</span>
+              </label>
+            );
+          })}
           {def.options.length === 0 && (
             <p className="filter-menu-empty">No values in the current dataset.</p>
           )}
@@ -71,7 +122,7 @@ function FacetChip({ def, selected, onToggle, openId, setOpenId }: ChipProps) {
   );
 }
 
-export default function FilterBar({ options, filters, onToggle, onClearAll }: Props) {
+export default function FilterBar({ options, filters, counts, onToggle, onClearAll }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -114,6 +165,7 @@ export default function FilterBar({ options, filters, onToggle, onClearAll }: Pr
       key={def.id}
       def={def}
       selected={filters[def.key]}
+      counts={counts[def.key] ?? {}}
       onToggle={onToggle}
       openId={openId}
       setOpenId={setOpenId}
