@@ -165,18 +165,15 @@ export const VERDICT_COPY: Record<
 > = {
   exists: {
     headline: "This may already be built.",
-    action:
-      "The closest build is first in the Solution column below. Take the artifact, or talk to its owner before you start — if it does not quite fit, extending theirs is usually cheaper than a second build.",
+    action: "Talk to its owner before you start. Extending theirs usually beats a second build.",
   },
   "already-asked": {
     headline: "Someone has already asked for this.",
-    action:
-      "The request is in the columns below. Add your case to it instead of filing a second one — two requests for the same thing compete for the same build slot.",
+    action: "Add your case to their request rather than filing a second one.",
   },
   related: {
     headline: "Nothing covers this, but there is related work.",
-    action:
-      "The closest records are below. Worth a conversation with their owners: they may have solved a piece of it, or hit something you would rather find out now.",
+    action: "Worth a word with the owners below before you start.",
   },
   clear: {
     headline: "Nothing in the catalog is close to this.",
@@ -209,15 +206,13 @@ export function clearCopy(result: OverlapResult): {
   if (!nearMiss) {
     return {
       headline: "Nothing in the catalog is anywhere near this.",
-      action:
-        "Go ahead. Record it when you build it, so the next person asking this question finds you.",
+      action: "Go ahead. Record it when you build it, so the next person finds you.",
       proof: null,
     };
   }
   return {
     headline: "Nothing here is close enough to act on.",
-    action:
-      "Close enough to be worth a second look before you start, but nothing that covers it. Go ahead, and record it when you build it.",
+    action: "Go ahead, and record it when you build it.",
     proof: result.nearest
       ? `The nearest record is “${result.nearest.name}”, and it is not a match — it is in the same territory at most.`
       : null,

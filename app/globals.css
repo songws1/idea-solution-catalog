@@ -2249,10 +2249,10 @@ a.dot:focus-visible {
   border-color: var(--ink-faint);
 }
 
-.board-order-note {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-}
+/* .board-order-note held "Ranked by how closely each record matches your
+   description." on a checked board until v4.11, forty pixels below a sub-line
+   saying the same thing and just above a legend showing it. The slot is now
+   empty on a checked board rather than filled for symmetry. */
 
 /* The explainer stays closed by default: it answers a question people have
    once, and should not cost space to everyone who already knows. */
@@ -2321,6 +2321,61 @@ a.dot:focus-visible {
 .widget .match-help {
   margin: 0 0 14px;
   display: block;
+}
+
+/* ---- Match legend (v4.11) ------------------------------------------------
+   Sits directly under "Ranked against what you described, closest first." and
+   reuses the real .card-score pills, so the key and the thing it keys are the
+   same markup rather than two drawings that can drift apart. Wraps to one item
+   per line on narrow screens; the third tier is shown as absent rather than
+   omitted, because it is the one label the board never renders. */
+.match-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-top: 12px;
+}
+
+/* flex-start, not center: when the gloss wraps to two lines on a narrow
+   screen the pill should sit against the first line, the way it does on a
+   card, rather than float beside the middle of a paragraph. */
+.match-legend-item {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.match-legend-item .card-score {
+  margin-left: 0;
+}
+
+.match-legend-text {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+/* The tier that exists in the scale but never on this board. Greyed and
+   struck through so it reads as "excluded", not as a fourth thing to look
+   for. */
+.card-score.m-loose {
+  color: var(--ink-faint);
+  background: transparent;
+  border-color: var(--border);
+  border-style: dashed;
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--ink-faint) 60%, transparent);
+}
+
+.match-legend-item.is-absent .match-legend-text {
+  color: var(--ink-faint);
+}
+
+/* The long explainer moved in here from the board controls (v4.11). It no
+   longer needs to push itself to the end of a toolbar row. */
+.match-legend .match-help {
+  margin-left: 0;
+  flex-basis: 100%;
 }
 
 /* ==========================================================================
@@ -2565,6 +2620,62 @@ a.dot:focus-visible {
   font-size: 14px;
   color: var(--ink-muted);
   max-width: var(--max-line);
+}
+
+/* Everything after the first supporting line folds in here (v4.11). Each of
+   those lines earned its place on its own; the stack of five did not. The
+   summary names how many are hidden, so folding them is a choice offered
+   rather than a decision taken on the reader's behalf. */
+.verdict-more {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--verdict-color) 25%, transparent);
+}
+
+.verdict-more > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.verdict-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.verdict-more > summary::before {
+  content: "+";
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-faint);
+}
+
+.verdict-more[open] > summary::before {
+  content: "\2212";
+}
+
+.verdict-more > summary:hover {
+  color: var(--ink);
+}
+
+/* Inside the fold the lines lose their dividers — the fold is the divider,
+   and repeating one per paragraph rebuilds the stack this was meant to end. */
+.verdict-more > p {
+  margin: 12px 0 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 /* The .overlap-* card grid lived here until v4.7. It rendered the verdict's

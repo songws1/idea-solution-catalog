@@ -29,7 +29,7 @@ import KanbanResults from "@/components/search/KanbanResults";
 import CheckPanel from "@/components/check/CheckPanel";
 import VerdictBlock from "@/components/check/VerdictBlock";
 import CoveragePanel from "@/components/check/CoveragePanel";
-import MatchHelp from "@/components/search/MatchHelp";
+import MatchLegend from "./MatchLegend";
 import { DEFAULT_SORT, SORT_LABELS, sortBoardItems, type SortKey } from "@/lib/board-sort";
 
 /**
@@ -417,6 +417,9 @@ export default function CatalogHome({
             "Ideas people asked for, and the solutions built from them. Filter or reorder to explore."
           )}
         </p>
+        {/* Only under a checked board — with nothing asked there are no pills
+            to explain, and a legend for labels that are not on screen is noise. */}
+        {results && hasResults && <MatchLegend />}
       </div>
 
       <div className="board-controls">
@@ -430,16 +433,14 @@ export default function CatalogHome({
         />
 
         {/*
-          Board order, stated rather than implied. After a check the order IS
-          part of the answer — the board is ranked by match — so the control is
-          replaced by a line saying so instead of silently doing nothing.
+          Board order. After a check the order IS part of the answer, so the
+          control has nothing to offer and the slot goes empty rather than
+          holding a disabled control or a third restatement of "ranked by
+          match" (v4.11 — the sub-line says it, the legend shows it, and the
+          note here said it a third time in the space of forty pixels).
         */}
-        <div className="board-order">
-          {results && hasResults ? (
-            <span className="board-order-note">
-              Ranked by how closely each record matches your description.
-            </span>
-          ) : (
+        {!(results && hasResults) && (
+          <div className="board-order">
             <label className="board-order-control">
               <span>Order</span>
               <select
@@ -453,9 +454,8 @@ export default function CatalogHome({
                 ))}
               </select>
             </label>
-          )}
-          {results && hasResults && <MatchHelp />}
-        </div>
+          </div>
+        )}
       </div>
 
       {filteredEmpty ? (

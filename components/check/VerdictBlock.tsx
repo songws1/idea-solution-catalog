@@ -99,14 +99,45 @@ export default function VerdictBlock({
     return null;
   })();
 
+  /**
+   * Compression (v4.11).
+   *
+   * Every addition to this block was justified on its own and the total was
+   * never looked at. On an `exists` verdict with a duplicate pair and a stale
+   * owner, the reader met five stacked paragraphs before seeing a single
+   * record — which is the "busy and text-heavy" complaint from v4.1 growing
+   * back in a different place.
+   *
+   * So one extra line shows inline and the rest fold away. The order is by how
+   * much each changes the decision: a duplicate pair means the overlap itself
+   * is the problem, a stale build means the answer may not be true any more,
+   * and the explanation is detail on an answer already given.
+   */
+  const extras = [
+    alreadyTwice && { cls: "verdict-twice", text: alreadyTwice },
+    caution && { cls: "verdict-caution", text: caution },
+    explanation && { cls: "verdict-explain", text: explanation },
+    cleared?.proof && { cls: "verdict-proof", text: cleared.proof },
+  ].filter(Boolean) as Array<{ cls: string; text: string }>;
+  const [lead, ...folded] = extras;
+
   return (
     <section className={`verdict v-${result.verdict}`} aria-live="polite">
       <h2>{copy.headline}</h2>
       <p className="verdict-action">{copy.action}</p>
-      {cleared?.proof && <p className="verdict-proof">{cleared.proof}</p>}
-      {alreadyTwice && <p className="verdict-twice">{alreadyTwice}</p>}
-      {explanation && <p className="verdict-explain">{explanation}</p>}
-      {caution && <p className="verdict-caution">{caution}</p>}
+      {lead && <p className={lead.cls}>{lead.text}</p>}
+      {folded.length > 0 && (
+        <details className="verdict-more">
+          <summary>
+            {folded.length === 1 ? "One more thing" : `${folded.length} more things`} worth knowing
+          </summary>
+          {folded.map((f) => (
+            <p key={f.cls} className={f.cls}>
+              {f.text}
+            </p>
+          ))}
+        </details>
+      )}
     </section>
   );
 }
