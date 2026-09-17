@@ -1,6 +1,6 @@
 import { getDatasetVariant, loadDataset } from "@/lib/dataset";
 import {
-  agingData,
+  agingHeat,
   demandSupply,
   duplicateClusters,
   programFunnel,
@@ -10,7 +10,7 @@ import {
 import SummaryTiles from "@/components/governance/SummaryTiles";
 import ProgramFunnelWidget from "@/components/governance/ProgramFunnel";
 import DemandSupplyWidget from "@/components/governance/DemandSupply";
-import AgingWidget from "@/components/governance/AgingWidget";
+import AgingHeatmap from "@/components/governance/AgingHeatmap";
 import ThroughputWidget from "@/components/governance/ThroughputWidget";
 import DuplicateClusters from "@/components/governance/DuplicateClusters";
 
@@ -23,7 +23,7 @@ export default function GovernancePage() {
   const tiles = summaryTiles(dataset);
   const supply = demandSupply(dataset);
   const funnel = programFunnel(dataset);
-  const aging = agingData(dataset);
+  const aging = agingHeat(dataset);
   const tp = throughput(dataset);
   const clusters = duplicateClusters(dataset);
 
@@ -55,7 +55,9 @@ export default function GovernancePage() {
           funnel        where the program loses ideas — the first question
           demand/supply which service is furthest behind (was a six-column table)
           clusters      the queue, banded by what to do, cheapest action first
-          aging         what has gone quiet
+          aging         what has gone quiet — a heatmap since v4.15, because
+                        "where is it piling up" is a hot-spot question that two
+                        alphabetical tables of counts left to the reader
           throughput    the trend behind all of it
 
         Out: "Duplicate rate by service" said the cluster finding a second time
@@ -66,7 +68,7 @@ export default function GovernancePage() {
         <ProgramFunnelWidget funnel={funnel} />
         <DemandSupplyWidget rows={supply} />
         <DuplicateClusters clusters={clusters} dataset={dataset} />
-        <AgingWidget data={aging} />
+        <AgingHeatmap heat={aging} />
         <ThroughputWidget points={tp.points} conversionPct={tp.conversionPct} />
       </div>
     </div>

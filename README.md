@@ -75,11 +75,14 @@ data, names, or terminology. "GBS" is a generic org name.
   The board stays on the page rather than moving behind a click because it
   renders with no API call: if the key is missing or the spend cap is reached,
   the check fails but the page still has the whole catalog on it.
-- **`/governance`** — catalog health for leaders: status by service, aging
-  against the same thresholds that mark a card, how many solutions nobody has
-  confirmed working, build throughput, share of records flagged as duplicates,
-  a service-by-service dot grid (one dot per record), and duplicate cluster
-  listings with submitter, manager, and solution owner.
+- **`/governance`** — catalog health for leaders, five widgets in the order
+  diagnosis, work, context (v4.13): where ideas stop, drawn as a funnel because
+  the stages really nest; demand against supply per service; the overlap queue
+  banded by what to do, cheapest action first, with submitter, manager and
+  solution owner on every member; aging as a heatmap (v4.15), ordered by what
+  needs acting on and graded on the same thresholds that mark a card; and build
+  throughput. `npx tsx scripts/check-governance.ts` asserts the arithmetic
+  behind all of it rather than the rendering.
 - **`/export`** — the catalog as two flat CSV files, one per record type.
 
 Every solution card downloads a real artifact file, generated from the record

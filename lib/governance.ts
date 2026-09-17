@@ -145,6 +145,122 @@ export interface AgingRow {
   neverReviewed: number;
 }
 
+/**
+ * The aging heatmap (v4.15).
+ *
+ * Replaces the two aging tables. They held the right numbers in the wrong
+ * shape: eleven columns of digits across two tables, alphabetical by service,
+ * leaving the reader to scan for the big ones. The question anyone opens this
+ * widget with is "where is it piling up", which is a hot-spot question, so the
+ * answer should be seen rather than read.
+ *
+ * Three decisions carry the widget:
+ *
+ *   - Rows are ordered by the urgent count (ideas over a year, plus solutions
+ *     stale or never reviewed), not alphabetically. The ordering is part of the
+ *     answer, and every number needed to check it is printed on the row.
+ *
+ *   - Two ramps, not one. The "act on this" columns (over 12 months, never
+ *     reviewed) take the review colour; the rest take the accent. Colour then
+ *     separates what needs work from what is merely current, which a single
+ *     ramp cannot do — under it, a healthy 8 and an alarming 8 look identical.
+ *
+ *   - Counts stay printed in every cell, zeros included (v3 §4.5). A heatmap
+ *     that only shows colour forces the reader back to a table for any
+ *     arithmetic, and an empty cell reads as missing data rather than as none.
+ *
+ * Buckets and totals come from agingData(), so the cells, the card marks and
+ * the summary tiles cannot drift apart.
+ */
+export type HeatRampKey = "calm" | "urgent";
+
+export interface AgingHeatCell {
+  key: "recent" | "mid" | "old" | "never";
+  label: string;
+  value: number;
+  ramp: HeatRampKey;
+  /** 0 for none, 1-4 by share of the strongest cell on the same ramp. */
+  step: number;
+}
+
+export interface AgingHeatRow {
+  org: string;
+  ideas: AgingHeatCell[];
+  solutions: AgingHeatCell[];
+  ideaTotal: number;
+  solutionTotal: number;
+  /** Ideas over a year plus solutions unconfirmed — what puts the row on top. */
+  urgent: number;
+}
+
+export interface AgingHeat {
+  rows: AgingHeatRow[];
+  /** Strongest cell on each ramp, the denominator every step is taken against. */
+  maxima: Record<HeatRampKey, number>;
+}
+
+const HEAT_STEPS = 4;
+
+/** 0 only for an empty cell; otherwise 1-4 by share of that ramp's strongest cell. */
+export function heatStep(value: number, max: number): number {
+  if (value <= 0) return 0;
+  if (max <= 0) return 1;
+  return Math.max(1, Math.min(HEAT_STEPS, Math.ceil((value / max) * HEAT_STEPS)));
+}
+
+export function agingHeat(dataset: Dataset, now: Date = new Date()): AgingHeat {
+  const { ideas, solutions } = agingData(dataset, now);
+  const solutionsByOrg = new Map(solutions.map((r) => [r.org, r]));
+  const empty: AgingRow = { org: "", recent: 0, mid: 0, old: 0, neverReviewed: 0 };
+
+  const raw = ideas.map((idea) => {
+    const sol = solutionsByOrg.get(idea.org) ?? empty;
+    return {
+      org: idea.org,
+      ideaCells: [
+        { key: "recent" as const, label: "under 6 months", value: idea.recent, ramp: "calm" as const },
+        { key: "mid" as const, label: "6 to 12 months", value: idea.mid, ramp: "calm" as const },
+        { key: "old" as const, label: "over 12 months", value: idea.old, ramp: "urgent" as const },
+      ],
+      solutionCells: [
+        { key: "recent" as const, label: "reviewed under 6 months ago", value: sol.recent, ramp: "calm" as const },
+        { key: "mid" as const, label: "reviewed 6 to 12 months ago", value: sol.mid, ramp: "calm" as const },
+        { key: "old" as const, label: "not reviewed for over 12 months", value: sol.old, ramp: "urgent" as const },
+        { key: "never" as const, label: "never reviewed", value: sol.neverReviewed, ramp: "urgent" as const },
+      ],
+    };
+  });
+
+  const all = raw.flatMap((r) => [...r.ideaCells, ...r.solutionCells]);
+  const maxima: Record<HeatRampKey, number> = {
+    calm: Math.max(0, ...all.filter((c) => c.ramp === "calm").map((c) => c.value)),
+    urgent: Math.max(0, ...all.filter((c) => c.ramp === "urgent").map((c) => c.value)),
+  };
+  const withStep = (c: (typeof all)[number]): AgingHeatCell => ({
+    ...c,
+    step: heatStep(c.value, maxima[c.ramp]),
+  });
+
+  const rows: AgingHeatRow[] = raw
+    .map((r) => {
+      const ideaCells = r.ideaCells.map(withStep);
+      const solutionCells = r.solutionCells.map(withStep);
+      return {
+        org: r.org,
+        ideas: ideaCells,
+        solutions: solutionCells,
+        ideaTotal: ideaCells.reduce((n, c) => n + c.value, 0),
+        solutionTotal: solutionCells.reduce((n, c) => n + c.value, 0),
+        urgent: [...ideaCells, ...solutionCells]
+          .filter((c) => c.ramp === "urgent")
+          .reduce((n, c) => n + c.value, 0),
+      };
+    })
+    .sort((a, b) => b.urgent - a.urgent || a.org.localeCompare(b.org));
+
+  return { rows, maxima };
+}
+
 export function agingData(
   dataset: Dataset,
   now: Date = new Date()

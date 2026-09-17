@@ -10,8 +10,8 @@ result rendering removed (v4.7), staleness signals (v4.8), and the dataset
 roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1),
 the "nothing found" answer rebuilt (v4.10), the verdict compressed (v4.11),
 counts in the filter menus (v4.12), the governance page rebuilt (v4.13; those
-three are recorded in their commit messages), and a similarity scale inside
-the verdict (v4.14). The mindmap is
+three are recorded in their commit messages), a similarity scale inside
+the verdict (v4.14), and aging redrawn as a heatmap (v4.15). The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -945,6 +945,62 @@ compares it with the old inline loop across every self-query.
 
 `scripts/check-fixture.ts` gained a fourth payload, `already-asked`, since the
 scale is the first thing that looks different on all four verdicts.
+
+---
+
+## v4.15 — aging as a heatmap
+
+The last table-shaped widget on the governance page. It held the right numbers
+in the wrong shape: eleven columns of digits across two tables, services in
+alphabetical order, and the reader left to scan for the big ones. Nobody opens
+this widget to look up Facilities Support; they open it to find where the
+problem is, which is a hot-spot question.
+
+One grid now, two column groups, counts still printed in every cell.
+
+### Decisions worth keeping
+
+**Two ramps, not one.** The accent for what is current, the review colour for
+what needs acting on (ideas over a year, solutions stale or never reviewed).
+Under a single ramp a healthy 8 and an alarming 8 are the same square, which is
+the failure the old table at least did not have. The column headings for those
+two columns carry the same colour, so the pairing is made where the reader is
+looking rather than only in the legend.
+
+**Rows ordered by what needs acting on.** Alphabetical order said nothing. The
+ordering is now part of the answer — Finance Operations first with 12 — and
+every number needed to check it is printed on the row.
+
+**Counts stay in the cells, zeros included.** A heatmap that shows only colour
+sends the reader back to a table for any arithmetic, and an empty cell reads as
+missing data rather than as none (v3 §4.5, unchanged since the tables).
+
+**Ink stays dark on every step.** The first pass flipped the top two steps to
+white text, which needed fills dark enough to carry it, and a count of 9 then
+shouted across the page before the reader had read what the column was. The
+steps top out mid-strength instead and every digit stays readable.
+
+**The cells are not links.** The service name opens the board pre-filtered, the
+same cross-navigation "Demand against supply" uses. There is no "solutions in
+this service not reviewed for a year" view to send anyone to, and a control
+that looks clickable and is not is worse than plain text.
+
+**Nothing new is counted.** `agingHeat()` is a layout over `agingData()`, so
+the cells, the trust marks on cards and the summary tiles cannot drift apart.
+
+### Verification
+
+`scripts/check-governance.ts` gained six assertions, all re-derived rather than
+hard-coded: every cell carries the count the tables carried, the grid accounts
+for every unsolved idea (76) and every solution (55), printed totals are their
+own row's sum, the urgent solution columns equal the "not confirmed working"
+tile (15), rows really are ordered by the urgent count and that count is its own
+sum, and the shading ranks — within a ramp a bigger count is never paler, only
+an empty cell is unshaded, and the strongest cell reaches the top step.
+
+`.widget { min-width: 0 }` went in with it: a grid item defaults to min-content
+width, so the 660px grid would otherwise have pushed the widget, and the page,
+wider than the phone.
 
 ---
 

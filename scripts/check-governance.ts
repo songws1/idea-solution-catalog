@@ -17,12 +17,15 @@
 import { getDatasetVariant, loadDataset } from "../lib/dataset";
 import {
   CLUSTER_BAND_ORDER,
+  agingData,
+  agingHeat,
   demandSupply,
   duplicateClusters,
   programFunnel,
   summaryTiles,
   orgOfSolution,
 } from "../lib/governance";
+import { solutionFreshness } from "../lib/freshness";
 import type { IdeaRecord } from "../lib/types";
 
 const variant = getDatasetVariant();
@@ -193,6 +196,114 @@ check(
   "all three bands occur in the dataset",
   CLUSTER_BAND_ORDER.every((b) => present.has(b)),
   [...present].join(", ")
+);
+
+/* ---- aging heatmap (v4.15) ---------------------------------------------- */
+
+/**
+ * The heatmap replaced two tables, so the risk it introduces is a cell that
+ * looks right and counts something else. Every assertion below re-derives the
+ * grid from agingData() or from the dataset rather than from a constant.
+ */
+const heat = agingHeat(dataset);
+const aging = agingData(dataset);
+const ideaRowOf = new Map(aging.ideas.map((r) => [r.org, r]));
+const solutionRowOf = new Map(aging.solutions.map((r) => [r.org, r]));
+
+const cellMismatch = heat.rows.filter((row) => {
+  const i = ideaRowOf.get(row.org);
+  const s = solutionRowOf.get(row.org);
+  const cell = (cells: typeof row.ideas, key: string) =>
+    cells.find((c) => c.key === key)?.value ?? -1;
+  return (
+    !i ||
+    !s ||
+    cell(row.ideas, "recent") !== i.recent ||
+    cell(row.ideas, "mid") !== i.mid ||
+    cell(row.ideas, "old") !== i.old ||
+    cell(row.solutions, "recent") !== s.recent ||
+    cell(row.solutions, "mid") !== s.mid ||
+    cell(row.solutions, "old") !== s.old ||
+    cell(row.solutions, "never") !== s.neverReviewed
+  );
+});
+check(
+  "every heat cell carries the count the aging tables carried",
+  cellMismatch.length === 0,
+  cellMismatch.map((r) => r.org).join(", ") || `${heat.rows.length} services`
+);
+
+check(
+  "the grid accounts for every unsolved idea and every solution",
+  heat.rows.reduce((n, r) => n + r.ideaTotal, 0) ===
+    dataset.ideas.filter((i) => i.status !== "solved").length &&
+    heat.rows.reduce((n, r) => n + r.solutionTotal, 0) === dataset.solutions.length,
+  `${heat.rows.reduce((n, r) => n + r.ideaTotal, 0)} ideas, ${heat.rows.reduce(
+    (n, r) => n + r.solutionTotal,
+    0
+  )} solutions`
+);
+
+check(
+  "printed totals are the sum of their own row",
+  heat.rows.every(
+    (r) =>
+      r.ideaTotal === r.ideas.reduce((n, c) => n + c.value, 0) &&
+      r.solutionTotal === r.solutions.reduce((n, c) => n + c.value, 0)
+  )
+);
+
+/**
+ * The shaded columns are exactly the records the page calls unconfirmed
+ * elsewhere. If these two ever disagree, the tile and the widget it links to
+ * are counting different things.
+ */
+const unconfirmed = dataset.solutions.filter((s) => {
+  const state = solutionFreshness(s);
+  return state === "stale" || state === "unreviewed";
+}).length;
+check(
+  "the urgent solution columns match the unconfirmed tile",
+  heat.rows.reduce(
+    (n, r) => n + r.solutions.filter((c) => c.ramp === "urgent").reduce((m, c) => m + c.value, 0),
+    0
+  ) === unconfirmed,
+  `${unconfirmed} unconfirmed`
+);
+
+check(
+  "rows are ordered by what needs acting on, and urgent is its own sum",
+  heat.rows.every(
+    (r, i) =>
+      (i === 0 || heat.rows[i - 1].urgent >= r.urgent) &&
+      r.urgent ===
+        [...r.ideas, ...r.solutions]
+          .filter((c) => c.ramp === "urgent")
+          .reduce((n, c) => n + c.value, 0)
+  ),
+  heat.rows.map((r) => `${r.org} ${r.urgent}`).join(" | ")
+);
+
+/**
+ * Shading is a ranking device, so it has to rank: within one ramp a bigger
+ * count can never be paler, an empty cell is the only step 0, and the strongest
+ * cell is the top step. Otherwise the colour would argue with the digits
+ * printed inside it.
+ */
+const cells = heat.rows.flatMap((r) => [...r.ideas, ...r.solutions]);
+const rampBroken = (["calm", "urgent"] as const).filter((ramp) => {
+  const of = cells.filter((c) => c.ramp === ramp);
+  const monotonic = of.every((a) =>
+    of.every((b) => (a.value > b.value ? a.step >= b.step : true))
+  );
+  const zeros = of.every((c) => (c.value === 0) === (c.step === 0));
+  const topped = heat.maxima[ramp] === 0 || of.some((c) => c.step === 4);
+  return !(monotonic && zeros && topped);
+});
+check(
+  "shading ranks: more is never paler, only an empty cell is unshaded",
+  rampBroken.length === 0,
+  rampBroken.join(", ") || `calm max ${heat.maxima.calm}, urgent max ${heat.maxima.urgent}`
 );
 
 /* ---- tiles still point at something ------------------------------------- */
