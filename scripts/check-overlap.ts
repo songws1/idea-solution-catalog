@@ -11,7 +11,7 @@
 import { loadDataset } from "../lib/dataset";
 import { toClientRecord } from "../lib/client-records";
 import { retrieve } from "../lib/retrieval";
-import { assessOverlap } from "../lib/overlap";
+import { assessOverlap, findTwicePair } from "../lib/overlap";
 import type { ClientScoredResult } from "../lib/types";
 
 const dataset = loadDataset("post");
@@ -109,6 +109,48 @@ for (const s of dataset.solutions) {
   if (r.solutions.length > 3 || r.ideas.length > 3) overLong++;
 }
 check("no verdict lists more than three of either kind", overLong === 0, `${overLong} over`);
+
+// 6. v4.14: findTwicePair is the pair search VerdictBlock used to run inline,
+//    moved, not rewritten. The reference below is the pre-v4.14 loop verbatim
+//    in behaviour; if the two ever disagree, the sentence and the scale's arc
+//    could name different records.
+function inlineTwicePair(r: ReturnType<typeof assess>): [string, string] | null {
+  if (r.verdict !== "exists" && r.verdict !== "already-asked") return null;
+  const matches = [...r.solutions, ...r.ideas].map((m) => m.record);
+  for (let i = 0; i < matches.length; i++) {
+    for (let j = i + 1; j < matches.length; j++) {
+      if (matches[i].duplicate_candidates.some((c) => c.id === matches[j].id)) {
+        return [matches[i].id, matches[j].id];
+      }
+    }
+  }
+  return null;
+}
+let pairDisagree = 0;
+let pairsSeen = 0;
+let nearestViaLink = 0;
+let nearestMissing = 0;
+for (const rec of [...dataset.ideas, ...dataset.solutions]) {
+  const outcome = retrieve(dataset, rec.embedding, { topDirect: 8 });
+  const r = assess(rec.embedding);
+  const expected = inlineTwicePair(r);
+  const got = findTwicePair(r);
+  if (expected) pairsSeen++;
+  if (JSON.stringify(expected) !== JSON.stringify(got ? [got[0].id, got[1].id] : null)) {
+    pairDisagree++;
+  }
+  // 7. nearest carries an id, and it is always a direct hit.
+  if (!r.nearest?.id) nearestMissing++;
+  const hit = [...outcome.ideas, ...outcome.solutions].find((h) => h.record.id === r.nearest?.id);
+  if (!hit || hit.via_link) nearestViaLink++;
+}
+check(
+  "findTwicePair names the same pair the inline search did",
+  pairDisagree === 0 && pairsSeen > 0,
+  `${pairDisagree} disagreements across ${pairsSeen} pairs`
+);
+check("nearest always carries an id", nearestMissing === 0, `${nearestMissing} missing`);
+check("nearest is never a via_link record", nearestViaLink === 0, `${nearestViaLink} via_link`);
 
 console.log(
   failures === 0

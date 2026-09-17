@@ -65,7 +65,39 @@ export interface OverlapResult {
    * that a tile on a ranked board reads as a match whatever its label says, so
    * this stays prose.
    */
-  nearest: { name: string; org: string; score: number } | null;
+  nearest: { id: string; name: string; org: string; score: number } | null;
+}
+
+/**
+ * The pair behind "this has been built twice" / "two requests already ask for
+ * this" (v4.9.2), or null.
+ *
+ * Lifted out of VerdictBlock in v4.14 because two things now depend on it: the
+ * sentence, and the arc the similarity scale draws between the same two dots.
+ * If each ran its own search they could one day disagree about which pair, and
+ * the picture would contradict the words directly above it.
+ *
+ * Only on `exists` and `already-asked`, and only among the records the verdict
+ * rests on, in the order the sentence has always named them.
+ */
+export function findTwicePair(result: OverlapResult): [ClientRecord, ClientRecord] | null {
+  if (result.verdict !== "exists" && result.verdict !== "already-asked") return null;
+  const matches = [...result.solutions, ...result.ideas].map((m) => m.record);
+  for (let i = 0; i < matches.length; i++) {
+    for (let j = i + 1; j < matches.length; j++) {
+      if (matches[i].duplicate_candidates.some((c) => c.id === matches[j].id)) {
+        return [matches[i], matches[j]];
+      }
+    }
+  }
+  return null;
+}
+
+/** Display name of any client record: an idea's title, a solution's name. */
+export function recordName(record: ClientRecord): string {
+  return record.doc_type === "idea"
+    ? (record as ClientIdea).title
+    : (record as ClientSolution).name;
 }
 
 /** Ideas that are still open questions — a solved idea is represented by its solution. */
@@ -95,11 +127,19 @@ export function assessOverlap(
   /**
    * The closest record of any kind, whether or not it qualifies as a match.
    * Only rendered on a `clear` verdict; the others have real matches to show.
+   *
+   * Direct hits only (v4.14). A `via_link` record carries its partner's score
+   * rather than one of its own, so on a tie it could be named "nearest" when it
+   * never matched at all. It also needs an id now: the similarity scale draws
+   * the nearest record as a dot and has to open the right one when clicked.
    */
-  const all = [...ideas, ...solutions].sort((a, b) => b.score - a.score);
+  const all = [...ideas, ...solutions]
+    .filter((r) => !r.via_link)
+    .sort((a, b) => b.score - a.score);
   const best = all[0];
   const nearest = best
     ? {
+        id: best.record.id,
         name:
           best.record.doc_type === "idea"
             ? (best.record as ClientIdea).title

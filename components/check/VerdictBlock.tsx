@@ -1,4 +1,10 @@
-import { VERDICT_COPY, clearCopy, type OverlapResult } from "@/lib/overlap";
+import {
+  VERDICT_COPY,
+  clearCopy,
+  findTwicePair,
+  recordName,
+  type OverlapResult,
+} from "@/lib/overlap";
 import type { ClientSolution } from "@/lib/types";
 import { isNoteworthy, monthsSince, solutionFreshness } from "@/lib/freshness";
 
@@ -79,24 +85,16 @@ export default function VerdictBlock({
    *
    * Surfaced from `duplicate_candidates`, which detection already wrote offline.
    * No new computation, no extra call — the finding was sitting in the payload
-   * unread.
+   * unread. The pair search lives in lib/overlap.ts (v4.14) so the similarity
+   * scale's arc and this sentence always name the same two records.
    */
   const alreadyTwice = (() => {
-    if (result.verdict !== "exists" && result.verdict !== "already-asked") return null;
-    const matches = [...result.solutions, ...result.ideas].map((m) => m.record);
-    for (let i = 0; i < matches.length; i++) {
-      for (let j = i + 1; j < matches.length; j++) {
-        const a = matches[i];
-        const b = matches[j];
-        if (!a.duplicate_candidates.some((c) => c.id === b.id)) continue;
-        const nameOf = (r: typeof a): string =>
-          r.doc_type === "idea" ? r.title : (r as ClientSolution).name;
-        return result.verdict === "exists"
-          ? `This has been built twice already: “${nameOf(a)}” and “${nameOf(b)}” are flagged as near-duplicates of each other. Yours would be the third — worth getting both owners in one conversation rather than picking one.`
-          : `Two separate requests already ask for this: “${nameOf(a)}” and “${nameOf(b)}”. Joining one of them splits the case further; the useful move is to get them merged.`;
-      }
-    }
-    return null;
+    const pair = findTwicePair(result);
+    if (!pair) return null;
+    const [a, b] = pair.map(recordName);
+    return result.verdict === "exists"
+      ? `This has been built twice already: “${a}” and “${b}” are flagged as near-duplicates of each other. Yours would be the third — worth getting both owners in one conversation rather than picking one.`
+      : `Two separate requests already ask for this: “${a}” and “${b}”. Joining one of them splits the case further; the useful move is to get them merged.`;
   })();
 
   /**
