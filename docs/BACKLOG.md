@@ -1,6 +1,6 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 10, 2026
+**Last updated:** September 16, 2026
 **Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
@@ -8,7 +8,10 @@ board-density pass, the employee directory (v4.2), real solution artifacts
 door (v4.5), the second search box folded into it (v4.6), and the duplicate
 result rendering removed (v4.7), staleness signals (v4.8), and the dataset
 roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1),
-and the "nothing found" answer rebuilt (v4.10). The mindmap is
+the "nothing found" answer rebuilt (v4.10), the verdict compressed (v4.11),
+counts in the filter menus (v4.12), the governance page rebuilt (v4.13; those
+three are recorded in their commit messages), and a similarity scale inside
+the verdict (v4.14). The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -877,6 +880,74 @@ orgs the data contains — so they cannot go stale the same way again.
 
 ---
 
+## v4.14 — the similarity scale in the verdict
+
+The verdict is a judgement in words, and v4.10 and v4.11 both came out of the
+same complaint: a reader could not judge it. "This may already be built" reads
+the same whether the top record scored 0.98 or 0.51, and "nothing here is close
+enough" reads the same as a broken search. A sentence carries the conclusion
+and none of the evidence.
+
+So the verdict now draws its own decision rule. A scale from 0 to 1 is split
+into four zones at the constants `assessOverlap()` grades on
+(`LOW_SCORE_FLOOR`, `MIN_ABS_FOR_RELATED`, `MIN_ABS_FOR_STRONG`), every direct
+result sits on it at its exact score, and the zone that decided the verdict is
+outlined in the verdict's stripe colour. Solutions on the upper lane, ideas on
+the lower, because "built, or only asked for?" is the verdict's first question.
+The near-duplicate pair behind the v4.9.2 sentence gets an arc; on a clear
+verdict the record the proof sentence names is labelled "nearest, not a match".
+No new call: it draws the same `/api/check` response the board does.
+
+### Decisions worth keeping
+
+**The one promise, tested.** `scripts/check-scale.ts` (`npm run check-scale`)
+drives retrieve → assessOverlap → buildScale over 910 queries (every record's
+own vector plus four dilutions, so all four verdicts appear hundreds of times)
+and re-derives the verdict from the dots alone. If the picture ever disagrees
+with the sentence above it, the page is contradicting itself, so that is the
+assertion, not the rendering.
+
+**§2.4 exception: a dot opens the drawer.** Dots on the similarity scale open
+the drawer directly, because the scale is part of the verdict, whose job is a
+fast answer. The jump-to-card contract governs navigation within the board. The
+drawer's "Show it on the board" restores that path, and appears only when the
+drawer was opened from the scale and the record actually has a card (a solved
+idea has none, and a dead button is worse than no button).
+
+**`via_link` records are not drawn.** Retrieval gives a joined record its
+partner's score, so each would sit exactly on another dot showing a score it
+never earned. For the same reason `nearest` is now picked from direct hits
+and carries an id (measured: verdicts unchanged in all 910 sweep queries,
+nearest changed in 1, not one where the name is shown).
+
+**Solved ideas are drawn, muted.** The verdict ignores them, so they never set
+the outlined zone. But on a clear verdict the proof sentence can name one, and
+a record named in prose has to be on the picture to click.
+
+**No gap marker.** The mockup had a "gap 0.13" callout between the top group
+and the rest. It needed a threshold for "big enough to mention" picked by eye,
+which is a second similarity scale by another name. The dot spacing already
+shows the gap.
+
+**Dots never move sideways.** When two dots would overlap they step up or down
+within their lane (a five-slot beeswarm, slots 12 apart). Nudging along the
+axis could carry a dot across a zone line and draw it in a zone its score is
+not in. Measured over the sweep: 93% of specific descriptions draw no
+overlapping dots; what remains is vague descriptions with eight scores inside
+0.03 in the noise zone, drawn closest-on-top and still reachable by keyboard.
+
+**One tab stop.** Arrow keys move through the dots by score, Enter opens the
+drawer. Sixteen tab stops inside a verdict would be a trap.
+
+**The pair search moved, not copied.** `findTwicePair` now lives in
+`lib/overlap.ts` and feeds both the sentence and the arc; check-overlap
+compares it with the old inline loop across every self-query.
+
+`scripts/check-fixture.ts` gained a fourth payload, `already-asked`, since the
+scale is the first thing that looks different on all four verdicts.
+
+---
+
 ## Open/parked items (not urgent)
 
 - **Dead filter chip.** The `scheduling` tag is in the taxonomy but no solution
@@ -886,10 +957,6 @@ orgs the data contains — so they cannot go stale the same way again.
   record by the SHAPE of what it does (extract, triage, summarise, draft,
   check, route) is worth adding to search and to the AI scan. Deliberately kept
   out of the v4.9 tag expansion so the two do not overlap. Not yet decided.
-- **Orientation on a `clear` verdict** — when nothing matches, the page could
-  say what the catalog *does* cover instead of only "go ahead". Identified
-  during the v4.9 UAT discussion as the other half of the problem that more
-  data alone does not solve. Not built.
 - The threshold-fragility comment in `scripts/enrich.ts` — now moot;
   `tune-duplicates` replaced the hand-tuning it warned about.
 - No other open decisions remain from the addendum — all three items that

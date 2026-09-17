@@ -5,7 +5,8 @@ import {
   recordName,
   type OverlapResult,
 } from "@/lib/overlap";
-import type { ClientSolution } from "@/lib/types";
+import type { ClientScoredResult, ClientSolution } from "@/lib/types";
+import SimilarityScale from "./SimilarityScale";
 import { isNoteworthy, monthsSince, solutionFreshness } from "@/lib/freshness";
 
 /**
@@ -25,14 +26,28 @@ import { isNoteworthy, monthsSince, solutionFreshness } from "@/lib/freshness";
  *
  * So the answer is now two parts with no overlap between them: this, which
  * states the judgement in words, and the board below, which is the evidence
- * and the only place a record is drawn.
+ * and the only place a record is drawn as a card.
+ *
+ * v4.14 adds the similarity scale between the action and the extras. It does
+ * not reopen the v4.7 problem: it draws scores on the verdict's own zones, not
+ * a second set of cards, and a dot leads to the record rather than restating it.
  */
 export default function VerdictBlock({
   result,
   explanation,
+  ideas,
+  solutions,
+  topScore,
+  onOpenRecord,
 }: {
   result: OverlapResult;
   explanation: string | null;
+  /** The full ranked sets from the same /api/check response the board uses. */
+  ideas: ClientScoredResult[];
+  solutions: ClientScoredResult[];
+  /** Top score of the ranked board, or undefined when nothing was ranked. */
+  topScore: number | undefined;
+  onOpenRecord: (id: string) => void;
 }) {
   /**
    * `clear` splits in two (v4.10): "nothing anywhere near this" and "nothing
@@ -123,6 +138,13 @@ export default function VerdictBlock({
     <section className={`verdict v-${result.verdict}`} aria-live="polite">
       <h2>{copy.headline}</h2>
       <p className="verdict-action">{copy.action}</p>
+      <SimilarityScale
+        ideas={ideas}
+        solutions={solutions}
+        result={result}
+        topScore={topScore}
+        onOpen={onOpenRecord}
+      />
       {lead && <p className={lead.cls}>{lead.text}</p>}
       {folded.length > 0 && (
         <details className="verdict-more">

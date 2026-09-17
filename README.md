@@ -66,6 +66,12 @@ data, names, or terminology. "GBS" is a generic org name.
   to "Strong match" and "Related" so a ranked board holds only things that
   rank. The line above the board says how many were left off.
 
+  v4.14 put the evidence for the words inside the verdict: a similarity scale
+  whose zones are the verdict's own thresholds, with every direct result
+  placed on it, so the zone the highest dot lands in visibly is the verdict.
+  A dot opens that record's drawer; `npm run check-scale` holds the picture to
+  agreeing with the sentence above it.
+
   The board stays on the page rather than moving behind a click because it
   renders with no API call: if the key is missing or the spend cap is reached,
   the check fails but the page still has the whole catalog on it.
@@ -144,9 +150,11 @@ npm run tune-duplicates      # computes the duplicate thresholds from the data
                              # (add -- --write to set them in enrich.ts)
 npm run verify-duplicates    # checks detection against the planted clusters
 npm run check-overlap        # verdict logic for the check (no API key, no spend)
+npm run check-scale          # similarity scale always agrees with the verdict
 npm run check-freshness      # staleness scale + board/dashboard agreement
-npm run check-fixture a.json b.json   # real /api/check payloads, offline, for
-                                      # inspecting the checked UI with no spend
+npm run check-fixture exists.json related.json clear.json asked.json
+                             # real /api/check payloads for all four verdicts,
+                             # offline, for inspecting the checked UI with no spend
 ```
 
 `enrich` does four things, per the spec's pipeline: (1) summarizes each

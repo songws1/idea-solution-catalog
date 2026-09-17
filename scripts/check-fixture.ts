@@ -9,7 +9,7 @@
  * other. Point a browser at the app with /api/check stubbed by one of these
  * files and the page renders exactly as it would in production.
  *
- * Run: npx tsx scripts/check-fixture.ts exists.json related.json
+ * Run: npx tsx scripts/check-fixture.ts exists.json related.json clear.json asked.json
  */
 import { loadDataset } from "../lib/dataset";
 import { toClientRecord } from "../lib/client-records";
@@ -89,6 +89,20 @@ const nearMiss = payload(
 );
 writeFileSync(process.argv[4] ?? "clear.json", JSON.stringify(nearMiss));
 
+/**
+ * An `already-asked` verdict (v4.14). The similarity scale is the first thing
+ * on the page that looks different on all four verdicts, so the fixture set
+ * needs all four. An unsolved idea's own text, where no built solution comes
+ * anywhere near it, is the cleanest way to get one.
+ */
+const askedIdea =
+  dataset.ideas.find((i) => {
+    if (i.status === "solved" || i.linked_solution_id) return false;
+    return payload(i.embedding, "", "").result.verdict === "already-asked";
+  }) ?? dataset.ideas[0];
+const asked = payload(askedIdea.embedding, askedIdea.description, "");
+writeFileSync(process.argv[5] ?? "asked.json", JSON.stringify(asked));
+
 console.log("exists:", exists.result.verdict, "top", exists.result.topScore.toFixed(3));
 console.log("related:", related.result.verdict, "top", related.result.topScore.toFixed(3));
 console.log(
@@ -99,3 +113,4 @@ console.log(
   "nearest:",
   nearMiss.result.nearest?.name ?? "none"
 );
+console.log("asked:", asked.result.verdict, "top", asked.result.topScore.toFixed(3));

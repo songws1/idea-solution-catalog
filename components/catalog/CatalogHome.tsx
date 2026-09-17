@@ -273,6 +273,22 @@ export default function CatalogHome({
   }
 
   /**
+   * A dot on the similarity scale (v4.14): open the drawer directly.
+   *
+   * The one stated exception to the §2.4 contract below. The scale is part of
+   * the verdict, whose job is a fast answer, and the board can be two thousand
+   * pixels further down, so a jump there would turn the answer into a search.
+   * The drawer is told where it was opened from and whether the record has a
+   * card, so it can offer "Show it on the board" only when that leads somewhere
+   * (a solved idea has no card, and a dead button is worse than none).
+   */
+  function openFromScale(id: string) {
+    const tile = document.querySelector(`[data-record-id="${CSS.escape(id)}"]`);
+    openDetailById(id);
+    setDetail((d) => (d && d.record.id === id ? { ...d, origin: "scale", boardTile: Boolean(tile) } : d));
+  }
+
+  /**
    * §2.4 navigation contract: jump to (scroll + highlight) the record's card
    * wherever it is in the current view; open its detail directly when no card
    * is rendered for it. Never a dead click.
@@ -382,7 +398,14 @@ export default function CatalogHome({
       )}
 
       {results?.result && !error && !loading && (
-        <VerdictBlock result={results.result} explanation={results.explanation ?? null} />
+        <VerdictBlock
+          result={results.result}
+          explanation={results.explanation ?? null}
+          ideas={scored.ideas}
+          solutions={scored.solutions}
+          topScore={resultsTopScore}
+          onOpenRecord={openFromScale}
+        />
       )}
 
       {/*

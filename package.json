@@ -14,6 +14,7 @@
     "enrich": "tsx scripts/enrich.ts",
     "verify-duplicates": "tsx scripts/verify-duplicates.ts",
     "check-overlap": "tsx scripts/check-overlap.ts",
+    "check-scale": "tsx scripts/check-scale.ts",
     "check-fixture": "tsx scripts/check-fixture.ts",
     "check-freshness": "tsx scripts/check-freshness.ts",
     "tune-duplicates": "tsx scripts/tune-duplicates.ts",

@@ -77,6 +77,14 @@ export interface DetailRecord {
   score?: number;
   topScore?: number;
   viaLink?: boolean;
+  /**
+   * Opened from a dot on the similarity scale (v4.14) rather than from a card.
+   * Only then is "Show it on the board" offered: from a card it would lead
+   * back to where the reader already was.
+   */
+  origin?: "scale";
+  /** Whether the record had a card on the board when the drawer was opened. */
+  boardTile?: boolean;
 }
 
 interface Props {
@@ -387,6 +395,12 @@ export default function RecordDetail({
         {linkedId && (
           <button type="button" className="btn-secondary" onClick={() => onNavigate(linkedId)}>
             {linkedLabel}
+          </button>
+        )}
+        {/* v4.14: the path back to the §2.4 jump for a drawer opened from the scale. */}
+        {detail.origin === "scale" && detail.boardTile && (
+          <button type="button" className="btn-secondary" onClick={() => onNavigate(record.id)}>
+            Show it on the board
           </button>
         )}
       </div>
