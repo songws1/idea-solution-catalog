@@ -1143,6 +1143,41 @@ three floors are really two, in `docs/gold-findings.md`.
 
 ---
 
+## v4.19.1 — the verdict got better and the answers got worse
+
+The v4.19 run reported 25/35 and, on the next line, `shown 72%` — down from 96%.
+Almost a quarter of the records the gold questions ask for were retrieved and
+then not displayed; two questions surfaced none of theirs. The page had become
+more often right about *whether* something exists while naming less of *what*
+exists, and the headline number did not move.
+
+`MIN_ABS_FOR_RELATED` was doing two unrelated jobs: deciding whether a record
+may set the verdict, and deciding whether a record is worth listing beside an
+answer. v4.19 raised it for the first; the second came along silently.
+
+Now separated. Only records at or above the noise gate can set a verdict —
+which is also what stops a `related` verdict resting on dots the scale draws
+below the "nothing here" line, the contradiction that made the two look coupled
+in v4.18.1. Once a verdict is decided, anything above the lower listing floor
+appears beside it as context. The lists were always sorted before slicing to
+three, so the top three are the same three at any listing floor; a lower floor
+only fills the remaining slots. **No verdict changes.** `MIN_ABS_FOR_RELATED`
+returns to 0.30 provisionally and `tune-gold` now sweeps it as its own
+dimension.
+
+One trap recorded in the script: optimising a listing floor on recall alone is
+degenerate, since a floor of zero shows everything and scores perfectly. The
+gold set records what should be shown, not what should not, so the counterweight
+is a rule rather than a metric — among settings that show everything they can,
+take the highest floor. The tightest list that still says it all.
+
+**The lesson, which is why this has its own entry:** a single quality number can
+improve while the thing it stands for gets worse. This was only caught because
+`check-gold` reports "found" and "shown" separately, built for a different
+purpose. It now says so out loud when the two diverge.
+
+---
+
 ## Open/parked items (not urgent)
 
 - **Is `related` a verdict?** v4.19 established it cannot be separated by score.

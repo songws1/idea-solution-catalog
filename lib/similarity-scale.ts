@@ -1,4 +1,5 @@
 import {
+  NO_MATCH_TOPSCORE_FLOOR,
   LOW_SCORE_FLOOR,
   MIN_ABS_FOR_RELATED,
   MIN_ABS_FOR_STRONG,
@@ -79,14 +80,14 @@ const SCALE_GEOMETRY_WIDTH = 720 - 14 * 2;
 /** The four zones, bounded by the constants the verdict itself uses. */
 export const ZONES: Zone[] = [
   zone("noise", "noise", 0, LOW_SCORE_FLOOR),
-  zone("loose", "loose", LOW_SCORE_FLOOR, MIN_ABS_FOR_RELATED),
-  zone("related", "related", MIN_ABS_FOR_RELATED, MIN_ABS_FOR_STRONG),
+  zone("loose", "loose", LOW_SCORE_FLOOR, NO_MATCH_TOPSCORE_FLOOR),
+  zone("related", "related", NO_MATCH_TOPSCORE_FLOOR, MIN_ABS_FOR_STRONG),
   zone("strong", "strong", MIN_ABS_FOR_STRONG, 1),
 ];
 
 export function zoneOf(score: number): ZoneKey {
   if (score >= MIN_ABS_FOR_STRONG) return "strong";
-  if (score >= MIN_ABS_FOR_RELATED) return "related";
+  if (score >= NO_MATCH_TOPSCORE_FLOOR) return "related";
   if (score >= LOW_SCORE_FLOOR) return "loose";
   return "noise";
 }

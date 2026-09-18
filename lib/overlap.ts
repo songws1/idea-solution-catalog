@@ -201,6 +201,29 @@ export function assessOverlap(
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
+  /**
+   * Setting the verdict and being worth listing are two different jobs, and
+   * v4.19.1 separated them after the first calibration ran them together.
+   *
+   * They were the same test until the v4.19 floors moved. Raising the listing
+   * floor to the noise gate did fix the `clear` verdict, and it also deleted
+   * correct supporting records from correct answers: the gold set's "shown"
+   * recall fell from 96% to 72%, with two questions surfacing none of their
+   * expected records at all. The page was more often right about WHETHER
+   * something exists while naming less of WHAT exists.
+   *
+   * So: only a record at or above the noise gate can decide the verdict, which
+   * is what stops a `related` verdict resting on evidence the similarity scale
+   * draws below the "nothing here" line. Once a verdict is decided, anything
+   * above the (lower) listing floor can appear beside it as supporting context.
+   *
+   * The lists are sorted by score before slicing, so the top three are the same
+   * three whatever the listing floor is; a lower floor only fills the remaining
+   * slots when fewer than three records clear the gate. That is why this
+   * changes what is shown without changing a single verdict.
+   */
+  const canSetVerdict = (r: ClientScoredResult) => r.score >= noMatchTopScore;
+
   const builtCovers = directSolutions.some((r) => r.score >= strongFloor);
   const askedFor = openIdeas.some((r) => r.score >= strongFloor);
 
@@ -208,7 +231,7 @@ export function assessOverlap(
     ? "exists"
     : askedFor
       ? "already-asked"
-      : directSolutions.length > 0 || openIdeas.length > 0
+      : directSolutions.some(canSetVerdict) || openIdeas.some(canSetVerdict)
         ? "related"
         : "clear";
 

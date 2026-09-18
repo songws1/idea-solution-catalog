@@ -201,6 +201,14 @@ const meanShown = scoredRows.reduce((a, r) => a + r.shownRecall, 0) / scoredRows
 
 console.log(`verdict correct   ${verdictsCorrect}/${n}  (${((verdictsCorrect / n) * 100).toFixed(0)}%)`);
 console.log(`expected records found  ${(meanFound * 100).toFixed(0)}%   shown  ${(meanShown * 100).toFixed(0)}%`);
+// v4.19 taught this the hard way: a run can gain verdicts and lose answers at
+// the same time, and the headline number hides it. Say so out loud.
+if (meanShown < meanFound - 0.1) {
+  console.log(
+    `  ${(((meanFound - meanShown) / meanFound) * 100).toFixed(0)}% of expected records were retrieved and then not shown.` +
+      " That is the listing floor, not retrieval."
+  );
+}
 
 // Per-verdict, because an overall number hides the asymmetry that matters: a
 // wrong "exists" sends someone to a tool that does not do the job, a wrong

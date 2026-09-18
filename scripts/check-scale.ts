@@ -23,6 +23,7 @@ import {
   LOW_SCORE_FLOOR,
   MIN_ABS_FOR_RELATED,
   MIN_ABS_FOR_STRONG,
+  NO_MATCH_TOPSCORE_FLOOR,
 } from "../lib/match-label";
 import { SCALE_GEOMETRY, ZONES, buildScale, xOf, zoneOf } from "../lib/similarity-scale";
 import type { ClientScoredResult } from "../lib/types";
@@ -58,8 +59,8 @@ check(
   ZONES[0].from === 0 &&
     ZONES[0].to === LOW_SCORE_FLOOR &&
     ZONES[1].from === LOW_SCORE_FLOOR &&
-    ZONES[1].to === MIN_ABS_FOR_RELATED &&
-    ZONES[2].from === MIN_ABS_FOR_RELATED &&
+    ZONES[1].to === NO_MATCH_TOPSCORE_FLOOR &&
+    ZONES[2].from === NO_MATCH_TOPSCORE_FLOOR &&
     ZONES[2].to === MIN_ABS_FOR_STRONG &&
     ZONES[3].from === MIN_ABS_FOR_STRONG &&
     ZONES[3].to === 1,
@@ -132,7 +133,7 @@ function weightIntoRelatedBand(rec: { embedding: number[] }, seed: number): numb
   for (let i = 0; i < 24; i++) {
     const mid = (lo + hi) / 2;
     const s = eligible(mid);
-    if (s >= MIN_ABS_FOR_RELATED && s < MIN_ABS_FOR_STRONG) return mid;
+    if (s >= NO_MATCH_TOPSCORE_FLOOR && s < MIN_ABS_FOR_STRONG) return mid;
     if (s >= MIN_ABS_FOR_STRONG) hi = mid;
     else lo = mid;
   }
@@ -172,7 +173,7 @@ records.forEach((rec, k) => {
         ? "exists"
         : topOpenIdea >= MIN_ABS_FOR_STRONG
           ? "already-asked"
-          : topEligible >= MIN_ABS_FOR_RELATED
+          : topEligible >= NO_MATCH_TOPSCORE_FLOOR
             ? "related"
             : "clear";
     if (expected !== result.verdict) broken.promise.push(`${tag} dots say ${expected}, verdict ${result.verdict}`);

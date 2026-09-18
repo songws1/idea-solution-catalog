@@ -234,6 +234,51 @@ thin band showing up somewhere else:
 which is a narrow plateau. The second decimal should not be trusted until the
 gold set is larger.
 
+## 8. What the verdict score hid (v4.19.1)
+
+The v4.19 run reported 25/35 and, on the line underneath, this:
+
+```
+expected records found  100%   shown  72%
+```
+
+Shown recall had been **96%** before the calibration. Almost a quarter of the
+records the questions ask for were retrieved and then not displayed. Two
+questions (q13, q23) surfaced **none** of theirs. The page had become more often
+right about *whether* something exists while naming less of *what* exists, and
+the headline number did not move a millimetre.
+
+**The cause was a conflation, not a threshold.** `MIN_ABS_FOR_RELATED` was doing
+two unrelated jobs: deciding whether a record may set the verdict, and deciding
+whether a record is worth listing beside an answer. v4.19 raised it to the noise
+gate for the first job, and the second job came along silently.
+
+**The fix separates them.** Only records at or above the gate can set a verdict
+— which is what stops a `related` verdict resting on dots the scale draws below
+the "nothing here" line, the contradiction that made these two look coupled in
+section 6. Once the verdict is decided, anything above the lower listing floor
+appears beside it as supporting context. The lists were always sorted before
+slicing to three, so the top three are the same three whatever the listing floor
+is; a lower floor only fills the remaining slots. **Not one verdict changes.**
+
+`MIN_ABS_FOR_RELATED` goes back to 0.30 provisionally, and `tune-gold` now
+sweeps it as its own dimension, judged on shown recall rather than on verdict
+accuracy, which it cannot affect.
+
+**One trap worth recording.** Optimising the listing floor on recall alone is
+degenerate: a floor of zero lists everything retrieved and scores perfectly
+while burying the answer in near-misses. The gold set records what *should* be
+shown, not what should not, so there is no metric to push back with. The
+counterweight is a rule instead — among settings that show everything they can,
+take the **highest** floor, not the lowest. The tightest list that still says it
+all.
+
+**The general lesson, which is the reason this section exists.** A single
+quality number can improve while the thing it stands for gets worse. The only
+reason this was caught is that `check-gold` reports found and shown separately,
+which was built for a different purpose. `check-gold` now says so out loud when
+the two diverge.
+
 ## What this says to do next
 
 1. **`scripts/tune-gold.ts`** — built (v4.18). `npm run tune-gold` sweeps the
