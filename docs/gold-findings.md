@@ -113,13 +113,25 @@ say so, not to pick a number that scores well on six questions.
 
 ## What this says to do next
 
-1. **`scripts/tune-gold.ts`** — sweep the floors against the gold set and print
-   accuracy at each setting, the same way `tune-duplicates` derives the
-   duplicate threshold from planted clusters rather than from taste. The
-   analysis above uses each question's single top score as a proxy; the verdict
-   actually compares the top *solution* score against the top *unsolved idea*
-   score, so the sweep has to work on the per-panel scores and may land
-   somewhere slightly different from 0.51.
+1. **`scripts/tune-gold.ts`** — built (v4.18). `npm run tune-gold` sweeps the
+   floors against the gold set and prints accuracy at each setting, the same way
+   `tune-duplicates` derives the duplicate threshold from planted clusters
+   rather than from taste. The analysis above uses each question's single top
+   score as a proxy; the verdict actually compares the top *solution* score
+   against the top *unsolved idea* score, so the sweep works on the per-panel
+   scores and may land somewhere different from 0.51. Three things make its
+   recommendation trustworthy rather than merely optimal:
+   - it sweeps the **real** `assessOverlap`, which now takes the thresholds as a
+     parameter, so the recommendation applies to the rule the page follows and
+     not to a tuner's copy of it;
+   - it reports the **width of the winning plateau**. A maximum reached by one
+     setting is a number fitted to 35 questions; a maximum reached by a broad
+     region is a boundary. It recommends the middle, not the edge;
+   - it **does not move a floor that does not need to move**. The floors overlap
+     in effect, so a plateau is usually wide in at least one dimension, and the
+     centre of a dimension that does not matter is an invented number. Each
+     floor is checked alone and today's value is kept when it still reaches the
+     maximum.
 2. **Move the floors**, guarded: only adopt a change that takes `clear` to at
    least 6/7 without dropping `exists` below its current 15/17, and prefer a
    round number. A floor of 0.5137 that beats 0.51 by one question is noise

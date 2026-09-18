@@ -15,6 +15,7 @@
     "verify-duplicates": "tsx scripts/verify-duplicates.ts",
     "embed-gold": "tsx scripts/embed-gold.ts",
     "check-gold": "tsx scripts/check-gold.ts",
+    "tune-gold": "tsx scripts/tune-gold.ts",
     "check-overlap": "tsx scripts/check-overlap.ts",
     "check-scale": "tsx scripts/check-scale.ts",
     "check-fixture": "tsx scripts/check-fixture.ts",

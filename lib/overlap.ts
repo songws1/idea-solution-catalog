@@ -106,6 +106,28 @@ function isUnsolved(record: ClientIdea): boolean {
 }
 
 /**
+ * The three absolute floors this grading rests on.
+ *
+ * They live in lib/match-label.ts and are imported, not re-picked: a second
+ * similarity scale calibrated by eye would quietly disagree with the labels on
+ * the board, and one of the two would be wrong.
+ */
+export interface OverlapThresholds {
+  /** Below this top score the whole result set is noise (`NO_MATCH_TOPSCORE_FLOOR`). */
+  noMatchTopScore: number;
+  /** Below this a record is not worth listing at all (`MIN_ABS_FOR_RELATED`). */
+  related: number;
+  /** At or above this a record covers the description (`MIN_ABS_FOR_STRONG`). */
+  strong: number;
+}
+
+export const DEFAULT_THRESHOLDS: OverlapThresholds = {
+  noMatchTopScore: NO_MATCH_TOPSCORE_FLOOR,
+  related: MIN_ABS_FOR_RELATED,
+  strong: MIN_ABS_FOR_STRONG,
+};
+
+/**
  * Grade a retrieval result into a verdict.
  *
  * `exists` deliberately requires a DIRECT solution hit at the "strong" floor.
@@ -113,11 +135,20 @@ function isUnsolved(record: ClientIdea): boolean {
  * because its paired idea matched, not because it matched — telling someone
  * "this already exists" on that basis would be a confident wrong answer, which
  * is the one failure this feature cannot afford.
+ *
+ * The `thresholds` parameter exists for exactly one caller: scripts/tune-gold.ts,
+ * which asks "what would this have answered at a different setting" across the
+ * gold query set. It defaults to the committed floors, and the app never passes
+ * it. The alternative was a tuner with its own copy of this grading, which would
+ * eventually drift from the real thing and recommend a threshold for a rule the
+ * page does not follow.
  */
 export function assessOverlap(
   ideas: ClientScoredResult[],
-  solutions: ClientScoredResult[]
+  solutions: ClientScoredResult[],
+  thresholds: OverlapThresholds = DEFAULT_THRESHOLDS
 ): OverlapResult {
+  const { noMatchTopScore, related: relatedFloor, strong: strongFloor } = thresholds;
   const topScore = Math.max(
     0,
     ...ideas.map((r) => r.score),
@@ -150,12 +181,12 @@ export function assessOverlap(
     : null;
 
   // Below the whole-set noise floor nothing here means anything (§3).
-  if (topScore < NO_MATCH_TOPSCORE_FLOOR) {
+  if (topScore < noMatchTopScore) {
     return { verdict: "clear", solutions: [], ideas: [], topScore, nearest };
   }
 
   const directSolutions = solutions
-    .filter((r) => !r.via_link && r.score >= MIN_ABS_FOR_RELATED)
+    .filter((r) => !r.via_link && r.score >= relatedFloor)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
@@ -163,15 +194,15 @@ export function assessOverlap(
     .filter(
       (r) =>
         !r.via_link &&
-        r.score >= MIN_ABS_FOR_RELATED &&
+        r.score >= relatedFloor &&
         r.record.doc_type === "idea" &&
         isUnsolved(r.record as ClientIdea)
     )
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
 
-  const builtCovers = directSolutions.some((r) => r.score >= MIN_ABS_FOR_STRONG);
-  const askedFor = openIdeas.some((r) => r.score >= MIN_ABS_FOR_STRONG);
+  const builtCovers = directSolutions.some((r) => r.score >= strongFloor);
+  const askedFor = openIdeas.some((r) => r.score >= strongFloor);
 
   const verdict: OverlapVerdict = builtCovers
     ? "exists"
@@ -188,12 +219,12 @@ export function assessOverlap(
     solutions: directSolutions.map((r) => ({
       record: r.record,
       score: r.score,
-      relation: r.score >= MIN_ABS_FOR_STRONG ? "built" : "related",
+      relation: r.score >= strongFloor ? "built" : "related",
     })),
     ideas: openIdeas.map((r) => ({
       record: r.record,
       score: r.score,
-      relation: r.score >= MIN_ABS_FOR_STRONG ? "asked" : "related",
+      relation: r.score >= strongFloor ? "asked" : "related",
     })),
   };
 }

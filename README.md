@@ -160,6 +160,8 @@ npm run embed-gold           # one paid run: embeds the 35 gold questions and
                              # (reads OPENROUTER_API_KEY from .env.local, like enrich)
 npm run check-gold           # scores the real pipeline against those questions
                              # (offline once embedded; -- --verbose for detail)
+npm run tune-gold            # derives the verdict floors from the gold set
+                             # (recommends only; changes nothing)
 npm run check-fixture exists.json related.json clear.json asked.json
                              # real /api/check payloads for all four verdicts,
                              # offline, for inspecting the checked UI with no spend
