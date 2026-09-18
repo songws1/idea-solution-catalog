@@ -157,6 +157,7 @@ npm run check-scale          # similarity scale always agrees with the verdict
 npm run check-freshness      # staleness scale + board/dashboard agreement
 npm run embed-gold           # one paid run: embeds the 35 gold questions and
                              # commits their vectors into data/gold-queries.json
+                             # (reads OPENROUTER_API_KEY from .env.local, like enrich)
 npm run check-gold           # scores the real pipeline against those questions
                              # (offline once embedded; -- --verbose for detail)
 npm run check-fixture exists.json related.json clear.json asked.json

@@ -19,14 +19,20 @@
  *      Cosine similarity across two models is not a smaller number, it is a
  *      meaningless one.
  *
- * Run: OPENROUTER_API_KEY=... npm run embed-gold
+ * Run: npm run embed-gold          (key from .env.local, same as `npm run enrich`)
  *      npm run embed-gold -- --force   (re-embed questions that already have vectors)
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadDataset } from "../lib/dataset";
+import { loadEnvLocal } from "../lib/env-local";
 import { datasetFingerprint, type GoldFile } from "../lib/gold";
 import { embedTexts, embeddingModel, getApiKey } from "../lib/openrouter";
+
+// Before anything reads the key or the model name: tsx does not load .env.local
+// the way Next.js does, so without this the script would tell someone their key
+// is missing while it sits in the file two directories up.
+loadEnvLocal();
 
 const GOLD_PATH = resolve(process.cwd(), "data/gold-queries.json");
 const EMBED_ROUND = 6; // same rounding as scripts/enrich.ts, for file size
@@ -69,7 +75,10 @@ async function main() {
   }
 
   if (!getApiKey()) {
-    console.error("OPENROUTER_API_KEY is not set. This is the one gold script that needs it.");
+    console.error(
+      "OPENROUTER_API_KEY is not set. This is the one gold script that needs it.\n" +
+        "Put it in .env.local (same file `npm run enrich` uses), or set it for this shell."
+    );
     process.exit(1);
   }
 

@@ -22,42 +22,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chatComplete, embedTexts, embeddingModel, getApiKey } from "../lib/openrouter";
+import { loadEnvLocal } from "../lib/env-local";
 import { TAG_TAXONOMY } from "../lib/tag-taxonomy";
 
-/**
- * Load .env.local / .env manually — tsx doesn't do it for us outside Next.js.
- * Handles UTF-8 and UTF-16 files (PowerShell's default encoding is UTF-16).
- * Existing environment variables always win.
- */
-function readEnvFileText(file: string): string {
-  const buf = fs.readFileSync(file);
-  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) return buf.toString("utf16le");
-  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
-    const swapped = Buffer.from(buf);
-    swapped.swap16();
-    return swapped.toString("utf16le");
-  }
-  return buf.toString("utf8").replace(/^\uFEFF/, "");
-}
-
-function loadEnvLocal(): void {
-  for (const name of [".env.local", ".env"]) {
-    const file = path.join(process.cwd(), name);
-    if (!fs.existsSync(file)) continue;
-    for (const line of readEnvFileText(file).split(/\r?\n/)) {
-      const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (!m) continue;
-      let value = m[2].trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      if (!(m[1] in process.env)) process.env[m[1]] = value;
-    }
-  }
-}
 loadEnvLocal();
 
 
