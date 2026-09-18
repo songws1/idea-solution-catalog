@@ -267,6 +267,12 @@ makes you remember at the moment it matters instead of in a calendar.
 target. The score is not expected to reach 100%. The baseline exists so it
 cannot quietly get worse while thresholds or retrieval are being changed.
 
+The first run scored 21/35, and what it found is written up in
+`docs/gold-findings.md`: retrieval returned every expected record (100%), the
+`clear` verdict failed on all 7 of its questions, and the absolute score floors
+turn out to have been calibrated against a distribution that typed questions do
+not produce. Read that before changing anything in `lib/match-label.ts`.
+
 ## Deploying to Vercel
 
 1. Push this repo to GitHub. It contains no secrets: `.env.local` is

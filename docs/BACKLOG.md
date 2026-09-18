@@ -1085,6 +1085,23 @@ against that is not self-retrieval. `MIN_ABS_FOR_STRONG` (0.50) was already
 shown not to discriminate — 3.4% of all record pairs clear it — but it could
 not be moved responsibly without a test that measures search. It can be now.
 
+**First run, September 18 2026: 21/35 (60%).** Full analysis in
+`docs/gold-findings.md`. The three things it established:
+
+- **Retrieval is not the problem.** Every expected record was in the retriever's
+  top 8, 100%. Hybrid search, RRF, a bigger embedding model: none of it is worth
+  building. That question is now closed with evidence rather than opinion.
+- **The `clear` verdict is broken, 0/7.** Every question whose right answer was
+  "nothing here covers this" returned records anyway, two of them claiming a
+  colleague had already asked. The cause is arithmetic: the floor is 0.30 and
+  unrelated questions score 0.395 to 0.504. The sweep puts the line at 0.51.
+- **`exists` vs `already-asked` confusion is a separate, non-threshold problem.**
+  Four questions found the right records and chose the wrong label, because the
+  verdict picks the panel by score difference where the difference means nothing.
+
+Next: `scripts/tune-gold.ts` to derive the floors rather than eye them, then the
+panel-choice rule in `lib/overlap.ts`. Not retrieval.
+
 ---
 
 ## Open/parked items (not urgent)
