@@ -235,6 +235,25 @@ export function assessOverlap(
         ? "related"
         : "clear";
 
+  /**
+   * A clear verdict shows nothing, by either route into it (v4.19.2).
+   *
+   * Before v4.19.1 this was automatic: `clear` meant both lists were empty, so
+   * there was nothing to return. Separating "may set the verdict" from "worth
+   * listing" opened a second route — records above the listing floor but none
+   * at the gate — and on that route the lists were still being handed back. The
+   * page would have said "nothing in the catalog is close" and then printed
+   * records underneath it.
+   *
+   * Caught by check-gold's "a clear verdict never shows a record", which
+   * existed for the pre-v4.19.1 design and turned out to be load-bearing for
+   * this one. v4.10 settled what a clear verdict shows: the nearest record, in
+   * prose, and nothing as a tile.
+   */
+  if (verdict === "clear") {
+    return { verdict, solutions: [], ideas: [], topScore, nearest };
+  }
+
   return {
     verdict,
     topScore,

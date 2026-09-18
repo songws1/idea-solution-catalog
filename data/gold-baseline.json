@@ -1,8 +1,8 @@
 {
-  "saved_at": "2026-09-18T19:55:48.586Z",
+  "saved_at": "2026-09-18T21:33:08.712Z",
   "embedding_model": "openai/text-embedding-3-small",
   "fingerprint": "2a0da339e6c0a13c",
-  "verdicts_correct": 21,
+  "verdicts_correct": 25,
   "n": 35,
   "per_query": {
     "q01": {
@@ -10,7 +10,7 @@
       "recall": 0.5
     },
     "q02": {
-      "verdict": false,
+      "verdict": true,
       "recall": 1
     },
     "q03": {
@@ -70,15 +70,15 @@
       "recall": 1
     },
     "q17": {
-      "verdict": true,
+      "verdict": false,
       "recall": 1
     },
     "q18": {
-      "verdict": false,
+      "verdict": true,
       "recall": 1
     },
     "q19": {
-      "verdict": false,
+      "verdict": true,
       "recall": 1
     },
     "q20": {
@@ -98,31 +98,31 @@
       "recall": 1
     },
     "q24": {
-      "verdict": true,
-      "recall": 1
+      "verdict": false,
+      "recall": 0
     },
     "q25": {
       "verdict": true,
       "recall": 1
     },
     "q26": {
-      "verdict": false,
-      "recall": 1
-    },
-    "q27": {
-      "verdict": false,
-      "recall": 1
-    },
-    "q28": {
       "verdict": true,
       "recall": 1
     },
-    "q29": {
+    "q27": {
+      "verdict": true,
+      "recall": 1
+    },
+    "q28": {
       "verdict": false,
+      "recall": 0
+    },
+    "q29": {
+      "verdict": true,
       "recall": 1
     },
     "q30": {
-      "verdict": false,
+      "verdict": true,
       "recall": 1
     },
     "q31": {
@@ -130,7 +130,7 @@
       "recall": 1
     },
     "q32": {
-      "verdict": false,
+      "verdict": true,
       "recall": 1
     },
     "q33": {
@@ -138,8 +138,8 @@
       "recall": 0.6666666666666666
     },
     "q34": {
-      "verdict": true,
-      "recall": 1
+      "verdict": false,
+      "recall": 0
     },
     "q35": {
       "verdict": false,

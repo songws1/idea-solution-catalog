@@ -277,7 +277,7 @@ function summarise(label: string, pool: Point[], hi: number): Point | null {
 }
 
 const rawPick = summarise("Best on total verdicts", points.filter((p) => p.correct === best), best);
-const pick = summarise(
+let pick = summarise(
   "Best that also satisfies the guard (clear ≥ 6/7, exists ≥ 15/17)",
   guarded.filter((p) => p.correct === guardedBest),
   guardedBest
@@ -287,8 +287,52 @@ const pick = summarise(
 // How much of this is real, and what to type.
 // ---------------------------------------------------------------------------
 
+/**
+ * Do not move a number that does not need to move.
+ *
+ * The plateau is wide in every dimension here, so the middle of it is not the
+ * only good answer, and "gate 0.52 → 0.51" buys nothing while costing the next
+ * reader an explanation that does not exist. Each knob is checked on its own
+ * against the chosen setting: if today's value scores the same on verdicts AND
+ * on what is shown, today's value stays.
+ *
+ * This was in the v4.18 script, lost in the v4.19.1 rewrite, and the first real
+ * run put it back on the agenda by recommending two one-hundredth moves for no
+ * measured gain.
+ */
+function keepWhatWorks(from: Point): Point {
+  let out: Point = from;
+  const knobs = [
+    ["noMatchTopScore", DEFAULT_THRESHOLDS.noMatchTopScore],
+    ["strong", DEFAULT_THRESHOLDS.strong],
+    ["related", DEFAULT_THRESHOLDS.related],
+  ] as const;
+  for (const [key, today] of knobs) {
+    if (Math.abs(out[key] - today) < 1e-9) continue;
+    const t: OverlapThresholds = { ...out, [key]: today };
+    if (t.strong <= t.noMatchTopScore || t.related > t.noMatchTopScore) continue;
+    const s = scoreAt(t);
+    if (s.correct === out.correct && s.shown >= out.shown - 1e-9 && GUARD({ ...t, ...s } as Point)) {
+      out = { ...t, ...s };
+    }
+  }
+  return out;
+}
+
 console.log("");
 if (pick) {
+  const kept = keepWhatWorks(pick);
+  if (
+    Math.abs(kept.noMatchTopScore - pick.noMatchTopScore) > 1e-9 ||
+    Math.abs(kept.strong - pick.strong) > 1e-9 ||
+    Math.abs(kept.related - pick.related) > 1e-9
+  ) {
+    console.log(
+      `Smallest change that holds ${kept.correct}/${cases.length} and shown ${(kept.shown * 100).toFixed(0)}%:` +
+        `  gate ${kept.noMatchTopScore.toFixed(2)} · strong ${kept.strong.toFixed(2)} · listing ${kept.related.toFixed(2)}`
+    );
+    pick = kept;
+  }
   const plateau = guarded.filter((p) => p.correct === guardedBest).length;
   console.log(
     plateau >= 20

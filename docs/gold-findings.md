@@ -279,6 +279,57 @@ reason this was caught is that `check-gold` reports found and shown separately,
 which was built for a different purpose. `check-gold` now says so out loud when
 the two diverge.
 
+## 9. The separation had a bug, and the gold set caught it (v4.19.2)
+
+Splitting "may set the verdict" from "worth listing" opened a second route into
+the `clear` verdict: records above the listing floor, none at the gate. On that
+route the record lists were still being returned. **The page would have said
+"nothing in the catalog is close" and printed records underneath it.**
+
+Before v4.19.1 this was impossible by construction — `clear` meant both lists
+were empty, so there was nothing to hand back. The separation removed that
+accident, and nothing replaced it until `check-gold` failed on
+`a clear verdict never shows a record`, an assertion written for the old design
+that turned out to be load-bearing for the new one.
+
+`assessOverlap` now returns empty lists on `clear` explicitly, by either route.
+v4.10 settled what a clear verdict shows: the nearest record, in prose, and
+nothing as a tile.
+
+## 10. Final state
+
+`npm run tune-gold` on the real vectors, after all of the above:
+
+```
+Best under the guard: 25/35, reached by 115 settings
+  plateau spans   gate 0.51–0.53 · strong 0.52–0.54 · listing 0.15–0.53
+No change recommended: today's floors already reach the best guarded score.
+```
+
+**gate 0.52 · strong 0.54 · listing 0.30 · 25/35 · shown 85%.** The plateau is
+115 settings wide now rather than 6, because the listing floor turned out to be
+a free dimension: it cannot change a verdict, so every value of it inherits the
+same score.
+
+The sweep's two selection rules disagreed about the listing floor — "take the
+tightest list that still says it all" pointed at 0.39, "do not move a number
+that does not need to move" pointed at 0.30. Settled by measuring instead of
+arguing:
+
+| listing floor | shown | records listed | not in the expected set |
+|---|---|---|---|
+| 0.30 | 85% | 139 | 103 (74%) |
+| 0.39 | 85% | 127 | 91 (72%) |
+| 0.44 | 80% | 99 | 65 (66%) |
+
+0.39 shows twelve fewer records across thirty-five questions at the same recall.
+That is a third of a record per question, and "not in the expected set" is not a
+measure of wrongness — the gold set records what must appear, never what must
+not. Too thin to justify moving a committed constant, so 0.30 stays. 0.44 is
+ruled out properly: it buys a shorter list by dropping real answers.
+
+Baseline re-saved at 25/35.
+
 ## What this says to do next
 
 1. **`scripts/tune-gold.ts`** — built (v4.18). `npm run tune-gold` sweeps the
