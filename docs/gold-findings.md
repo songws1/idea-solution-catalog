@@ -168,11 +168,71 @@ ceiling strictly above it.** That is now written in `lib/match-label.ts`, and
 recommend a setting the product cannot adopt. A tuner that emits an unusable
 number is worse than no tuner, because its output looks like evidence.
 
-**This invalidates the 27/35 above.** That figure came from the unconstrained
-sweep. The constrained sweep has to be re-run, and because the coupling forces
-`strong` above the floor, and `strong` is exactly the knob that costs `exists`
-(0.55 → 14/17, 0.61 → 10/17), the honest expectation is that the achievable
-number is lower than 27.
+**This invalidated the 27/35 above.** That figure came from the unconstrained
+sweep. The constrained re-run came in at 25/35, lower as expected, because the
+coupling forces `strong` above the floor and `strong` is the knob that costs
+`exists`.
+
+## 7. Adopted (v4.19): floor 0.52, strong 0.54
+
+| | before | after |
+|---|---|---|
+| total | 21/35 | **25/35** |
+| exists | 15/17 | 15/17 |
+| already-asked | 3/5 | 3/5 |
+| related | 3/6 | **0/6** |
+| clear | **0/7** | **7/7** |
+
+`NO_MATCH_TOPSCORE_FLOOR` 0.30 → 0.52, `MIN_ABS_FOR_RELATED` 0.30 → 0.52,
+`MIN_ABS_FOR_STRONG` 0.50 → 0.54. Decided by Chris after seeing the trade
+stated, not by the script.
+
+**What was bought:** the `clear` verdict, which did not work at all. A pre-build
+check that can never say "nothing exists, go ahead" has no green light, and the
+green light is half of what the page is for.
+
+**What was sold, and it is not small:** `related` goes to 0 of 6. Two of those
+questions (q24, q34, both topping out at 0.481) now read as `clear`, which is
+the false-clear direction and therefore the duplicate-build direction. The other
+one moves up into `exists`.
+
+**Why no setting avoids this.** Lay the four distributions on one axis:
+
+```
+clear     0.395 ────────── 0.504
+related        0.481 ──────────────── 0.635
+exists                     0.576 ──────────── 0.773
+```
+
+`related` overlaps both of its neighbours. Its floor is under `clear`'s ceiling
+and its ceiling is over `exists`'s floor. **No absolute band can hold it at any
+setting**, and no larger gold set will change that, because "related but not the
+same thing" is a semantic judgment and this is a magnitude scale. The 0.02-wide
+band the calibration leaves behind is an acceptance of that fact, not a tuning
+result.
+
+The open design question, deliberately not answered here: whether `related`
+should remain a verdict at all, or whether those cases belong under `clear` with
+the v4.10 "nearest, not a match" line, which already does that job in prose.
+Three verdicts would be separable; four are not.
+
+**Two consequences that had to be fixed in the same change**, both of them the
+thin band showing up somewhere else:
+
+- The similarity scale drew a `related` zone 14 pixels wide on a 720-pixel
+  axis, and its label would have spilled across the `strong` zone — a word
+  pointing at the wrong band. A zone too narrow for its name now keeps its
+  boundary value and drops the word, and `check-scale` asserts no label
+  overflows the zone it names.
+- `check-scale`'s "every verdict was exercised" assertion started passing on
+  luck: `related` appeared **once** in 910 queries. One regeneration away from
+  failing for a reason unconnected to any bug. The run now aims a dilution
+  search into the band deliberately (32 hits, on every sixth record) and asserts
+  the band is reachable on purpose.
+
+**Provisional, by the script's own warning.** Six settings reached the maximum,
+which is a narrow plateau. The second decimal should not be trusted until the
+gold set is larger.
 
 ## What this says to do next
 
@@ -195,12 +255,12 @@ number is lower than 27.
      centre of a dimension that does not matter is an invented number. Each
      floor is checked alone and today's value is kept when it still reaches the
      maximum.
-2. **Move the floors**, guarded: only adopt a change that takes `clear` to at
-   least 6/7 without dropping `exists` below its current 15/17, and prefer a
-   round number. A floor of 0.5137 that beats 0.51 by one question is noise
-   wearing a lab coat.
+2. **Move the floors**, guarded — done in v4.19, section 7 above.
 3. **Then** re-examine the `exists` / `already-asked` rule in `lib/overlap.ts`.
-4. **Not** retrieval work. See finding 1.
+   Four questions (q02, q11, q13, q23) find the right records and choose the
+   wrong label. No threshold touches this.
+4. **Decide what `related` is for**, given that it cannot be a score band.
+5. **Not** retrieval work. See finding 1.
 
 ## What this does not say
 

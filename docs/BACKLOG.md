@@ -11,9 +11,10 @@ roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1),
 the "nothing found" answer rebuilt (v4.10), the verdict compressed (v4.11),
 counts in the filter menus (v4.12), the governance page rebuilt (v4.13; those
 three are recorded in their commit messages), a similarity scale inside
-the verdict (v4.14), aging redrawn as a heatmap (v4.15), and a gold query set
-that tests search rather than self-retrieval (v4.17). The mindmap is
-deliberately **not** next — see the v4.4 note.
+the verdict (v4.14), aging redrawn as a heatmap (v4.15), a gold query set that
+tests search rather than self-retrieval (v4.17), a sweep that derives the
+verdict floors (v4.18), and the first calibration those two made possible
+(v4.19). The mindmap is deliberately **not** next — see the v4.4 note.
 
 ---
 
@@ -1104,7 +1105,54 @@ panel-choice rule in `lib/overlap.ts`. Not retrieval.
 
 ---
 
+## v4.19 — the floors move, and `related` turns out not to be a band
+
+`NO_MATCH_TOPSCORE_FLOOR` 0.30 → **0.52**, `MIN_ABS_FOR_RELATED` 0.30 → **0.52**,
+`MIN_ABS_FOR_STRONG` 0.50 → **0.54**. Derived by `npm run tune-gold`, adopted by
+Chris after seeing the trade stated. Gold score 21/35 → 25/35.
+
+The whole gain is the `clear` verdict going 0/7 → 7/7. It had never once fired
+correctly, which meant the page could not say "nothing exists, go ahead" — no
+green light on a check whose job is to give one. The old floors were not wrong
+reasoning, they were right reasoning on the wrong evidence: calibrated when a
+query was a record's own text and scores ran 0.9+, against a product where a
+typed sentence tops out at 0.83 and unrelated ones reach 0.504.
+
+The cost is `related` 3/6 → 0/6, and it cannot be avoided. The three
+distributions overlap: `clear` reaches 0.504, `related` spans 0.481–0.635,
+`exists` starts at 0.576. **No absolute band holds `related` at any setting**,
+because "related but not the same thing" is a semantic judgment and this is a
+magnitude scale. The 0.02-wide band left behind is an acceptance of that, not a
+result. Open question recorded below: whether `related` should be a verdict at
+all, or whether those cases belong under `clear` with the v4.10 "nearest, not a
+match" line that already does the job in prose.
+
+Two knock-ons from the thin band, fixed in the same change:
+
+- The scale drew a `related` zone 14px wide on a 720px axis, whose label would
+  have spilled across `strong` — a word pointing at the wrong band. A zone too
+  narrow for its name keeps the boundary value and drops the word;
+  `check-scale` asserts no label overflows the zone it names.
+- `check-scale`'s "every verdict was exercised" began passing on luck:
+  `related` appeared once in 910 queries. The run now aims a dilution search
+  into the band (32 hits) and asserts it is reachable on purpose. A test that
+  passes by luck is not a test.
+
+Full write-up, including the score distributions and the constraint that the
+three floors are really two, in `docs/gold-findings.md`.
+
+---
+
 ## Open/parked items (not urgent)
+
+- **Is `related` a verdict?** v4.19 established it cannot be separated by score.
+  Either accept it as rare (where it stands), or drop it to three verdicts and
+  let `clear` carry the nearest-record prose. The second is cleaner and costs
+  re-labelling 6 gold questions plus UI work in `VerdictBlock` and the scale.
+- **`exists` vs `already-asked`.** Four gold questions find the right records
+  and pick the wrong label, because the verdict chooses a panel by a score
+  difference that carries no meaning. A rule fix in `lib/overlap.ts`, not a
+  threshold.
 
 - **Dead filter chip.** The `scheduling` tag is in the taxonomy but no solution
   carries it (its idea is unsolved), so the chip returns zero. Either drop the

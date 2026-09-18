@@ -26,12 +26,29 @@ export const LOW_SCORE_FLOOR = 0.15;
  * check grades overlap on exactly the same scale the board labels use — a
  * second scale picked by eye would quietly disagree with the first.
  *
- * These floors are calibrated from the live retrieval tests in Addendum A §0
- * (real strong matches: 0.58-0.74; real secondary/related matches:
- * 0.39-0.55; cross-org noise and unrelated queries: well under 0.35).
+ * CALIBRATION (v4.19). These were 0.5 and 0.3, picked by eye from the live
+ * retrieval tests in Addendum A §0, where a query was a record's own text and
+ * scores ran high (real strong matches 0.58-0.74, noise under 0.35). The gold
+ * query set showed that distribution is not the one the product sees. A person
+ * types a short sentence, not a record, and against 35 hand-written questions
+ * nothing scored above 0.83 while unrelated questions reached 0.504 — so a
+ * "nothing here" bar at 0.30 never fired once in seven chances to fire.
+ *
+ * These values now come from `npm run tune-gold`, which sweeps the real
+ * grading over the gold set. Do not adjust them by hand: re-run the sweep,
+ * read its plateau, and take what it says.
+ *
+ *   measured, by expected verdict, top score per question:
+ *     clear    0.395 - 0.504      related  0.481 - 0.635
+ *     exists   0.576 - 0.773      asked    0.526 - 0.827
+ *
+ * Note what that says about `related`: it overlaps both of its neighbours, so
+ * no absolute band can hold it. "Related but not the same thing" is a semantic
+ * property and this is a magnitude scale. The narrow band below is a deliberate
+ * acceptance, not a tuning result — see docs/gold-findings.md.
  */
-export const MIN_ABS_FOR_STRONG = 0.5;
-export const MIN_ABS_FOR_RELATED = 0.3;
+export const MIN_ABS_FOR_STRONG = 0.54;
+export const MIN_ABS_FOR_RELATED = 0.52;
 
 /**
  * Two constraints bind these three numbers together. Found the hard way in
@@ -78,17 +95,24 @@ export function topScoreOf(scores: number[]): number {
 
 /**
  * Below this topScore, nothing in the result set is a real match — treat the
- * whole set as empty rather than showing individually-labeled but
- * meaningless cards. Found in UAT: a query like "cooking" against this
- * catalog tops out around 0.16, while the weakest genuinely-relevant match
- * seen in live testing (Addendum A §0) was 0.39-0.42. 0.3 sits comfortably
- * between the two. This is a whole-result-set check, distinct from the
- * per-item tier floors above — a real query can legitimately include a
- * "Loosely related" card (or a via-link cross-reference inheriting a real
- * direct hit's score) sitting well above this bar; this bar only catches
- * the case where even the single best result is noise.
+ * whole set as empty rather than showing individually-labeled but meaningless
+ * cards.
+ *
+ * This is the same number as MIN_ABS_FOR_RELATED and must stay that way; see
+ * the constraint note above for what breaks otherwise.
+ *
+ * It was 0.3, chosen because "cooking" topped out at 0.16 and the weakest real
+ * match seen in early testing was 0.39. That reasoning was sound and the
+ * evidence was wrong: it came from queries that were records. Against 35
+ * questions a person would actually type, unrelated ones reach 0.504, so 0.3
+ * cleared nothing and the `clear` verdict was dead — 0 correct out of 7. At
+ * 0.52 it is 7 out of 7. The cost is two `related` questions (0.481) that now
+ * read as clear, which loses a discovery rather than a duplicate-prevention.
+ *
+ * Provisional: 6 settings reached the maximum, which is a narrow plateau.
+ * Widen the gold set before trusting the second decimal.
  */
-export const NO_MATCH_TOPSCORE_FLOOR = 0.3;
+export const NO_MATCH_TOPSCORE_FLOOR = 0.52;
 
 /** True when at least one result in the set is a real match, not noise. */
 export function hasAnyRealMatch(topScore: number): boolean {

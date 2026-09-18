@@ -48,14 +48,40 @@ export interface Zone {
   label: string;
   from: number;
   to: number;
+  /**
+   * False when the zone is too narrow to carry its own word (v4.19).
+   *
+   * The v4.19 calibration put `related` between 0.52 and 0.54, which is 14
+   * pixels of a 720-pixel scale. "related 0.52" drawn there does not sit in its
+   * zone, it lies across the next one, and a label pointing at the wrong band is
+   * worse than no label: the legend and the numbers on the boundaries still say
+   * everything the word did. So a narrow zone keeps its boundary value and drops
+   * its name. scripts/check-scale.ts asserts no drawn label overflows its zone.
+   */
+  showLabel: boolean;
 }
+
+/**
+ * Roughly the width one zone label needs, in SVG user units. Measured against
+ * the longest word plus its boundary value at the size globals.css draws them;
+ * a couple of units either way changes nothing, since the only judgement it
+ * makes is "does the word fit at all".
+ */
+const LABEL_WIDTH = 58;
+
+function zone(key: ZoneKey, label: string, from: number, to: number): Zone {
+  return { key, label, from, to, showLabel: (to - from) * SCALE_GEOMETRY_WIDTH >= LABEL_WIDTH };
+}
+
+/** Kept separate from SCALE_GEOMETRY below only because ZONES is built first. */
+const SCALE_GEOMETRY_WIDTH = 720 - 14 * 2;
 
 /** The four zones, bounded by the constants the verdict itself uses. */
 export const ZONES: Zone[] = [
-  { key: "noise", label: "noise", from: 0, to: LOW_SCORE_FLOOR },
-  { key: "loose", label: "loose", from: LOW_SCORE_FLOOR, to: MIN_ABS_FOR_RELATED },
-  { key: "related", label: "related", from: MIN_ABS_FOR_RELATED, to: MIN_ABS_FOR_STRONG },
-  { key: "strong", label: "strong", from: MIN_ABS_FOR_STRONG, to: 1 },
+  zone("noise", "noise", 0, LOW_SCORE_FLOOR),
+  zone("loose", "loose", LOW_SCORE_FLOOR, MIN_ABS_FOR_RELATED),
+  zone("related", "related", MIN_ABS_FOR_RELATED, MIN_ABS_FOR_STRONG),
+  zone("strong", "strong", MIN_ABS_FOR_STRONG, 1),
 ];
 
 export function zoneOf(score: number): ZoneKey {

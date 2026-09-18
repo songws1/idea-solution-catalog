@@ -154,13 +154,25 @@ export default function SimilarityScale({
                 width={xOf(z.to) - xOf(z.from)}
                 height={G.zoneBottom - G.zoneTop}
               />
+              {/*
+                A zone too narrow for its word keeps the boundary value and
+                drops the name — see lib/similarity-scale.ts. The value is
+                right-anchored to the boundary it marks so two adjacent narrow
+                zones cannot stack their numbers on each other.
+              */}
               <text
                 className={`sim-zone-label${z.key === scale.activeZone ? " is-active" : ""}`}
-                x={xOf(z.from) + 4}
+                x={xOf(z.from) + (z.showLabel ? 4 : 0)}
                 y={G.labelRow}
+                textAnchor={z.showLabel ? "start" : "middle"}
               >
-                {z.label}
-                {z.from > 0 && <tspan className="sim-zone-value"> {z.from.toFixed(2)}</tspan>}
+                {z.showLabel && z.label}
+                {z.from > 0 && (
+                  <tspan className="sim-zone-value">
+                    {z.showLabel ? " " : ""}
+                    {z.from.toFixed(2)}
+                  </tspan>
+                )}
               </text>
             </g>
           ))}
