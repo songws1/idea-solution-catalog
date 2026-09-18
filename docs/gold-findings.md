@@ -48,15 +48,29 @@ Nothing a human typed scored above 0.83, and the real matches bottom out at
 discriminate on a 0.4-to-0.8 one. We knew that floor was weak (3.4% of all
 record pairs clear it). Now we know what it does to actual questions.
 
-## 3. The `clear` verdict fails completely, and that is the expensive one
+## 3. The `clear` verdict fails completely
 
 **0 of 7.** Every question whose correct answer is "nothing in the catalog
 covers this" returned records instead.
 
-This is the failure that matters most, because it is the one that causes the
-duplicate build the catalog exists to prevent, and it does it while sounding
-authoritative. Two of the seven (q26, q27) came back `already-asked`, which
-tells someone that a colleague has already requested a thing nobody requested.
+**A correction to the first draft of this page.** It said this was the failure
+that causes the duplicate build the catalog exists to prevent. That is wrong,
+and worth stating plainly because the mistake points the wrong way. A false
+`clear` is what causes a duplicate build: it tells someone nothing exists, and
+they go and build it. Today the system never says `clear` at all, so it cannot
+currently make that error. What 0/7 actually costs is different, and still
+serious:
+
+- Two of the seven (q26, q27) came back `already-asked`, which states that a
+  colleague has requested something nobody requested. That is not a weak answer,
+  it is a false one about a specific person's work.
+- A verdict that never clears anyone carries no information. A check that always
+  finds something is a check people stop reading, and then it fails at the one
+  moment it had something real to say.
+
+The direction of the risk matters for the fix. Raising the floor is what
+*introduces* the duplicate-build error, so the tuning should prefer the low end
+of any plateau and must not buy `clear` accuracy by giving up `exists`.
 
 The cause is arithmetic, not judgment. The "is there anything here at all"
 floor is 0.30, and unrelated questions score between 0.395 and 0.504. Every one
@@ -110,6 +124,55 @@ sweep cannot separate `related` cleanly, the right answer is to accept it and
 say so, not to pick a number that scores well on six questions.
 
 ---
+
+## 6. The sweep ran, and the answer came with a constraint nobody had written down
+
+`npm run tune-gold` against the real vectors, September 18:
+
+| | today | best on total | best under the guard |
+|---|---|---|---|
+| score | 21/35 | 27/35 | 27/35 |
+| exists | 15/17 | 14/17 | 16/17 |
+| already-asked | 3/5 | 4/5 | 3/5 |
+| related | 3/6 | 2/6 | 1/6 |
+| clear | 0/7 | 7/7 | 7/7 |
+
+The floor that decides "is anything here at all" lands at **0.51 to 0.52**,
+which is what the top-score analysis in section 3 predicted before the sweep
+was written. The whole gain comes from `clear` going 0 to 7. The cost is two
+`related` questions (q24, q34, both at 0.481) becoming `clear` — a lost
+discovery, not a lost duplicate-prevention, since `related` never told anyone to
+stop building.
+
+**The constraint, found by trying the recommendation rather than trusting it.**
+The first sweep treated the three constants as three free knobs and recommended
+a noise gate of 0.52 with `MIN_ABS_FOR_RELATED` left at 0.30. Applying that
+fails `check-scale` on sight:
+
+```
+FAIL the verdict always matches the zone of the highest dot that can set it
+     — idea-0001@0.32 dots say related, verdict clear
+```
+
+The similarity scale draws `MIN_ABS_FOR_RELATED` as the line between "nothing
+here" and "related", so lifting the noise gate above it puts dots inside the
+Related band on a page whose verdict says nothing is close. The picture and the
+words contradict each other, which is the precise failure v4.14's check was
+built to catch. Tying the two and raising both then fails a second way, with
+`related` above `strong` and the `related` verdict left with no band to live in
+("every verdict was exercised — related 0").
+
+So these are not three numbers. They are **one floor used in two places, and a
+ceiling strictly above it.** That is now written in `lib/match-label.ts`, and
+`tune-gold` sweeps two dimensions instead of three, so it can no longer
+recommend a setting the product cannot adopt. A tuner that emits an unusable
+number is worse than no tuner, because its output looks like evidence.
+
+**This invalidates the 27/35 above.** That figure came from the unconstrained
+sweep. The constrained sweep has to be re-run, and because the coupling forces
+`strong` above the floor, and `strong` is exactly the knob that costs `exists`
+(0.55 → 14/17, 0.61 → 10/17), the honest expectation is that the achievable
+number is lower than 27.
 
 ## What this says to do next
 

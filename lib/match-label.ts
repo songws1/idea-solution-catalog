@@ -34,6 +34,29 @@ export const MIN_ABS_FOR_STRONG = 0.5;
 export const MIN_ABS_FOR_RELATED = 0.3;
 
 /**
+ * Two constraints bind these three numbers together. Found the hard way in
+ * v4.18.1, when the tuner recommended a setting the page could not adopt.
+ *
+ *   NO_MATCH_TOPSCORE_FLOOR must equal MIN_ABS_FOR_RELATED.
+ *
+ * The similarity scale (v4.14) draws MIN_ABS_FOR_RELATED as the line between
+ * "nothing here" and "related", so raising the noise gate above it puts dots
+ * inside the Related band on a page whose verdict says nothing is close. That
+ * is the page contradicting itself, which is the exact failure check-scale
+ * exists to catch — and it does: raising only the noise gate to 0.51 fails it
+ * with "dots say related, verdict clear".
+ *
+ *   MIN_ABS_FOR_RELATED must stay strictly below MIN_ABS_FOR_STRONG.
+ *
+ * Otherwise the `related` verdict has no band to live in and becomes
+ * unreachable. check-scale catches this one too, as "every verdict was
+ * exercised — related 0".
+ *
+ * So these are not three free knobs. They are one floor, used in two places,
+ * and a ceiling above it. scripts/tune-gold.ts sweeps them that way.
+ */
+
+/**
  * Label a single score relative to the top score in its result set, gated
  * by an absolute floor per tier so a weak/noisy result set can't produce a
  * false "Strong match" purely from relative math. Returns null when no

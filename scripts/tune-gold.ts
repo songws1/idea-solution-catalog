@@ -11,7 +11,7 @@
  * unrelated questions score up to 0.504.
  *
  * This is the same move `tune-duplicates` makes for the duplicate threshold:
- * compute the boundary from ground truth instead of choosing it. Two things
+ * compute the boundary from ground truth instead of choosing it. Three things
  * keep it honest:
  *
  *   1. It sweeps the REAL grading function. assessOverlap takes the thresholds
@@ -23,6 +23,12 @@
  *      maximum that holds across a broad range is a boundary. The script says
  *      which one it found, and recommends the middle of the plateau rather than
  *      its edge, because the edge is where the next corpus pushes you off.
+ *   3. It only recommends settings the product can actually adopt (v4.18.1).
+ *      The three constants are not three free knobs: the noise gate and the
+ *      related floor are one number used twice, and the strong ceiling sits
+ *      strictly above it. The first version did not know that and recommended a
+ *      setting that fails check-scale on sight. See the note in
+ *      lib/match-label.ts for what breaks and how it announces itself.
  *
  * It changes nothing. It prints a recommendation; moving the floors is an edit
  * to lib/match-label.ts that a human makes after reading this output.
@@ -122,12 +128,16 @@ console.log(
 // Easier to read than the joint grid, and it shows whether a floor matters.
 // ---------------------------------------------------------------------------
 
-function sweep1D(name: keyof OverlapThresholds, from: number, to: number) {
-  console.log(`\n${name}, others at today's values:`);
+function sweep1D(name: "floor" | "strong", label: string, from: number, to: number) {
+  console.log(`\n${label}:`);
   const rows: string[] = [];
   let prev = -1;
   for (let c = cents(from); c <= cents(to); c++) {
-    const t = { ...DEFAULT_THRESHOLDS, [name]: dec(c) };
+    const t: OverlapThresholds =
+      name === "floor"
+        ? { noMatchTopScore: dec(c), related: dec(c), strong: DEFAULT_THRESHOLDS.strong }
+        : { ...DEFAULT_THRESHOLDS, strong: dec(c) };
+    if (t.strong <= t.related) continue;
     const s = scoreAt(t);
     // Print only where the answer changes, unless --all: 36 identical lines
     // teach nothing, and the points where a number starts to matter are the
@@ -143,9 +153,8 @@ function sweep1D(name: keyof OverlapThresholds, from: number, to: number) {
   console.log(rows.join("\n"));
 }
 
-sweep1D("noMatchTopScore", 0.3, 0.7);
-sweep1D("related", 0.3, 0.7);
-sweep1D("strong", 0.45, 0.85);
+sweep1D("floor", "the shared floor (noise gate + related), strong held at today's 0.50", 0.3, 0.49);
+sweep1D("strong", "the strong ceiling, floor held at today's 0.30", 0.45, 0.85);
 
 // ---------------------------------------------------------------------------
 // Joint sweep.
@@ -156,15 +165,30 @@ interface Point extends OverlapThresholds {
   byClass: Record<OverlapVerdict, number>;
 }
 
+/**
+ * The sweep is two-dimensional, not three, and this is the correction that
+ * matters most in v4.18.1.
+ *
+ * The first version treated the three floors as three free knobs and
+ * recommended a setting the product cannot adopt: noise gate 0.52 with the
+ * related floor left at 0.30. Applying it fails check-scale immediately —
+ * "dots say related, verdict clear" — because the similarity scale draws
+ * MIN_ABS_FOR_RELATED as the boundary of the "nothing here" zone, so a higher
+ * noise gate puts dots inside the Related band on a page saying nothing is
+ * close. Tying them and raising both then fails differently, with `related`
+ * pushed above `strong` so the related verdict has no band left to live in.
+ *
+ * See the note in lib/match-label.ts. One floor used in two places, and a
+ * ceiling strictly above it. A tuner that can recommend an unusable setting is
+ * worse than no tuner, because its output looks like evidence.
+ */
 const points: Point[] = [];
-for (let nm = cents(0.3); nm <= cents(0.7); nm++) {
-  for (let rel = cents(0.3); rel <= cents(0.7); rel++) {
-    for (let st = cents(0.45); st <= cents(0.85); st++) {
-      if (st < rel) continue; // "covers it" cannot be a lower bar than "worth listing"
-      const t = { noMatchTopScore: dec(nm), related: dec(rel), strong: dec(st) };
-      const s = scoreAt(t);
-      points.push({ ...t, ...s });
-    }
+for (let floor = cents(0.3); floor <= cents(0.7); floor++) {
+  for (let st = cents(0.45); st <= cents(0.85); st++) {
+    if (st <= floor) continue; // strictly above, or `related` is unreachable
+    const t = { noMatchTopScore: dec(floor), related: dec(floor), strong: dec(st) };
+    const s = scoreAt(t);
+    points.push({ ...t, ...s });
   }
 }
 
@@ -192,24 +216,19 @@ function summarise(label: string, pool: Point[], hi: number) {
   // (the region need not be convex).
   const mean = (f: (p: Point) => number) => pool.reduce((a, p) => a + f(p), 0) / pool.length;
   const centre = {
-    noMatchTopScore: dec(Math.round(cents(mean((p) => p.noMatchTopScore)))),
     related: dec(Math.round(cents(mean((p) => p.related)))),
     strong: dec(Math.round(cents(mean((p) => p.strong)))),
   };
   const dist = (p: Point) =>
-    Math.abs(p.noMatchTopScore - centre.noMatchTopScore) +
-    Math.abs(p.related - centre.related) +
-    Math.abs(p.strong - centre.strong);
+    Math.abs(p.related - centre.related) + Math.abs(p.strong - centre.strong);
   const pick = [...pool].sort((a, b) => dist(a) - dist(b))[0];
   const span = (f: (p: Point) => number) =>
     `${Math.min(...pool.map(f)).toFixed(2)}–${Math.max(...pool.map(f)).toFixed(2)}`;
 
   console.log(`\n${label}: ${hi}/${cases.length}, reached by ${pool.length} settings`);
+  console.log(`  plateau spans   floor ${span((p) => p.related)} · strong ${span((p) => p.strong)}`);
   console.log(
-    `  plateau spans   noMatch ${span((p) => p.noMatchTopScore)} · related ${span((p) => p.related)} · strong ${span((p) => p.strong)}`
-  );
-  console.log(
-    `  middle of it    noMatch ${pick.noMatchTopScore.toFixed(2)} · related ${pick.related.toFixed(2)} · strong ${pick.strong.toFixed(2)}`
+    `  middle of it    floor ${pick.related.toFixed(2)} · strong ${pick.strong.toFixed(2)}`
   );
   console.log(`  by class        ${CLASSES.map((c) => `${c} ${pick.byClass[c]}/${total[c]}`).join(", ")}`);
   return pick;
@@ -233,22 +252,31 @@ const centre = summarise("Best that also satisfies the guard (clear ≥ 6/7, exi
  * today's value if it is among them. Only a floor that has to move, moves.
  */
 function minimalChange(from: OverlapThresholds, target: number): OverlapThresholds {
-  const keys: Array<keyof OverlapThresholds> = ["noMatchTopScore", "related", "strong"];
   const out: OverlapThresholds = { ...from };
-  for (const k of keys) {
-    const span = [0.3, 0.85];
+  // Two knobs: the shared floor (noise gate and related floor move together),
+  // and the strong ceiling above it.
+  for (const knob of ["floor", "strong"] as const) {
     const keeps: number[] = [];
-    for (let c = cents(span[0]); c <= cents(span[1]); c++) {
-      const t = { ...out, [k]: dec(c) };
-      if (t.strong < t.related) continue;
+    for (let c = cents(0.3); c <= cents(0.85); c++) {
+      const t: OverlapThresholds =
+        knob === "floor"
+          ? { noMatchTopScore: dec(c), related: dec(c), strong: out.strong }
+          : { ...out, strong: dec(c) };
+      if (t.strong <= t.related) continue;
       const s = scoreAt(t);
       if (s.correct === target && GUARD({ ...t, ...s } as Point)) keeps.push(dec(c));
     }
     if (!keeps.length) continue;
-    const today = DEFAULT_THRESHOLDS[k];
-    out[k] = keeps.some((v) => Math.abs(v - today) < 1e-9)
+    const today = knob === "floor" ? DEFAULT_THRESHOLDS.related : DEFAULT_THRESHOLDS.strong;
+    const value = keeps.some((v) => Math.abs(v - today) < 1e-9)
       ? today
       : keeps[Math.floor(keeps.length / 2)];
+    if (knob === "floor") {
+      out.noMatchTopScore = value;
+      out.related = value;
+    } else {
+      out.strong = value;
+    }
   }
   return out;
 }
@@ -262,12 +290,12 @@ if (centre) {
   // stands.
   const ok = s.correct === guardedBest && GUARD({ ...minimal, ...s } as Point);
   pick = ok ? { ...minimal, ...s } : centre;
-  const kept = (["noMatchTopScore", "related", "strong"] as const).filter(
+  const kept = (["related", "strong"] as const).filter(
     (k) => Math.abs(pick![k] - DEFAULT_THRESHOLDS[k]) < 1e-9
   );
   console.log(
     `\nSmallest change that reaches ${guardedBest}/${cases.length}:` +
-      `  noMatch ${pick.noMatchTopScore.toFixed(2)} · related ${pick.related.toFixed(2)} · strong ${pick.strong.toFixed(2)}`
+      `  floor ${pick.related.toFixed(2)} · strong ${pick.strong.toFixed(2)}`
   );
   if (kept.length) {
     console.log(`  unchanged from today: ${kept.join(", ")} — the sweep gives no reason to move ${kept.length > 1 ? "them" : "it"}.`);
@@ -293,10 +321,11 @@ if (pick) {
   }
   console.log("");
   const changes: string[] = [];
-  if (Math.abs(pick.noMatchTopScore - DEFAULT_THRESHOLDS.noMatchTopScore) > 1e-9)
-    changes.push(`  NO_MATCH_TOPSCORE_FLOOR = ${pick.noMatchTopScore}   (was ${DEFAULT_THRESHOLDS.noMatchTopScore})`);
-  if (Math.abs(pick.related - DEFAULT_THRESHOLDS.related) > 1e-9)
+  if (Math.abs(pick.related - DEFAULT_THRESHOLDS.related) > 1e-9) {
+    // These two always move together — see the note in lib/match-label.ts.
+    changes.push(`  NO_MATCH_TOPSCORE_FLOOR = ${pick.related}   (was ${DEFAULT_THRESHOLDS.noMatchTopScore})`);
     changes.push(`  MIN_ABS_FOR_RELATED     = ${pick.related}   (was ${DEFAULT_THRESHOLDS.related})`);
+  }
   if (Math.abs(pick.strong - DEFAULT_THRESHOLDS.strong) > 1e-9)
     changes.push(`  MIN_ABS_FOR_STRONG      = ${pick.strong}   (was ${DEFAULT_THRESHOLDS.strong})`);
   if (changes.length === 0) {
