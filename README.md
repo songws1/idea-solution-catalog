@@ -155,6 +155,10 @@ npm run verify-duplicates    # checks detection against the planted clusters
 npm run check-overlap        # verdict logic for the check (no API key, no spend)
 npm run check-scale          # similarity scale always agrees with the verdict
 npm run check-freshness      # staleness scale + board/dashboard agreement
+npm run embed-gold           # one paid run: embeds the 35 gold questions and
+                             # commits their vectors into data/gold-queries.json
+npm run check-gold           # scores the real pipeline against those questions
+                             # (offline once embedded; -- --verbose for detail)
 npm run check-fixture exists.json related.json clear.json asked.json
                              # real /api/check payloads for all four verdicts,
                              # offline, for inspecting the checked UI with no spend
@@ -234,6 +238,34 @@ Current result: **every planted cluster is caught and no unrelated records
 are flagged in either dataset.** Override with `DUP_THRESHOLD`,
 `DUP_THRESHOLD_PRE`, or `DUP_THRESHOLD_POST`.
 
+### The gold query set (what actually tests search)
+
+Every other check here queries with a record's own vector, which measures
+whether a record can find itself. It always can, which is why those numbers are
+high and why they are not evidence that search works. `data/gold-queries.json`
+holds 35 questions written by hand, graded for realism before anyone looked at
+whether the catalog answers them well, with expectations set by reading the
+records the catalog actually holds. `npm run check-gold` runs the real pipeline
+against them.
+
+It reports two recalls because they need different fixes: **found** means the
+expected record was in the top 8 the retriever returned (a miss there is a
+retrieval problem), **shown** means it survived the thresholds and reached the
+reader (found but not shown is a threshold problem). The overall accuracy
+number hides which one you have.
+
+**These questions expire when the corpus changes.** An idea moving from open to
+solved turns a correct "already asked" into a wrong one, and nothing announces
+it. So the file records a fingerprint of the records it was written against —
+ids, text, idea status and links — and `check-gold` refuses to score against a
+corpus that no longer matches, printing what to redo. Bringing this tool to a
+real dataset means rewriting the questions for that dataset; the guard is what
+makes you remember at the moment it matters instead of in a calendar.
+
+`data/gold-baseline.json` (`npm run check-gold -- --save-baseline`) is not a
+target. The score is not expected to reach 100%. The baseline exists so it
+cannot quietly get worse while thresholds or retrieval are being changed.
+
 ## Deploying to Vercel
 
 1. Push this repo to GitHub. It contains no secrets: `.env.local` is
@@ -289,8 +321,10 @@ app/               Next.js App Router: /, /governance, /export, /api/check
 components/        catalog board + cards, record drawer, governance widgets, shell
 lib/               types, dataset loading, retrieval, governance math,
                    OpenRouter client, rate limiting
-scripts/           seed generator, enrichment pipeline, duplicate verifier
-data/              committed: users, seed records, both datasets (with embeddings)
+scripts/           seed generator, enrichment pipeline, duplicate verifier,
+                   offline checks (overlap, scale, freshness, governance, gold)
+data/              committed: users, seed records, both datasets (with embeddings),
+                   the gold query set and its baseline
 docs/              spec, v3 UX redesign spec, backlog
 ```
 

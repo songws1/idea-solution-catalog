@@ -1,0 +1,502 @@
+{
+  "version": 1,
+  "purpose": "Human-written queries with human-decided expectations. Every other check in this repo uses a record's own vector as the query, which measures self-retrieval, not search. This is the only test that asks what a person would type.",
+  "how_expectations_were_set": "Chris graded each question for realism (A/B/C) without seeing an expected answer. Expectations were then set by reading the records the catalog actually holds, and the debatable ones were decided by Chris.",
+  "written_against": {
+    "dataset_variant": "post",
+    "records": 182,
+    "generated_at": "2026-09-10T01:17:42.998Z",
+    "fingerprint": "2a0da339e6c0a13c",
+    "fingerprint_of": "lib/gold.ts datasetFingerprint(), over the post-enrichment dataset"
+  },
+  "embedding_model": null,
+  "vectors_written_at": null,
+  "balance": {
+    "exists": 17,
+    "already-asked": 5,
+    "clear": 7,
+    "related": 6
+  },
+  "queries": [
+    {
+      "id": "q01",
+      "source_batch": 3,
+      "text": "We want to pull action items out of meeting recordings automatically and assign owners",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0011",
+          "sol-0020",
+          "sol-0030",
+          "sol-0031"
+        ],
+        "twice": true
+      },
+      "note": "Four near-duplicate ideas produced four solutions; two flagged pairs.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q02",
+      "source_batch": 5,
+      "text": "A tool that reminds vendor managers when a vendor risk review is due",
+      "expect": {
+        "verdict": "already-asked",
+        "records": [
+          "idea-0035",
+          "idea-0034"
+        ]
+      },
+      "note": "Asked twice: one open, one in progress. Nothing built.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q03",
+      "source_batch": 8,
+      "text": "dashboard for spend",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0013"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q04",
+      "source_batch": 9,
+      "text": "Our team spends hours every month figuring out which month-end close tasks are still blocked. Looking for something that shows status in one place.",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0006"
+        ]
+      },
+      "note": "idea-0095 is still open asking for the same thing.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q05",
+      "source_batch": 10,
+      "text": "Can I get a summary of what changed between two versions of a document?",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0038"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q06",
+      "source_batch": 11,
+      "text": "A tool that flags invoices arriving without a PO number so they stop sitting in the queue",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0001"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q07",
+      "source_batch": 12,
+      "text": "Can I get a weekly report of vendor insurance certificates about to expire?",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0012"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q08",
+      "source_batch": 13,
+      "text": "checklist for new joiner readiness",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0007",
+          "sol-0008"
+        ]
+      },
+      "disagreement": "Chris reads sol-0007 and sol-0008 as overlapping. Detection scores them 0.6700, under the 0.7119 duplicate threshold, so the page can never say 'built twice' here. Evidence about the threshold, not about retrieval.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q09",
+      "source_batch": 14,
+      "text": "Something that pulls tables out of PDFs into Excel",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0029"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q10",
+      "source_batch": 16,
+      "text": "We want software requests routed to the right approver instead of everything landing in one queue",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0023"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q11",
+      "source_batch": 18,
+      "text": "A tool that warns us about duplicate payments before the payment run goes out",
+      "expect": {
+        "verdict": "already-asked",
+        "records": [
+          "idea-0004"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q12",
+      "source_batch": 19,
+      "text": "Can I get an alert when timesheets are missing approval before the payroll cutoff?",
+      "expect": {
+        "verdict": "already-asked",
+        "records": [
+          "idea-0012"
+        ]
+      },
+      "note": "Graded B for realism; kept to fill the already-asked category.",
+      "grade": "B",
+      "embedding": null
+    },
+    {
+      "id": "q13",
+      "source_batch": 20,
+      "text": "report of licences nobody is using so we can reclaim them",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0052"
+        ]
+      },
+      "note": "idea-0059 is still open asking for a reclaim report.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q14",
+      "source_batch": 21,
+      "text": "A quarterly digest of what keeps coming up in exit interviews",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0044"
+        ]
+      },
+      "note": "idea-0031 is still open asking for the same digest.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q15",
+      "source_batch": 23,
+      "text": "We want meeting notes turned into tasks with owners",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0011",
+          "sol-0020",
+          "sol-0030",
+          "sol-0031"
+        ],
+        "twice": true
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q16",
+      "source_batch": 25,
+      "text": "Auto-approve standard access requests instead of a person clicking through each one",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0022",
+          "sol-0024"
+        ],
+        "twice": true
+      },
+      "note": "sol-0022 and sol-0024 are a flagged duplicate pair.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q17",
+      "source_batch": 26,
+      "text": "A tool that predicts which desks will be free next quarter so we can plan seating",
+      "expect": {
+        "verdict": "already-asked",
+        "records": [
+          "idea-0044",
+          "idea-0117"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q18",
+      "source_batch": 27,
+      "text": "summary of overtime trends by team",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q19",
+      "source_batch": 29,
+      "text": "A tool that tracks which contractors' background checks expire this quarter",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q20",
+      "source_batch": 34,
+      "text": "A tool that splits a big batch scan into separate documents",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0026"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q21",
+      "source_batch": 35,
+      "text": "report of which meeting rooms were booked but never used",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0016"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q22",
+      "source_batch": 37,
+      "text": "summary of what is blocking each open purchase order this week",
+      "expect": {
+        "verdict": "already-asked",
+        "records": [
+          "idea-0113"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q23",
+      "source_batch": 40,
+      "text": "We want the same standard reply sent for escalations instead of everyone writing their own",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0036"
+        ]
+      },
+      "note": "idea-0089 is in progress asking for standard replies to a recurring escalation.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q24",
+      "source_batch": 43,
+      "text": "summary of which suppliers we pay the most across regions",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0049",
+          "sol-0013"
+        ]
+      },
+      "note": "Neighbours price-spread and categorise spend; neither ranks suppliers by spend across regions.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q25",
+      "source_batch": 46,
+      "text": "A tool that drafts the monthly update for the leadership meeting",
+      "expect": {
+        "verdict": "exists",
+        "records": [
+          "sol-0033"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q26",
+      "source_batch": 47,
+      "text": "A tool that tracks which employees still owe their conflict of interest declaration",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "note": "Trap: sol-0012 'COI Expiry Watchlist' is certificates of insurance, not conflict of interest.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q27",
+      "source_batch": 48,
+      "text": "report of which internal policies are overdue for their annual review",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "note": "Vendor risk review reminders are about vendors, not policies.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q28",
+      "source_batch": 50,
+      "text": "summary of which training courses expire for each person next quarter",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0046",
+          "idea-0028"
+        ]
+      },
+      "note": "Dormant Course Report retires unused courses; idea-0028 nudges for overdue training. Neither reports upcoming expiry per person.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q29",
+      "source_batch": 51,
+      "text": "A tool that plans the marketing campaign calendar",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "note": "Different business domain.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q30",
+      "source_batch": 52,
+      "text": "report of sales pipeline by region",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "note": "Different business domain.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q31",
+      "source_batch": 54,
+      "text": "A tool that checks an invoice against the contract rates before we pay it",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0048",
+          "sol-0051",
+          "idea-0110"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q32",
+      "source_batch": 55,
+      "text": "report of which approvals are sitting with people who are on leave",
+      "expect": {
+        "verdict": "clear",
+        "records": []
+      },
+      "note": "Chris's call: the approval solutions would not help someone asking this.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q33",
+      "source_batch": 57,
+      "text": "A tool that drafts the agenda for a recurring meeting from last time's actions",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0011",
+          "sol-0030",
+          "sol-0032"
+        ]
+      },
+      "note": "Densest neighbourhood in the catalog; none of it drafts an agenda.",
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q34",
+      "source_batch": 58,
+      "text": "report of which documents on the shared drive have no owner",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0039",
+          "idea-0070",
+          "idea-0082"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    },
+    {
+      "id": "q35",
+      "source_batch": 59,
+      "text": "A tool that estimates how long onboarding will take for a new hire",
+      "expect": {
+        "verdict": "related",
+        "records": [
+          "sol-0007",
+          "sol-0008"
+        ]
+      },
+      "grade": "A",
+      "embedding": null
+    }
+  ]
+}

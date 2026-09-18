@@ -11,7 +11,8 @@ roughly doubled with a cross-functional service (v4.9, corrected in v4.9.1),
 the "nothing found" answer rebuilt (v4.10), the verdict compressed (v4.11),
 counts in the filter menus (v4.12), the governance page rebuilt (v4.13; those
 three are recorded in their commit messages), a similarity scale inside
-the verdict (v4.14), and aging redrawn as a heatmap (v4.15). The mindmap is
+the verdict (v4.14), aging redrawn as a heatmap (v4.15), and a gold query set
+that tests search rather than self-retrieval (v4.17). The mindmap is
 deliberately **not** next — see the v4.4 note.
 
 ---
@@ -1016,6 +1017,73 @@ Sankey replacing the funnel, and a cumulative curve replacing the throughput
 bars. Both passed their checks; Chris did not want either, so the funnel and the
 paired monthly bars stay. Recorded here so the next person does not propose them
 as fresh ideas.
+
+---
+
+## v4.17 — the gold query set
+
+**What was wrong, and it was not a bug.** Every offline check in this repo
+queries with a record's own vector: `check-overlap`, `check-scale`,
+`check-fixture`, and the 94–98% figures quoted for enrichment all do it. That
+measures whether a record can find itself, which it always can. It says nothing
+about whether a sentence a person types finds the right record — which is the
+only thing the product does. Nobody noticed because the numbers were high.
+
+**The fix is not code.** It is 35 questions written by hand. Chris graded each
+one for realism (A/B/C) *without seeing an expected answer*, so the grade is
+about the question and not about whether the catalog happens to answer it well.
+Expectations were then set by reading the records the catalog actually holds,
+and the debatable ones were decided by Chris one at a time. Eight of the
+expectations drafted before that reading were wrong, which is itself the
+argument for the exercise.
+
+Balance: 17 `exists`, 5 `already-asked`, 6 `related`, 7 `clear`. The `clear`
+questions matter most: a wrong "nothing like this exists" is the failure that
+causes the duplicate build this whole catalog is meant to prevent.
+
+**Where Chris and the code disagree, the disagreement is kept.** q08 expects
+sol-0007 and sol-0008, which Chris reads as overlapping. Detection scores them
+0.6700 against a 0.7119 duplicate threshold, so the page can never say "built
+twice" there. That is recorded in the file as a `disagreement` field rather than
+relabelled away: it is evidence about the threshold, not about retrieval, and
+the two should not be quietly merged.
+
+**Three files:**
+
+- `lib/gold.ts` — types, and `datasetFingerprint()`.
+- `scripts/embed-gold.ts` — run once with a key. Embeds the questions and
+  commits the vectors into the file, so every run after it is offline and free,
+  like every other check here. Refuses to embed against a drifted corpus or a
+  mismatched model.
+- `scripts/check-gold.ts` — the real pipeline (`retrieve` → `assessOverlap`)
+  over the 35 questions, with a per-question table.
+
+**Two recalls, not one**, because they fail for different reasons and need
+different fixes. *found* = the expected record was in the top 8 the retriever
+returned; a miss is a retrieval problem. *shown* = it survived the thresholds
+and reached the reader; found-but-not-shown is a threshold problem, and the
+thresholds are ours to move. An overall accuracy number hides which one you
+have.
+
+**The staleness guard** answers Chris's question — "if I ever bring this to
+work, do I redo this against the real dataset, and how do I remember to?" The
+file records a fingerprint of the corpus the questions were written against:
+every record's id and text, plus each idea's status and linked solution,
+because an idea moving from open to solved silently flips a correct "already
+asked" into a wrong one. `check-gold` refuses to score against a corpus that no
+longer matches and prints what to do. Embeddings, dates and owners are
+deliberately excluded — a guard that fires on noise is a guard people learn to
+skip. Same trick as `verify-duplicates`: the reminder fires at the moment it
+matters, not in a calendar.
+
+**The baseline** (`data/gold-baseline.json`, written by `--save-baseline`) is
+not a target. The score will not be 100% and is not supposed to be; the baseline
+exists so it cannot quietly get *worse* while someone is moving thresholds.
+
+**What this unblocks.** Threshold calibration now has something to calibrate
+against that is not self-retrieval. `MIN_ABS_FOR_STRONG` (0.50) was already
+shown not to discriminate — 3.4% of all record pairs clear it — but it could
+not be moved responsibly without a test that measures search. It can be now.
 
 ---
 

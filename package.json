@@ -13,6 +13,8 @@
     "seed": "tsx scripts/generate-seed.ts",
     "enrich": "tsx scripts/enrich.ts",
     "verify-duplicates": "tsx scripts/verify-duplicates.ts",
+    "embed-gold": "tsx scripts/embed-gold.ts",
+    "check-gold": "tsx scripts/check-gold.ts",
     "check-overlap": "tsx scripts/check-overlap.ts",
     "check-scale": "tsx scripts/check-scale.ts",
     "check-fixture": "tsx scripts/check-fixture.ts",
