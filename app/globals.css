@@ -3400,3 +3400,16 @@ a:hover {
 .heat-legend-note {
   color: var(--ink-faint);
 }
+
+/* Demand against supply keeps its column widths and scrolls inside the widget
+   (v4.16). v4.15's .widget { min-width: 0 } let the widget shrink, and this
+   grid was then the one thing still pushing the page wider than a phone. */
+.ds-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.ds-scroll .ds-head,
+.ds-scroll .ds-rows {
+  min-width: 420px;
+}

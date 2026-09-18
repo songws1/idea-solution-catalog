@@ -1004,6 +1004,21 @@ wider than the phone.
 
 ---
 
+## v4.16 — demand against supply scrolls inside its widget
+
+A one-line consequence of v4.15. `.widget { min-width: 0 }` let widgets shrink
+to their column, and this grid was then the only thing still pushing the
+governance page wider than a phone. Its rows now scroll inside the widget like
+the heatmap's grid does. Verified at 400px: no horizontal page scroll.
+
+Two graphics were built on top of this and then removed before they shipped: a
+Sankey replacing the funnel, and a cumulative curve replacing the throughput
+bars. Both passed their checks; Chris did not want either, so the funnel and the
+paired monthly bars stay. Recorded here so the next person does not propose them
+as fresh ideas.
+
+---
+
 ## Open/parked items (not urgent)
 
 - **Dead filter chip.** The `scheduling` tag is in the taxonomy but no solution

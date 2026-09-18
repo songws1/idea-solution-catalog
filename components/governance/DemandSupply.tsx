@@ -33,6 +33,9 @@ export default function DemandSupplyWidget({ rows }: { rows: DemandSupplyRow[] }
         comparable with each other, not just with themselves.
       </p>
 
+      {/* v4.16: the rows keep their column widths and scroll inside the widget.
+          On a phone the grid used to push the widget, and the page, wider. */}
+      <div className="ds-scroll">
       <div className="ds-head" aria-hidden="true">
         <span className="ds-head-left">Waiting</span>
         <span className="ds-head-right">Built</span>
@@ -71,6 +74,7 @@ export default function DemandSupplyWidget({ rows }: { rows: DemandSupplyRow[] }
             </div>
           );
         })}
+      </div>
       </div>
     </section>
   );
