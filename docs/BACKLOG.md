@@ -1,7 +1,10 @@
 # Backlog — Addendum A Rollout
 
-**Last updated:** September 16, 2026
-**Status:** Phases 1-4.1 complete and verified. The v3 build sequence is
+**Last updated:** September 18, 2026
+**Status: MVP closed at v4.19.2.** See "MVP — what was built and what it is
+worth" directly below before reading the history.
+
+Phases 1-4.1 complete and verified. The v3 build sequence is
 **finished**. On top of it: a v4 visual pass, deployment hardening, a
 board-density pass, the employee directory (v4.2), real solution artifacts
 (v4.3), the "before you build" check (v4.4), that check moved to the front
@@ -14,7 +17,68 @@ three are recorded in their commit messages), a similarity scale inside
 the verdict (v4.14), aging redrawn as a heatmap (v4.15), a gold query set that
 tests search rather than self-retrieval (v4.17), a sweep that derives the
 verdict floors (v4.18), and the first calibration those two made possible
-(v4.19). The mindmap is deliberately **not** next — see the v4.4 note.
+(v4.19, corrected in v4.19.1 and v4.19.2). The mindmap is deliberately **not**
+next — see the v4.4 note.
+
+---
+
+## MVP — what was built and what it is worth
+
+A prototype for the problem that 7000 people in GBS keep building the same
+thing twice. Two pages, no database, all data synthetic.
+
+**`/` — the check.** Describe what you are about to build. The page answers one
+question: does it already exist? Four verdicts (`exists`, `already-asked`,
+`related`, `clear`), a similarity scale showing why that verdict and not
+another, and a board that re-ranks against the same response.
+
+**`/governance` — five widgets**, each answering "what should someone do about
+this": where ideas stop, demand against supply, overlaps to review, aging, build
+throughput.
+
+**Honest quality numbers**, which is the part most prototypes do not have:
+
+| | |
+|---|---|
+| Verdict accuracy on 35 hand-written questions | **25/35 (71%)** |
+| Expected records the retriever found | **100%** |
+| Expected records that reached the reader | **85%** |
+| `clear` (nothing here) | 7/7 |
+| `exists` (it is built) | 15/17 |
+| `already-asked` | 3/5 |
+| `related` | 0/6, and see below |
+
+These come from `npm run check-gold`, the only test here that measures search
+rather than self-retrieval. Every other number this project has quoted — 94%,
+98% — came from querying with a record's own vector, which measures whether a
+record can find itself. Read `docs/gold-findings.md` before quoting any figure
+from this repo.
+
+**What is deliberately unfinished**, in the order it should be picked up:
+
+1. **`exists` vs `already-asked` confusion.** Four gold questions find the right
+   records and choose the wrong label, because the verdict picks a panel by a
+   score difference that carries no meaning. A rule fix in `lib/overlap.ts`. No
+   threshold touches it.
+2. **Whether `related` should be a verdict at all.** v4.19 established it cannot
+   be separated by score at any setting: its range overlaps both neighbours.
+   Either accept it as rare, or drop to three verdicts and let `clear` carry
+   those cases with the v4.10 "nearest, not a match" prose that already does the
+   job. A product decision.
+3. **Query logging.** Parked on purpose. It would be the first non-synthetic
+   data in the project, it only pays off once someone other than the author is
+   using the tool, and it needs storage, retention and access answers before the
+   first write rather than after.
+
+**What is settled and should not be reopened without new evidence:** retrieval.
+It returned every expected record on every question. Hybrid search, RRF and a
+larger embedding model are not worth building here.
+
+**Before this meets a real dataset:** the 35 questions expire. They were written
+against one corpus and `data/gold-queries.json` fingerprints it; `check-gold`
+refuses to score against a corpus that no longer matches and prints what to
+redo. That guard is the answer to "will I remember to redo this at work" — it
+fires at the moment it matters.
 
 ---
 
@@ -1175,6 +1239,36 @@ take the highest floor. The tightest list that still says it all.
 improve while the thing it stands for gets worse. This was only caught because
 `check-gold` reports "found" and "shown" separately, built for a different
 purpose. It now says so out loud when the two diverge.
+
+---
+
+## v4.19.2 — a clear verdict shows nothing, by either route
+
+The separation in v4.19.1 opened a second way into `clear`: records above the
+listing floor, none at the gate. On that route the record lists were still being
+returned, so the page would have said "nothing in the catalog is close" and then
+printed records underneath it.
+
+Before the split this was impossible by construction — `clear` meant both lists
+were empty. Removing that accident removed the guarantee with it, and nothing
+replaced it until `check-gold` failed on `a clear verdict never shows a record`,
+an assertion written for the old design that turned out to be load-bearing for
+the new one. Fixed explicitly.
+
+Also restored the minimal-change rule to `tune-gold`, lost in the v4.19.1
+rewrite. Its absence showed on the first real run, which recommended moving the
+gate 0.52 → 0.51 and strong 0.54 → 0.53 for no measured gain.
+
+**With that restored, the sweep's answer is: no change.** gate 0.52, strong
+0.54, listing 0.30, 25/35, shown 85%, on a plateau 115 settings wide. The
+calibration is finished.
+
+The sweep's two selection rules disagreed about the listing floor, and it was
+settled by measuring rather than arguing: 0.39 shows twelve fewer records across
+thirty-five questions at identical recall, a third of a record per question, and
+"not in the expected set" is not a measure of wrongness since the gold set
+records what must appear and never what must not. Too thin to move a committed
+constant.
 
 ---
 
